@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "BeautyUp LINE",
+    "slug": "line-sender-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "linesender",
+    "splash": {
+      "backgroundColor": "#22c55e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.beautyup.linesender"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#22c55e"
+      },
+      "package": "com.beautyup.linesender"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        { "photosPermission": "Allow BeautyUp LINE to access your photos." }
+      ]
+    ]
+  }
+}
