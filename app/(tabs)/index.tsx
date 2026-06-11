@@ -1,44 +1,44 @@
 import { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
+  View, Text, TextInput, TouchableOpacity, Pressable, StyleSheet, ScrollView,
   Image, Alert, ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { api } from "@/lib/api";
-
-interface User { id: string; fullName: string; email: string; }
+import { api, getStoredUser } from "@/lib/api";
 
 export default function SendScreen() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
-  const [note, setNote] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [title, setTitle] = useState("สินค้าทดสอบ");
+  const [price, setPrice] = useState("350");
+  const [note, setNote] = useState("test");
   const [image, setImage] = useState<{ uri: string; name: string; type: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { api.getUsers().then(setUsers).catch(console.error); }, []);
+  useEffect(() => {
+    getStoredUser().then((u) => { if (u) setUserId(u.id); });
+  }, []);
 
   async function pickImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       quality: 0.8,
+      allowsEditing: false,
     });
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
-      const name = asset.uri.split("/").pop() || "image.jpg";
-      const type = name.endsWith(".png") ? "image/png" : "image/jpeg";
+      const rawName = asset.uri.split("/").pop() || "image.jpg";
+      const isPng = rawName.toLowerCase().endsWith(".png");
+      // แปลง HEIC และรูปแบบอื่นๆ เป็น JPEG, คงไว้แค่ PNG
+      const name = isPng ? rawName : rawName.replace(/\.[^.]+$/, "") + ".jpg";
+      const type = isPng ? "image/png" : "image/jpeg";
       setImage({ uri: asset.uri, name, type });
     }
   }
 
-  function toggleUser(id: string) {
-    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  }
-
   async function handleSend() {
-    if (!image || !title || selectedIds.length === 0) {
-      Alert.alert("แจ้งเตือน", "กรุณากรอกข้อมูลและเลือก User ให้ครบ");
+    console.log('[SEND] image:', image?.uri, 'title:', title, 'userId:', userId);
+    if (!image || !title || !userId) {
+      Alert.alert("แจ้งเตือน", `กรุณากรอกข้อมูลให้ครบ\nimage=${!!image} title=${!!title} userId=${!!userId}`);
       return;
     }
     setLoading(true);
@@ -48,12 +48,13 @@ export default function SendScreen() {
       fd.append("title", title);
       fd.append("price", price);
       fd.append("note", note);
-      fd.append("targetUserIds", JSON.stringify(selectedIds));
+      fd.append("targetUserIds", JSON.stringify([userId]));
       await api.sendMessage(fd);
       Alert.alert("สำเร็จ", "ส่งรูปเข้า LINE Group แล้ว");
-      setImage(null); setTitle(""); setPrice(""); setNote(""); setSelectedIds([]);
+      setImage(null); setTitle(""); setPrice(""); setNote("");
     } catch (err: unknown) {
-      Alert.alert("ผิดพลาด", err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
+      console.error('[SEND] catch error:', err);
+      Alert.alert("ผิดพลาด", err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -82,23 +83,9 @@ export default function SendScreen() {
         <Text style={styles.label}>หมายเหตุ</Text>
         <TextInput style={[styles.input, { height: 72 }]} value={note} onChangeText={setNote} placeholder="รายละเอียดเพิ่มเติม" multiline />
 
-        <Text style={styles.label}>เลือก User</Text>
-        <View style={styles.userList}>
-          {users.map((u) => {
-            const selected = selectedIds.includes(u.id);
-            return (
-              <TouchableOpacity key={u.id} style={[styles.userItem, selected && styles.userItemSelected]}
-                onPress={() => toggleUser(u.id)}>
-                <Text style={[styles.userName, selected && styles.userNameSelected]}>{u.fullName}</Text>
-                <Text style={styles.userEmail}>{u.email}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
         <TouchableOpacity style={[styles.sendButton, loading && styles.sendButtonDisabled]}
           onPress={handleSend} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendButtonText}>ส่งเข้า LINE Group</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendButtonText}>ส่งเข้า LINE Group ของฉัน</Text>}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -115,12 +102,6 @@ const styles = StyleSheet.create({
   form: { paddingHorizontal: 16 },
   label: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6, marginTop: 12 },
   input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, backgroundColor: "#fff", color: "#111827" },
-  userList: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, overflow: "hidden", backgroundColor: "#fff" },
-  userItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  userItemSelected: { backgroundColor: "#f0fdf4" },
-  userName: { fontSize: 14, color: "#374151", fontWeight: "500" },
-  userNameSelected: { color: "#16a34a" },
-  userEmail: { fontSize: 12, color: "#9ca3af" },
   sendButton: { backgroundColor: "#22c55e", borderRadius: 12, paddingVertical: 15, alignItems: "center", marginTop: 20 },
   sendButtonDisabled: { opacity: 0.5 },
   sendButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },

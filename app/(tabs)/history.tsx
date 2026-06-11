@@ -22,7 +22,8 @@ export default function HistoryScreen() {
     try {
       const data = await api.getHistory();
       setLogs(data);
-    } catch (console.error) {
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
       setRefreshing(false);

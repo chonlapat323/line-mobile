@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 
-const API_URL = "http://localhost:3001";
+const API_URL = "https://e043-2001-fb1-10f-6cf9-ad89-e3fc-b270-8918.ngrok-free.app";
 
 async function getToken() {
   return await SecureStore.getItemAsync("token");
@@ -32,6 +32,7 @@ export const api = {
   getMe: () => request("/users/me"),
   getVerificationCode: (userId: string) => request(`/users/${userId}/verification-code`),
   getHistory: () => request("/line/history"),
+  getSettings: () => request("/settings"),
 
   sendMessage: (formData: FormData) =>
     request("/line/send", { method: "POST", body: formData }),

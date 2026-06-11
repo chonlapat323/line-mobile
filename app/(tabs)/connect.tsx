@@ -1,24 +1,28 @@
 import { useState, useEffect } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Clipboard, Linking,
 } from "react-native";
-import { api } from "@/lib/api";
-
-interface User { id: string; fullName: string; email: string; }
+import { api, getStoredUser } from "@/lib/api";
 
 export default function ConnectScreen() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [selected, setSelected] = useState<User | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [code, setCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lineBotId, setLineBotId] = useState<string | null>(null);
 
-  useEffect(() => { api.getUsers().then(setUsers).catch(console.error); }, []);
+  useEffect(() => {
+    getStoredUser().then((u) => { if (u) setUserId(u.id); });
+    api.getSettings().then((s: { lineBotId: string | null }) => {
+      if (s.lineBotId) setLineBotId(s.lineBotId);
+    }).catch(console.error);
+  }, []);
 
   async function generateCode() {
-    if (!selected) return;
+    if (!userId) return;
     setLoading(true);
+    setCode(null);
     try {
-      const data = await api.getVerificationCode(selected.id);
+      const data = await api.getVerificationCode(userId);
       setCode(data);
     } catch {
       Alert.alert("ผิดพลาด", "ไม่สามารถสร้างรหัสได้");
@@ -28,33 +32,53 @@ export default function ConnectScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
-      <Text style={styles.desc}>สร้างรหัสยืนยัน แล้วพิมพ์ในกลุ่ม LINE ที่มี Bot อยู่</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 24 }}>
+      <Text style={styles.title}>เชื่อมต่อ LINE Group</Text>
+      <Text style={styles.desc}>
+        1. กด "สร้างรหัส" ด้านล่าง{"\n"}
+        2. เปิดกลุ่ม LINE ที่มี Bot อยู่{"\n"}
+        3. พิมพ์รหัสในกลุ่ม LINE
+      </Text>
 
-      <Text style={styles.sectionTitle}>เลือก User</Text>
-      <View style={styles.userList}>
-        {users.map((u) => (
-          <TouchableOpacity key={u.id}
-            style={[styles.userItem, selected?.id === u.id && styles.userItemSelected]}
-            onPress={() => { setSelected(u); setCode(null); }}>
-            <Text style={[styles.userName, selected?.id === u.id && styles.userNameSelected]}>{u.fullName}</Text>
-            <Text style={styles.userEmail}>{u.email}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {lineBotId && (
+        <TouchableOpacity
+          style={styles.addBotButton}
+          onPress={() => Linking.openURL(`https://line.me/R/ti/p/${lineBotId}`)}
+        >
+          <Text style={styles.addBotText}>➕ เพิ่ม Bot เป็นเพื่อนใน LINE</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
-        style={[styles.button, (!selected || loading) && styles.buttonDisabled]}
-        onPress={generateCode} disabled={!selected || loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>สร้างรหัสยืนยัน</Text>}
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={generateCode}
+        disabled={loading}
+      >
+        {loading
+          ? <ActivityIndicator color="#fff" />
+          : <Text style={styles.buttonText}>สร้างรหัสยืนยัน</Text>
+        }
       </TouchableOpacity>
 
       {code && (
         <View style={styles.codeBox}>
           <Text style={styles.codeLabel}>รหัสยืนยัน</Text>
-          <Text style={styles.code}>{code.code}</Text>
-          <Text style={styles.codeExpiry}>หมดอายุ {new Date(code.expiresAt).toLocaleTimeString("th-TH")}</Text>
-          <Text style={styles.codeHint}>พิมพ์รหัสนี้ในกลุ่ม LINE ที่ต้องการเชื่อมต่อ</Text>
+          <TouchableOpacity onPress={() => { Clipboard.setString(code.code); Alert.alert("คัดลอกแล้ว", `รหัส ${code.code}`); }}>
+            <Text style={styles.code}>{code.code}</Text>
+          </TouchableOpacity>
+          <Text style={styles.codeExpiry}>
+            หมดอายุ {new Date(code.expiresAt).toLocaleTimeString("th-TH")}
+          </Text>
+          <TouchableOpacity
+            style={styles.copyButton}
+            onPress={() => {
+              Clipboard.setString(code.code);
+              Alert.alert("คัดลอกแล้ว", `รหัส ${code.code} ถูกคัดลอกแล้ว`);
+            }}
+          >
+            <Text style={styles.copyButtonText}>📋 คัดลอกรหัส</Text>
+          </TouchableOpacity>
+          <Text style={styles.codeHint}>พิมพ์หรือวางรหัสนี้ในกลุ่ม LINE</Text>
         </View>
       )}
     </ScrollView>
@@ -63,20 +87,18 @@ export default function ConnectScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb" },
-  desc: { fontSize: 13, color: "#6b7280", marginBottom: 20, lineHeight: 20 },
-  sectionTitle: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 8 },
-  userList: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, overflow: "hidden", backgroundColor: "#fff", marginBottom: 16 },
-  userItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  userItemSelected: { backgroundColor: "#f0fdf4" },
-  userName: { fontSize: 14, color: "#374151", fontWeight: "500" },
-  userNameSelected: { color: "#16a34a", fontWeight: "700" },
-  userEmail: { fontSize: 12, color: "#9ca3af" },
+  title: { fontSize: 20, fontWeight: "700", color: "#1f2937", marginBottom: 12 },
+  desc: { fontSize: 14, color: "#6b7280", lineHeight: 24, marginBottom: 24 },
+  addBotButton: { backgroundColor: "#06c755", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginBottom: 12 },
+  addBotText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   button: { backgroundColor: "#22c55e", borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  codeBox: { marginTop: 20, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0", borderRadius: 16, padding: 24, alignItems: "center" },
-  codeLabel: { fontSize: 12, color: "#6b7280", marginBottom: 6 },
-  code: { fontSize: 36, fontWeight: "800", color: "#16a34a", letterSpacing: 6, marginBottom: 8 },
+  codeBox: { marginTop: 24, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0", borderRadius: 16, padding: 28, alignItems: "center" },
+  codeLabel: { fontSize: 12, color: "#6b7280", marginBottom: 8 },
+  code: { fontSize: 40, fontWeight: "800", color: "#16a34a", letterSpacing: 8, marginBottom: 10 },
   codeExpiry: { fontSize: 12, color: "#9ca3af", marginBottom: 8 },
-  codeHint: { fontSize: 13, color: "#4b5563", textAlign: "center" },
+  copyButton: { backgroundColor: "#22c55e", borderRadius: 10, paddingVertical: 10, paddingHorizontal: 24, marginTop: 12, marginBottom: 8 },
+  copyButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  codeHint: { fontSize: 13, color: "#4b5563", textAlign: "center", lineHeight: 20 },
 });
