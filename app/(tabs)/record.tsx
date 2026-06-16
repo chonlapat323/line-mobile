@@ -13,7 +13,7 @@ import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-place
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
 import { colors, radius } from "@/lib/theme";
 
-const MIN_IMAGES = 1;
+const MIN_IMAGES = 6;
 
 interface PickedImage {
   uri: string;
