@@ -10,9 +10,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
 import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-places";
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
-import { colors, radius, shadows } from "@/lib/theme";
+import { colors, radius } from "@/lib/theme";
 
-const MIN_IMAGES = 5;
+const MIN_IMAGES = 4;
 
 interface PickedImage {
   uri: string;
@@ -20,26 +20,21 @@ interface PickedImage {
   type: string;
 }
 
+type TripType = "plan" | "off_plan" | "swap";
 type CustomerType = "new" | "existing";
-type VisitType = "visit" | "order" | "delivery";
+type VisitType = "tak" | "dem";
+type ResultType = "buy" | "no_buy" | "not_found";
 
 const IMAGE_SLOTS = [
-  { key: "front1",  label: "หน้าร้าน 1" },
-  { key: "front2",  label: "หน้าร้าน 2" },
-  { key: "inside1", label: "ภายในร้าน 1" },
-  { key: "inside2", label: "ภายในร้าน 2" },
-  { key: "line",    label: "หน้าจอ LINE" },
-  { key: "xray",    label: "X-ray" },
+  { key: "line",   label: "Line OA" },
+  { key: "front",  label: "หน้าร้าน" },
+  { key: "inside", label: "ภายในร้าน" },
+  { key: "xray",   label: "X-ray" },
 ] as const;
 
 type SlotKey = typeof IMAGE_SLOTS[number]["key"];
 type SlotImages = Record<SlotKey, PickedImage | null>;
-
-const EMPTY_SLOTS: SlotImages = {
-  front1: null, front2: null,
-  inside1: null, inside2: null,
-  line: null, xray: null,
-};
+const EMPTY_SLOTS: SlotImages = { line: null, front: null, inside: null, xray: null };
 
 export default function RecordScreen() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -54,8 +49,10 @@ export default function RecordScreen() {
   const [showProvincePicker, setShowProvincePicker] = useState(false);
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
+  const [tripType, setTripType] = useState<TripType | null>(null);
   const [customerType, setCustomerType] = useState<CustomerType | null>(null);
   const [visitType, setVisitType] = useState<VisitType | null>(null);
+  const [result, setResult] = useState<ResultType | null>(null);
   const [details, setDetails] = useState("");
   const [slotImages, setSlotImages] = useState<SlotImages>({ ...EMPTY_SLOTS });
   const [loading, setLoading] = useState(false);
@@ -111,18 +108,18 @@ export default function RecordScreen() {
   async function openCameraForSlot(slotKey: SlotKey) {
     const { granted } = await ImagePicker.requestCameraPermissionsAsync();
     if (!granted) { Alert.alert("ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
-    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
-    if (!result.canceled && result.assets[0]) {
-      setSlotImages((prev) => ({ ...prev, [slotKey]: parseAsset(result.assets[0].uri) }));
+    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
+    if (!res.canceled && res.assets[0]) {
+      setSlotImages((prev) => ({ ...prev, [slotKey]: parseAsset(res.assets[0].uri) }));
     }
   }
 
   async function openGalleryForSlot(slotKey: SlotKey) {
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8, allowsEditing: false,
     });
-    if (!result.canceled && result.assets[0]) {
-      setSlotImages((prev) => ({ ...prev, [slotKey]: parseAsset(result.assets[0].uri) }));
+    if (!res.canceled && res.assets[0]) {
+      setSlotImages((prev) => ({ ...prev, [slotKey]: parseAsset(res.assets[0].uri) }));
     }
   }
 
@@ -134,12 +131,14 @@ export default function RecordScreen() {
     if (!shopName.trim()) { Alert.alert("แจ้งเตือน", "กรุณากรอกชื่อร้าน"); return; }
     if (!province) { Alert.alert("แจ้งเตือน", "กรุณาเลือกจังหวัด"); return; }
     if (province === BANGKOK_PROVINCE && !district) { Alert.alert("แจ้งเตือน", "กรุณาเลือกเขต (กรุงเทพฯ)"); return; }
+    if (!tripType) { Alert.alert("แจ้งเตือน", "กรุณาเลือกทริป"); return; }
     if (!customerType) { Alert.alert("แจ้งเตือน", "กรุณาเลือกประเภทลูกค้า"); return; }
-    if (customerType === "existing" && !visitType) { Alert.alert("แจ้งเตือน", "กรุณาเลือกประเภทการเยี่ยม"); return; }
+    if (!visitType) { Alert.alert("แจ้งเตือน", "กรุณาเลือกภารกิจ"); return; }
+    if (!result) { Alert.alert("แจ้งเตือน", "กรุณาเลือกผลตอบรับ"); return; }
     const filledCount = IMAGE_SLOTS.filter((s) => slotImages[s.key] !== null).length;
     if (filledCount < MIN_IMAGES) {
       const missing = IMAGE_SLOTS.filter((s) => slotImages[s.key] === null).map((s) => s.label).join(", ");
-      Alert.alert("แจ้งเตือน", `กรุณาแนบรูปอย่างน้อย ${MIN_IMAGES} รูป\nยังขาด: ${missing}`);
+      Alert.alert("แจ้งเตือน", `กรุณาแนบรูปให้ครบทุก slot\nยังขาด: ${missing}`);
       return;
     }
     if (!userId) { Alert.alert("ข้อผิดพลาด", "ไม่พบข้อมูลผู้ใช้ กรุณา login ใหม่"); return; }
@@ -155,15 +154,18 @@ export default function RecordScreen() {
       fd.append("district", district);
       fd.append("latitude", String(latitude ?? 0));
       fd.append("longitude", String(longitude ?? 0));
+      fd.append("tripType", tripType);
       fd.append("customerType", customerType);
-      if (visitType) fd.append("visitType", visitType);
+      fd.append("visitType", visitType);
+      fd.append("result", result);
       fd.append("details", details);
       await api.createVisit(fd);
       await saveShopToHistory(shopName.trim());
       setShopHistory(await getShopHistory());
       Alert.alert("บันทึกสำเร็จ", "ข้อมูลการเยี่ยมร้านบันทึกแล้ว");
       setShopName(""); setProvince(""); setDistrict("");
-      setCustomerType(null); setVisitType(null); setDetails(""); setSlotImages({ ...EMPTY_SLOTS });
+      setTripType(null); setCustomerType(null); setVisitType(null);
+      setResult(null); setDetails(""); setSlotImages({ ...EMPTY_SLOTS });
       captureLocation();
     } catch (err: unknown) {
       Alert.alert("ผิดพลาด", err instanceof Error ? err.message : String(err));
@@ -175,7 +177,7 @@ export default function RecordScreen() {
   const isBangkok = province === BANGKOK_PROVINCE;
   const filledCount = IMAGE_SLOTS.filter((s) => slotImages[s.key] !== null).length;
   const canSubmit = !!shopName.trim() && !!province && (!isBangkok || !!district) &&
-    !!customerType && (customerType === "new" || !!visitType) && filledCount >= MIN_IMAGES && !loading;
+    !!tripType && !!customerType && !!visitType && !!result && filledCount >= MIN_IMAGES && !loading;
 
   const filteredProvinces = PROVINCES.filter((p) => p.toLowerCase().includes(pickerSearch.toLowerCase()));
   const filteredDistricts = BANGKOK_DISTRICTS.filter((d) => d.toLowerCase().includes(pickerSearch.toLowerCase()));
@@ -247,18 +249,38 @@ export default function RecordScreen() {
           </View>
         )}
 
-        {/* Customer type */}
+        {/* Trip type */}
         <View style={styles.section}>
-          <Text style={styles.label}>ประเภทลูกค้า <Text style={styles.required}>*</Text></Text>
+          <Text style={styles.label}>ทริป <Text style={styles.required}>*</Text></Text>
           <View style={styles.pillRow}>
             {([
-              { key: "new", label: "ลูกค้าใหม่" },
+              { key: "plan",     label: "ตามแผน" },
+              { key: "off_plan", label: "นอกแผน" },
+              { key: "swap",     label: "สลับวัน" },
+            ] as { key: TripType; label: string }[]).map(({ key, label }) => (
+              <TouchableOpacity
+                key={key}
+                style={[styles.pill, tripType === key && styles.pillActive]}
+                onPress={() => setTripType(key)}
+              >
+                <Text style={[styles.pillText, tripType === key && styles.pillTextActive]}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Customer type */}
+        <View style={styles.section}>
+          <Text style={styles.label}>ลูกค้า <Text style={styles.required}>*</Text></Text>
+          <View style={styles.pillRow}>
+            {([
+              { key: "new",      label: "ลูกค้าใหม่" },
               { key: "existing", label: "ลูกค้าเก่า" },
             ] as { key: CustomerType; label: string }[]).map(({ key, label }) => (
               <TouchableOpacity
                 key={key}
                 style={[styles.pill, customerType === key && styles.pillActive]}
-                onPress={() => { setCustomerType(key); if (key === "new") setVisitType(null); }}
+                onPress={() => setCustomerType(key)}
               >
                 <Text style={[styles.pillText, customerType === key && styles.pillTextActive]}>{label}</Text>
               </TouchableOpacity>
@@ -266,36 +288,53 @@ export default function RecordScreen() {
           </View>
         </View>
 
-        {/* Visit type */}
-        {customerType === "existing" && (
-          <View style={styles.section}>
-            <Text style={styles.label}>ประเภทการเยี่ยม <Text style={styles.required}>*</Text></Text>
-            <View style={styles.pillRow}>
-              {([
-                { key: "visit", label: "เยี่ยมเยือน" },
-                { key: "order", label: "จดยอด" },
-                { key: "delivery", label: "เด็มงาน" },
-              ] as { key: VisitType; label: string }[]).map(({ key, label }) => (
-                <TouchableOpacity
-                  key={key}
-                  style={[styles.pill, visitType === key && styles.pillActive]}
-                  onPress={() => setVisitType(key)}
-                >
-                  <Text style={[styles.pillText, visitType === key && styles.pillTextActive]}>{label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Details */}
+        {/* Mission type */}
         <View style={styles.section}>
-          <Text style={styles.label}>รายละเอียด</Text>
+          <Text style={styles.label}>ภารกิจ <Text style={styles.required}>*</Text></Text>
+          <View style={styles.pillRow}>
+            {([
+              { key: "tak", label: "ทัก" },
+              { key: "dem", label: "เดม" },
+            ] as { key: VisitType; label: string }[]).map(({ key, label }) => (
+              <TouchableOpacity
+                key={key}
+                style={[styles.pill, visitType === key && styles.pillActive]}
+                onPress={() => setVisitType(key)}
+              >
+                <Text style={[styles.pillText, visitType === key && styles.pillTextActive]}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Result */}
+        <View style={styles.section}>
+          <Text style={styles.label}>ผลตอบรับ <Text style={styles.required}>*</Text></Text>
+          <View style={styles.pillRow}>
+            {([
+              { key: "buy",       label: "ซื้อ" },
+              { key: "no_buy",    label: "ไม่ซื้อ" },
+              { key: "not_found", label: "ไม่พบ" },
+            ] as { key: ResultType; label: string }[]).map(({ key, label }) => (
+              <TouchableOpacity
+                key={key}
+                style={[styles.pill, result === key && styles.pillActive]}
+                onPress={() => setResult(key)}
+              >
+                <Text style={[styles.pillText, result === key && styles.pillTextActive]}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Summary */}
+        <View style={styles.section}>
+          <Text style={styles.label}>สรุปผล</Text>
           <TextInput
             style={[styles.input, { height: 88, paddingTop: 10 }]}
             value={details}
             onChangeText={setDetails}
-            placeholder="บันทึกรายละเอียดเพิ่มเติม..."
+            placeholder="บันทึกสรุปผลเพิ่มเติม..."
             placeholderTextColor={colors.textDisabled}
             multiline
             textAlignVertical="top"
@@ -307,7 +346,7 @@ export default function RecordScreen() {
           <View style={styles.imageLabelRow}>
             <Text style={styles.label}>รูปภาพ <Text style={styles.required}>*</Text></Text>
             <Text style={[styles.imageCount, filledCount < MIN_IMAGES && styles.imageCountWarn]}>
-              {filledCount}/6 · ต้องการอย่างน้อย {MIN_IMAGES} รูป
+              {filledCount}/4 · ต้องการครบทุกรูป
             </Text>
           </View>
           <View style={styles.imageGrid}>
