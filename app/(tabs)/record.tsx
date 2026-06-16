@@ -12,7 +12,7 @@ import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-place
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
 import { colors, radius } from "@/lib/theme";
 
-const MIN_IMAGES = 0; // TODO: เปลี่ยนเป็น 6 ตอน production
+const MIN_IMAGES = 6;
 
 interface PickedImage {
   uri: string;
@@ -178,7 +178,7 @@ export default function RecordScreen() {
 
   const isBangkok = province === BANGKOK_PROVINCE;
   const filledCount = IMAGE_SLOTS.filter((s) => slotImages[s.key] !== null).length;
-  const canSubmit = !!shopName.trim() && !!province &&
+  const canSubmit = !!shopName.trim() && !!province && (!isBangkok || !!district) &&
     !!tripType && !!customerType && !!visitType && !!result && filledCount >= MIN_IMAGES && !loading;
 
   const filteredProvinces = PROVINCES.filter((p) => p.toLowerCase().includes(pickerSearch.toLowerCase()));
@@ -348,7 +348,7 @@ export default function RecordScreen() {
           <View style={styles.imageLabelRow}>
             <Text style={styles.label}>รูปภาพ <Text style={styles.required}>*</Text></Text>
             <Text style={[styles.imageCount, filledCount < MIN_IMAGES && styles.imageCountWarn]}>
-              {filledCount}/6 รูป
+              {filledCount}/6 · ต้องการครบทุกรูป
             </Text>
           </View>
           <View style={styles.imageGrid}>
