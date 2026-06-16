@@ -21,7 +21,7 @@ interface PickedImage {
   type: string;
 }
 
-type TripType = "plan" | "off_plan" | "swap";
+type TripType = "plan" | "off_plan";
 type CustomerType = "new" | "existing";
 type VisitType = "tak" | "dem";
 type ResultType = "buy" | "no_buy" | "not_found";
@@ -263,7 +263,6 @@ export default function RecordScreen() {
             {([
               { key: "plan",     label: "ตามแผน" },
               { key: "off_plan", label: "นอกแผน" },
-              { key: "swap",     label: "สลับวัน" },
             ] as { key: TripType; label: string }[]).map(({ key, label }) => (
               <TouchableOpacity
                 key={key}
@@ -546,10 +545,10 @@ const styles = StyleSheet.create({
     width: "48%", aspectRatio: 1.2,
     borderRadius: radius.md,
     borderWidth: 1.5, borderColor: colors.borderDashed, borderStyle: "dashed",
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: colors.surface, gap: 4,
+    flexDirection: "column", alignItems: "center", justifyContent: "center",
+    backgroundColor: colors.surface,
   },
-  slotLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", textAlign: "center", paddingHorizontal: 4 },
+  slotLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", textAlign: "center", paddingHorizontal: 6, marginTop: 6 },
 
   submitBtn: {
     backgroundColor: colors.primaryDark, borderRadius: radius.lg,

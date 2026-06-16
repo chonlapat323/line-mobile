@@ -23,7 +23,7 @@ interface VisitRecord {
 }
 
 const TRIP_LABEL: Record<string, string> = {
-  plan: "ตามแผน", off_plan: "นอกแผน", swap: "สลับวัน",
+  plan: "ตามแผน", off_plan: "นอกแผน",
 };
 const MISSION_LABEL: Record<string, string> = {
   tak: "ทัก", dem: "เดม",
