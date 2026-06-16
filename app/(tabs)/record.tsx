@@ -382,8 +382,10 @@ export default function RecordScreen() {
                   style={styles.addCell}
                   onPress={() => pickForSlot(slot.key)}
                 >
-                  <Ionicons name="camera-outline" size={26} color={colors.textDisabled} />
-                  <Text style={styles.slotLabel}>{slot.label}</Text>
+                  <View style={styles.addCellInner}>
+                    <Ionicons name="camera-outline" size={26} color={colors.textDisabled} />
+                    <Text style={styles.slotLabel}>{slot.label}</Text>
+                  </View>
                 </TouchableOpacity>
               );
             })}
@@ -546,7 +548,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1.5, borderColor: colors.borderDashed, borderStyle: "dashed",
     alignItems: "center", justifyContent: "center",
-    backgroundColor: colors.surface, gap: 6,
+    backgroundColor: colors.surface,
+  },
+  addCellInner: {
+    alignItems: "center", justifyContent: "center", gap: 6,
   },
   slotLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", textAlign: "center", paddingHorizontal: 6 },
 
