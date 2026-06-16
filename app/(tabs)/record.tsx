@@ -165,9 +165,9 @@ export default function RecordScreen() {
       await saveShopToHistory(shopName.trim());
       setShopHistory(await getShopHistory());
       Alert.alert("บันทึกสำเร็จ", "ข้อมูลการเยี่ยมร้านบันทึกแล้ว");
-      setShopName(""); setProvince(""); setDistrict("");
-      setTripType(null); setCustomerType(null); setVisitType(null);
-      setResult(null); setDetails(""); setSlotImages({ ...EMPTY_SLOTS });
+      setShopName("ร้านทดสอบ BeautyUp"); setProvince("กรุงเทพมหานคร"); setDistrict("ลาดพร้าว");
+      setTripType("plan"); setCustomerType("new"); setVisitType("tak");
+      setResult("buy"); setDetails("ทดสอบระบบ"); setSlotImages({ ...EMPTY_SLOTS });
       captureLocation();
     } catch (err: unknown) {
       Alert.alert("ผิดพลาด", err instanceof Error ? err.message : String(err));
