@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView, Platform, RefreshControl, Linking,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
@@ -93,10 +94,12 @@ export default function RecordScreen() {
     }
   }
 
-  function parseAsset(uri: string): PickedImage {
-    const rawName = uri.split("/").pop() || "image.jpg";
-    const isPng = rawName.toLowerCase().endsWith(".png");
-    return { uri, name: isPng ? rawName : rawName.replace(/\.[^.]+$/, "") + ".jpg", type: isPng ? "image/png" : "image/jpeg" };
+  async function parseAsset(uri: string): Promise<PickedImage> {
+    const converted = await ImageManipulator.manipulateAsync(
+      uri, [], { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    const name = (converted.uri.split("/").pop() || "image").replace(/\.[^.]+$/, "") + ".jpg";
+    return { uri: converted.uri, name, type: "image/jpeg" };
   }
 
   function pickForSlot(slotKey: SlotKey) {
@@ -112,7 +115,8 @@ export default function RecordScreen() {
     if (!granted) { Alert.alert("ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
     const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
     if (!res.canceled && res.assets[0]) {
-      setSlotImages((prev) => ({ ...prev, [slotKey]: parseAsset(res.assets[0].uri) }));
+      const img = await parseAsset(res.assets[0].uri);
+      setSlotImages((prev) => ({ ...prev, [slotKey]: img }));
     }
   }
 
@@ -121,7 +125,8 @@ export default function RecordScreen() {
       mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8, allowsEditing: false,
     });
     if (!res.canceled && res.assets[0]) {
-      setSlotImages((prev) => ({ ...prev, [slotKey]: parseAsset(res.assets[0].uri) }));
+      const img = await parseAsset(res.assets[0].uri);
+      setSlotImages((prev) => ({ ...prev, [slotKey]: img }));
     }
   }
 
