@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "BeautyUp LINE",
+    "name": "BeautyUp Sales",
     "slug": "line-sender-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -24,7 +24,7 @@
       "expo-secure-store",
       [
         "expo-image-picker",
-        { "photosPermission": "Allow BeautyUp LINE to access your photos." }
+        { "photosPermission": "Allow BeautyUp Sales to access your photos." }
       ]
     ]
   }

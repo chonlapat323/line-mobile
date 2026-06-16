@@ -1,6 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 
-const API_URL = "https://e043-2001-fb1-10f-6cf9-ad89-e3fc-b270-8918.ngrok-free.app";
+export const API_URL = "https://7089-2001-fb1-10e-1fd0-40a4-bca1-e4cd-a0b1.ngrok-free.app";
+
+const TIMEOUT_MS = 10000; // 10 วินาที
 
 async function getToken() {
   return await SecureStore.getItemAsync("token");
@@ -16,12 +18,32 @@ async function request(path: string, options: RequestInit = {}) {
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || "Request failed");
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(err.message || "Request failed");
+    }
+    return res.json();
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("การเชื่อมต่อหมดเวลา กรุณาตรวจสอบ internet");
+    }
+    if (err instanceof TypeError && err.message.includes("Network request failed")) {
+      throw new Error("ไม่สามารถเชื่อมต่อ server ได้ กรุณาตรวจสอบ internet");
+    }
+    throw err;
   }
-  return res.json();
 }
 
 export const api = {
@@ -36,6 +58,11 @@ export const api = {
 
   sendMessage: (formData: FormData) =>
     request("/line/send", { method: "POST", body: formData }),
+
+  createVisit: (formData: FormData) =>
+    request("/visits", { method: "POST", body: formData }),
+
+  getVisits: () => request("/visits"),
 };
 
 export async function saveToken(token: string, user: object) {
