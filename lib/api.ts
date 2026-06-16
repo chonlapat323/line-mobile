@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 
-export const API_URL = "https://7089-2001-fb1-10e-1fd0-40a4-bca1-e4cd-a0b1.ngrok-free.app";
+export const API_URL = "https://sales.beautyup-enterprise.com";
 
 const TIMEOUT_MS = 10000; // 10 วินาที
 
