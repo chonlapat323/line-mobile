@@ -7,35 +7,42 @@ import { useNavigation } from "expo-router";
 import { api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 
-interface Log {
+interface VisitRecord {
   id: string;
-  imageUrl: string;
-  shopName?: string;
-  province?: string;
-  customerType?: "new" | "existing";
+  shopName: string;
+  province: string;
+  district?: string;
+  tripType?: string;
+  customerType: string;
   visitType?: string;
-  details?: { title: string; price: string; note: string };
-  status: string;
+  result?: string;
+  details?: string;
+  imageUrls: string[];
   createdAt: string;
+  user?: { fullName: string; email: string };
 }
 
-const VISIT_TYPE_LABEL: Record<string, string> = {
-  visit: "เยี่ยมเยือน",
-  order: "จดยอด",
-  delivery: "เดิมงาน",
+const TRIP_LABEL: Record<string, string> = {
+  plan: "ตามแผน", off_plan: "นอกแผน", swap: "สลับวัน",
+};
+const MISSION_LABEL: Record<string, string> = {
+  tak: "ทัก", dem: "เดม",
+};
+const RESULT_LABEL: Record<string, string> = {
+  buy: "ซื้อ", no_buy: "ไม่ซื้อ", not_found: "ไม่พบ",
 };
 
 export default function HistoryScreen() {
-  const [logs, setLogs] = useState<Log[]>([]);
+  const [records, setRecords] = useState<VisitRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
   const { fontScale } = useWindowDimensions();
 
-  async function loadHistory() {
+  async function loadVisits() {
     try {
-      const data = await api.getHistory();
-      setLogs(data);
+      const data = await api.getVisits();
+      setRecords(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -44,22 +51,21 @@ export default function HistoryScreen() {
     }
   }
 
-  useEffect(() => { loadHistory(); }, []);
+  useEffect(() => { loadVisits(); }, []);
 
-  // อัปเดต header badge เมื่อโหลดข้อมูลแล้ว
   useEffect(() => {
     if (loading) return;
     navigation.setOptions({
       headerRight: () =>
-        logs.length > 0 ? (
+        records.length > 0 ? (
           <View style={styles.headerBadge}>
-            <Text style={styles.headerBadgeText}>ทั้งหมด {logs.length}</Text>
+            <Text style={styles.headerBadgeText}>ทั้งหมด {records.length}</Text>
           </View>
         ) : null,
     });
-  }, [logs, loading]);
+  }, [records, loading]);
 
-  const onRefresh = useCallback(() => { setRefreshing(true); loadHistory(); }, []);
+  const onRefresh = useCallback(() => { setRefreshing(true); loadVisits(); }, []);
 
   if (loading) {
     return (
@@ -69,9 +75,11 @@ export default function HistoryScreen() {
     );
   }
 
+  const fs = (base: number) => base / fontScale;
+
   return (
     <FlatList
-      data={logs}
+      data={records}
       keyExtractor={(item) => item.id}
       style={styles.container}
       contentContainerStyle={{ padding: 14, paddingBottom: 40 }}
@@ -84,39 +92,46 @@ export default function HistoryScreen() {
         </View>
       }
       renderItem={({ item }) => {
-        const isNew = item.customerType === "new";
-        const isSuccess = item.status === "success";
-        const shopLabel = item.shopName || item.details?.title || "—";
-        const locationLabel = item.province || "";
-        const visitLabel = item.visitType ? VISIT_TYPE_LABEL[item.visitType] : "";
-        const subLabel = [isNew ? "ลูกค้าใหม่" : visitLabel, locationLabel].filter(Boolean).join(" · ");
+        const locationLabel = item.district
+          ? `${item.province} · ${item.district}`
+          : item.province;
+        const subParts = [
+          item.customerType === "new" ? "ลูกค้าใหม่" : "ลูกค้าเก่า",
+          item.visitType ? MISSION_LABEL[item.visitType] : "",
+          item.tripType ? TRIP_LABEL[item.tripType] : "",
+          locationLabel,
+        ].filter(Boolean);
 
-        const fs = (base: number) => base / fontScale;
+        const resultKey = item.result || "";
+        const resultLabel = RESULT_LABEL[resultKey] || "";
+        const resultStyle = resultKey === "buy"
+          ? { bg: styles.badgeSuccess, text: styles.badgeSuccessText }
+          : resultKey === "no_buy"
+          ? { bg: styles.badgeFail, text: styles.badgeFailText }
+          : { bg: styles.badgeNew, text: styles.badgeNewText };
+
         return (
           <View style={styles.card}>
             <Image
-              source={{ uri: item.imageUrl }}
+              source={item.imageUrls?.[0] ? { uri: item.imageUrls[0] } : undefined}
               style={styles.image}
-              defaultSource={undefined}
             />
             <View style={styles.info}>
-              <Text style={[styles.shopName, { fontSize: fs(13) }]} numberOfLines={1}>{shopLabel}</Text>
-              {subLabel ? <Text style={[styles.subLabel, { fontSize: fs(11) }]} numberOfLines={1}>{subLabel}</Text> : null}
+              <Text style={[styles.shopName, { fontSize: fs(13) }]} numberOfLines={1}>
+                {item.shopName}
+              </Text>
+              <Text style={[styles.subLabel, { fontSize: fs(11) }]} numberOfLines={1}>
+                {subParts.join(" · ")}
+              </Text>
               <Text style={[styles.date, { fontSize: fs(11) }]}>
                 {new Date(item.createdAt).toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" })}
               </Text>
             </View>
-            <View style={[
-              styles.badge,
-              isNew ? styles.badgeNew : isSuccess ? styles.badgeSuccess : styles.badgeFail,
-            ]}>
-              <Text style={[
-                styles.badgeText,
-                isNew ? styles.badgeNewText : isSuccess ? styles.badgeSuccessText : styles.badgeFailText,
-              ]}>
-                {isNew ? "ใหม่" : isSuccess ? "สำเร็จ" : "ล้มเหลว"}
-              </Text>
-            </View>
+            {resultLabel ? (
+              <View style={[styles.badge, resultStyle.bg]}>
+                <Text style={[styles.badgeText, resultStyle.text]}>{resultLabel}</Text>
+              </View>
+            ) : null}
           </View>
         );
       }}
