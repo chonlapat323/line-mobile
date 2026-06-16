@@ -12,7 +12,7 @@ import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-place
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
 import { colors, radius } from "@/lib/theme";
 
-const MIN_IMAGES = 4;
+const MIN_IMAGES = 6;
 
 interface PickedImage {
   uri: string;
@@ -26,15 +26,17 @@ type VisitType = "tak" | "dem";
 type ResultType = "buy" | "no_buy" | "not_found";
 
 const IMAGE_SLOTS = [
-  { key: "line",   label: "Line OA" },
-  { key: "front",  label: "หน้าร้าน" },
-  { key: "inside", label: "ภายในร้าน" },
-  { key: "xray",   label: "X-ray" },
+  { key: "front1",  label: "หน้าร้าน 1" },
+  { key: "front2",  label: "หน้าร้าน 2" },
+  { key: "inside1", label: "ภายในร้าน 1" },
+  { key: "inside2", label: "ภายในร้าน 2" },
+  { key: "line",    label: "หน้าจอ Line" },
+  { key: "xray",    label: "X-ray" },
 ] as const;
 
 type SlotKey = typeof IMAGE_SLOTS[number]["key"];
 type SlotImages = Record<SlotKey, PickedImage | null>;
-const EMPTY_SLOTS: SlotImages = { line: null, front: null, inside: null, xray: null };
+const EMPTY_SLOTS: SlotImages = { front1: null, front2: null, inside1: null, inside2: null, line: null, xray: null };
 
 export default function RecordScreen() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -346,7 +348,7 @@ export default function RecordScreen() {
           <View style={styles.imageLabelRow}>
             <Text style={styles.label}>รูปภาพ <Text style={styles.required}>*</Text></Text>
             <Text style={[styles.imageCount, filledCount < MIN_IMAGES && styles.imageCountWarn]}>
-              {filledCount}/4 · ต้องการครบทุกรูป
+              {filledCount}/6 · ต้องการครบทุกรูป
             </Text>
           </View>
           <View style={styles.imageGrid}>
