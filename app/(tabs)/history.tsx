@@ -257,8 +257,15 @@ export default function HistoryScreen() {
                 </Text>
               </View>
               {resLabel ? (
-                <View style={[styles.badge, { backgroundColor: rs.bg }]}>
-                  <Text style={[styles.badgeText, { color: rs.text }]}>{resLabel}</Text>
+                <View style={styles.badgeCol}>
+                  <View style={[styles.badge, { backgroundColor: rs.bg }]}>
+                    <Text style={[styles.badgeText, { color: rs.text }]}>{resLabel}</Text>
+                  </View>
+                  {resKey === "buy" && item.orderAmount != null && (
+                    <Text style={styles.orderAmt}>
+                      ฿{item.orderAmount.toLocaleString("th-TH")}
+                    </Text>
+                  )}
                 </View>
               ) : null}
             </TouchableOpacity>
@@ -312,8 +319,10 @@ const styles = StyleSheet.create({
   },
   headerBadgeText: { fontSize: 12, fontWeight: "600", color: colors.primaryDark },
 
+  badgeCol: { alignItems: "flex-end", gap: 4 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
   badgeText: { fontSize: 11, fontWeight: "600" },
+  orderAmt: { fontSize: 11, fontWeight: "700", color: "#15803d" },
 });
 
 const det = StyleSheet.create({
