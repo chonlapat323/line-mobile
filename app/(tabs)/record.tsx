@@ -23,7 +23,7 @@ interface PickedImage {
 
 type TripType = "plan" | "off_plan";
 type CustomerType = "new" | "existing";
-type VisitType = "tak" | "dem";
+type VisitType = "tak" | "dem" | "tel";
 type ResultType = "buy" | "no_buy" | "not_found";
 
 const IMAGE_SLOTS = [
@@ -57,6 +57,7 @@ export default function RecordScreen() {
   const [visitType, setVisitType] = useState<VisitType | null>("tak");
   const [result, setResult] = useState<ResultType | null>("buy");
   const [details, setDetails] = useState("ทดสอบระบบ");
+  const [orderAmount, setOrderAmount] = useState("");
   const [slotImages, setSlotImages] = useState<SlotImages>({ ...EMPTY_SLOTS });
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -166,13 +167,14 @@ export default function RecordScreen() {
       fd.append("visitType", visitType);
       fd.append("result", result);
       fd.append("details", details);
+      if (orderAmount.trim()) fd.append("orderAmount", orderAmount.trim());
       await api.createVisit(fd);
       await saveShopToHistory(shopName.trim());
       setShopHistory(await getShopHistory());
       Alert.alert("บันทึกสำเร็จ", "ข้อมูลการเยี่ยมร้านบันทึกแล้ว");
       setShopName("ร้านทดสอบ BeautyUp"); setProvince("กรุงเทพมหานคร"); setDistrict("ลาดพร้าว");
       setTripType("plan"); setCustomerType("new"); setVisitType("tak");
-      setResult("buy"); setDetails("ทดสอบระบบ"); setSlotImages({ ...EMPTY_SLOTS });
+      setResult("buy"); setDetails("ทดสอบระบบ"); setOrderAmount(""); setSlotImages({ ...EMPTY_SLOTS });
       captureLocation();
     } catch (err: unknown) {
       Alert.alert("ผิดพลาด", err instanceof Error ? err.message : String(err));
@@ -301,6 +303,7 @@ export default function RecordScreen() {
             {([
               { key: "tak", label: "ทัก" },
               { key: "dem", label: "เดม" },
+              { key: "tel", label: "โทร" },
             ] as { key: VisitType; label: string }[]).map(({ key, label }) => (
               <TouchableOpacity
                 key={key}
@@ -331,6 +334,19 @@ export default function RecordScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        {/* Order amount */}
+        <View style={styles.section}>
+          <Text style={styles.label}>ยอดสั่งซื้อ</Text>
+          <TextInput
+            style={styles.input}
+            value={orderAmount}
+            onChangeText={setOrderAmount}
+            placeholder="ระบุยอดสั่งซื้อ (บาท)"
+            placeholderTextColor={colors.textDisabled}
+            keyboardType="numeric"
+          />
         </View>
 
         {/* Summary */}
