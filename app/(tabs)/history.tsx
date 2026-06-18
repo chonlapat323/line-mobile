@@ -20,6 +20,7 @@ interface VisitRecord {
   visitType?: string;
   result?: string;
   details?: string;
+  orderAmount?: number | null;
   imageUrls: string[];
   createdAt: string;
   user?: { fullName: string; email: string };
@@ -117,10 +118,19 @@ function DetailModal({ record, onClose }: { record: VisitRecord; onClose: () => 
             <View style={det.body}>
               {/* Result badge */}
               {resKey ? (
-                <View style={[det.resultBadge, { backgroundColor: rs.bg }]}>
-                  <Text style={[det.resultBadgeText, { color: rs.text }]}>
-                    ผลตอบรับ: {RESULT_LABEL[resKey]}
-                  </Text>
+                <View style={det.resultRow}>
+                  <View style={[det.resultBadge, { backgroundColor: rs.bg }]}>
+                    <Text style={[det.resultBadgeText, { color: rs.text }]}>
+                      ผลตอบรับ: {RESULT_LABEL[resKey]}
+                    </Text>
+                  </View>
+                  {resKey === "buy" && record.orderAmount != null && (
+                    <View style={det.orderBadge}>
+                      <Text style={det.orderText}>
+                        ฿{record.orderAmount.toLocaleString("th-TH")}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               ) : null}
 
@@ -348,11 +358,18 @@ const det = StyleSheet.create({
 
   body: { padding: 18 },
 
+  resultRow: {
+    flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap",
+  },
   resultBadge: {
     borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6,
-    alignSelf: "flex-start", marginBottom: 16,
   },
   resultBadgeText: { fontSize: 13, fontWeight: "700" },
+  orderBadge: {
+    borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6,
+    backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0",
+  },
+  orderText: { fontSize: 13, fontWeight: "700", color: "#15803d" },
 
   infoRow: {
     flexDirection: "row", alignItems: "center",
