@@ -328,7 +328,7 @@ export default function RecordScreen() {
               <TouchableOpacity
                 key={key}
                 style={[styles.pill, result === key && styles.pillActive]}
-                onPress={() => setResult(key)}
+                onPress={() => { setResult(key); if (key !== "buy") setOrderAmount(""); }}
               >
                 <Text style={[styles.pillText, result === key && styles.pillTextActive]}>{label}</Text>
               </TouchableOpacity>
@@ -336,8 +336,8 @@ export default function RecordScreen() {
           </View>
         </View>
 
-        {/* Order amount */}
-        <View style={styles.section}>
+        {/* Order amount — แสดงเฉพาะเมื่อผลตอบรับ = ซื้อ */}
+        {result === "buy" && <View style={styles.section}>
           <Text style={styles.label}>ยอดสั่งซื้อ</Text>
           <TextInput
             style={styles.input}
@@ -347,7 +347,7 @@ export default function RecordScreen() {
             placeholderTextColor={colors.textDisabled}
             keyboardType="numeric"
           />
-        </View>
+        </View>}
 
         {/* Summary */}
         <View style={styles.section}>
