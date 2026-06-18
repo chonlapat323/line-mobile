@@ -94,7 +94,9 @@ export default function ConnectScreen() {
       {code && (
         <View style={styles.codeBox}>
           <Text style={styles.codeLabel}>รหัสยืนยัน</Text>
-          <Text style={styles.codeText}>{code.code}</Text>
+          <Text style={styles.codeText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.5}>
+            {code.code}
+          </Text>
           <Text style={styles.codeExpiry}>
             หมดอายุ {new Date(code.expiresAt).toLocaleTimeString("th-TH")}
           </Text>
@@ -184,8 +186,10 @@ const styles = StyleSheet.create({
     fontSize: 42,
     fontWeight: "800",
     color: colors.primaryDark,
-    letterSpacing: 10,
+    letterSpacing: 5,
     marginBottom: 2,
+    width: "100%",
+    textAlign: "center",
   },
   codeExpiry: { fontSize: 11, color: colors.textDisabled },
   copyButton: {

@@ -13,7 +13,7 @@ import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-place
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
 import { colors, radius } from "@/lib/theme";
 
-const MIN_IMAGES = 6;
+const MIN_IMAGES = 1;
 
 interface PickedImage {
   uri: string;
@@ -371,9 +371,9 @@ export default function RecordScreen() {
                   </View>
                   <TouchableOpacity
                     style={styles.removeBtn}
-                    onPress={() => setSlotImages((prev) => ({ ...prev, [slot.key]: null }))}
+                    onPress={() => pickForSlot(slot.key)}
                   >
-                    <Text style={styles.removeBtnText}>✕</Text>
+                    <Ionicons name="camera-outline" size={14} color="#fff" />
                   </TouchableOpacity>
                 </TouchableOpacity>
               ) : (
@@ -382,7 +382,7 @@ export default function RecordScreen() {
                   style={styles.addCell}
                   onPress={() => pickForSlot(slot.key)}
                 >
-                  <View style={styles.addCellCenter}>
+                  <View style={styles.addCellInner}>
                     <Ionicons name="camera-outline" size={26} color={colors.textDisabled} />
                     <Text style={styles.slotLabel}>{slot.label}</Text>
                   </View>
@@ -542,16 +542,15 @@ const styles = StyleSheet.create({
     borderRadius: 12, backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center", justifyContent: "center",
   },
-  removeBtnText: { color: "#fff", fontSize: 12, fontWeight: "700" },
   addCell: {
     width: "48%", aspectRatio: 1.2,
     borderRadius: radius.md,
     borderWidth: 1.5, borderColor: colors.borderDashed, borderStyle: "dashed",
     backgroundColor: colors.surface,
+    overflow: "hidden",
   },
-  addCellCenter: {
-    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-    alignItems: "center", justifyContent: "center", gap: 6,
+  addCellInner: {
+    flex: 1, alignItems: "center", justifyContent: "center", gap: 6,
   },
   slotLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", textAlign: "center", paddingHorizontal: 6 },
 
