@@ -5,7 +5,7 @@ import {
   Modal, TouchableOpacity, ScrollView,
   NativeSyntheticEvent, NativeScrollEvent,
 } from "react-native";
-import { useNavigation } from "expo-router";
+import { useNavigation, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
@@ -179,7 +179,7 @@ export default function HistoryScreen() {
     }
   }
 
-  useEffect(() => { loadVisits(); }, []);
+  useFocusEffect(useCallback(() => { loadVisits(); }, []));
 
   useEffect(() => {
     if (loading) return;
