@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView,
   useWindowDimensions, Modal, FlatList, Image, RefreshControl,
-  NativeSyntheticEvent, NativeScrollEvent,
+  NativeSyntheticEvent, NativeScrollEvent, TextInput, ActivityIndicator,
 } from "react-native";
 import MapView, { Polygon, Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,7 +12,7 @@ import { colors, radius, shadows } from "@/lib/theme";
 import provincesGeoJSON from "@/lib/thailand-provinces.json";
 
 // ── Types ─────────────────────────────────────────────────────
-interface UserInfo { fullName: string; email: string; role: string }
+interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string }
 interface VisitRecord {
   id: string; shopName: string; province: string; district?: string;
   tripType?: string; customerType: string; visitType?: string; result?: string;
@@ -279,6 +279,12 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [visits, setVisits] = useState<VisitRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Bank account editing
+  const [editingBank, setEditingBank] = useState(false);
+  const [bankName, setBankName] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankSaving, setBankSaving] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [provinceView, setProvinceView] = useState<"info" | "list" | null>(null);
   const [selectedVisit, setSelectedVisit] = useState<VisitRecord | null>(null);
@@ -371,11 +377,25 @@ export default function ProfileScreen() {
   async function loadData(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
     try {
-      const [u, data] = await Promise.all([getStoredUser(), api.getVisits()]);
-      setUser(u);
-      setVisits(data);
+      const [u, me, data] = await Promise.all([getStoredUser(), api.getMe(), api.getVisits()]);
+      const merged = { ...u, bankName: me?.bankName ?? "", bankAccount: me?.bankAccount ?? "" };
+      setUser(merged);
+      setBankName(me?.bankName ?? "");
+      setBankAccount(me?.bankAccount ?? "");
+      setVisits(data?.data ?? data ?? []);
     } catch {}
     finally { setRefreshing(false); }
+  }
+
+  async function handleSaveBank() {
+    setBankSaving(true);
+    try {
+      await api.updateMe({ bankName: bankName.trim(), bankAccount: bankAccount.trim() });
+      setUser((u) => u ? { ...u, bankName: bankName.trim(), bankAccount: bankAccount.trim() } : u);
+      setEditingBank(false);
+    } catch {
+      Alert.alert("เกิดข้อผิดพลาด", "ไม่สามารถบันทึกได้ กรุณาลองใหม่");
+    } finally { setBankSaving(false); }
   }
 
   useEffect(() => { loadData(); }, []);
@@ -564,6 +584,69 @@ export default function ProfileScreen() {
           ))}
         </View>
 
+        {/* Bank account */}
+        <View style={styles.bankSection}>
+          <View style={styles.bankHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.bankTitle}>ข้อมูลธนาคาร</Text>
+              <Text style={styles.bankSubtitle}>สำหรับรับค่าคอมมิชชัน</Text>
+            </View>
+            {!editingBank && (
+              <TouchableOpacity onPress={() => setEditingBank(true)} style={styles.editBtn}>
+                <Ionicons name="pencil-outline" size={14} color={colors.primaryDark} />
+                <Text style={styles.editBtnText}>แก้ไข</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {!editingBank ? (
+            <View style={{ gap: 10 }}>
+              <View style={styles.bankRow}>
+                <Text style={styles.bankLabel}>ธนาคาร</Text>
+                <Text style={[styles.bankValue, !user?.bankName && styles.bankEmpty]}>
+                  {user?.bankName || "ยังไม่ระบุ"}
+                </Text>
+              </View>
+              <View style={styles.bankRow}>
+                <Text style={styles.bankLabel}>เลขบัญชี</Text>
+                <Text style={[styles.bankValue, !user?.bankAccount && styles.bankEmpty]}>
+                  {user?.bankAccount || "ยังไม่ระบุ"}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View style={{ gap: 10 }}>
+              <View>
+                <Text style={styles.inputLabel}>ธนาคาร</Text>
+                <TextInput value={bankName} onChangeText={setBankName}
+                  placeholder="เช่น กสิกรไทย, กรุงไทย, SCB..."
+                  placeholderTextColor={colors.textDisabled}
+                  style={styles.bankInput} />
+              </View>
+              <View>
+                <Text style={styles.inputLabel}>เลขบัญชี</Text>
+                <TextInput value={bankAccount} onChangeText={setBankAccount}
+                  placeholder="xxx-x-xxxxx-x"
+                  placeholderTextColor={colors.textDisabled}
+                  keyboardType="numeric"
+                  style={styles.bankInput} />
+              </View>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+                <TouchableOpacity onPress={() => { setEditingBank(false); setBankName(user?.bankName ?? ""); setBankAccount(user?.bankAccount ?? ""); }}
+                  style={styles.cancelBtn}>
+                  <Text style={styles.cancelBtnText}>ยกเลิก</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleSaveBank} disabled={bankSaving}
+                  style={[styles.saveBtn, bankSaving && { opacity: 0.6 }]}>
+                  {bankSaving
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={styles.saveBtnText}>บันทึก</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
           <Ionicons name="log-out-outline" size={18} color={colors.error} style={{ marginRight: 8 }} />
@@ -661,6 +744,41 @@ const styles = StyleSheet.create({
   infoIcon: { width: 32, height: 32, borderRadius: radius.sm, justifyContent: "center", alignItems: "center" },
   infoLabel: { fontSize: 14, color: colors.textSecondary, fontWeight: "500" },
   infoValue: { fontSize: 13, color: colors.textDisabled, maxWidth: 160 },
+
+  bankSection: {
+    marginHorizontal: 16, marginTop: 12, backgroundColor: colors.surface,
+    borderRadius: radius.xl, borderWidth: 0.5, borderColor: colors.borderLight,
+    padding: 16, ...shadows.card,
+  },
+  bankHeader: { flexDirection: "row", alignItems: "flex-start", marginBottom: 14 },
+  bankTitle: { fontSize: 14, fontWeight: "700", color: colors.textPrimary },
+  bankSubtitle: { fontSize: 11, color: colors.textDisabled, marginTop: 2 },
+  editBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: colors.primaryLight, borderWidth: 1, borderColor: colors.primaryBorder,
+    borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 5,
+  },
+  editBtnText: { fontSize: 12, color: colors.primaryDark, fontWeight: "600" },
+  bankRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  bankLabel: { fontSize: 13, color: colors.textMuted },
+  bankValue: { fontSize: 13, color: colors.textPrimary, fontWeight: "600" },
+  bankEmpty: { color: colors.textDisabled, fontWeight: "400" },
+  inputLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "600", marginBottom: 5 },
+  bankInput: {
+    borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.lg,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
+    color: colors.textPrimary, backgroundColor: colors.bg,
+  },
+  cancelBtn: {
+    flex: 1, paddingVertical: 11, borderRadius: radius.lg,
+    borderWidth: 1, borderColor: colors.borderLight, alignItems: "center",
+  },
+  cancelBtnText: { fontSize: 14, color: colors.textSecondary, fontWeight: "600" },
+  saveBtn: {
+    flex: 2, paddingVertical: 11, borderRadius: radius.lg,
+    backgroundColor: colors.primary, alignItems: "center",
+  },
+  saveBtnText: { fontSize: 14, color: "#fff", fontWeight: "700" },
 
   logoutButton: {
     marginHorizontal: 16, marginTop: 12, backgroundColor: colors.errorBg,

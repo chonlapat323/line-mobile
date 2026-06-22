@@ -66,6 +66,8 @@ export const api = {
     request("/visits/verify-slip", { method: "POST", body: formData }),
 
   getVisits: () => request("/visits"),
+  updateMe: (data: { bankName?: string; bankAccount?: string }) =>
+    request("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
 };
 
 export async function saveToken(token: string, user: object) {
