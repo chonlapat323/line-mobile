@@ -169,8 +169,8 @@ export default function HistoryScreen() {
 
   async function loadVisits() {
     try {
-      const data = await api.getVisits();
-      setRecords(data);
+      const res = await api.getVisits();
+      setRecords(res?.data ?? []);
     } catch (err) {
       console.error(err);
     } finally {
