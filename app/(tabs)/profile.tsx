@@ -13,6 +13,23 @@ import provincesGeoJSON from "@/lib/thailand-provinces.json";
 
 // ── Types ─────────────────────────────────────────────────────
 interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string }
+
+const THAI_BANKS = [
+  "กรุงเทพ (BBL)",
+  "กสิกรไทย (KBANK)",
+  "กรุงไทย (KTB)",
+  "ไทยพาณิชย์ (SCB)",
+  "กรุงศรีอยุธยา (BAY)",
+  "ทหารไทยธนชาต (TTB)",
+  "ออมสิน (GSB)",
+  "ธ.ก.ส. (BAAC)",
+  "ซีไอเอ็มบี (CIMB)",
+  "ยูโอบี (UOB)",
+  "ทิสโก้ (TISCO)",
+  "เกียรตินาคินภัทร (KKP)",
+  "แลนด์แอนด์เฮ้าส์ (LH Bank)",
+  "ไทยเครดิต (Thai Credit)",
+];
 interface VisitRecord {
   id: string; shopName: string; province: string; district?: string;
   tripType?: string; customerType: string; visitType?: string; result?: string;
@@ -298,6 +315,7 @@ export default function ProfileScreen() {
   const [bankName, setBankName] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [bankSaving, setBankSaving] = useState(false);
+  const [bankPickerVisible, setBankPickerVisible] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [provinceView, setProvinceView] = useState<"info" | "list" | null>(null);
   const [selectedVisit, setSelectedVisit] = useState<VisitRecord | null>(null);
@@ -769,10 +787,12 @@ export default function ProfileScreen() {
             <View style={{ gap: 10 }}>
               <View>
                 <Text style={styles.inputLabel}>ธนาคาร</Text>
-                <TextInput value={bankName} onChangeText={setBankName}
-                  placeholder="เช่น กสิกรไทย, กรุงไทย, SCB..."
-                  placeholderTextColor={colors.textDisabled}
-                  style={styles.bankInput} />
+                <TouchableOpacity onPress={() => setBankPickerVisible(true)} style={[styles.bankInput, { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
+                  <Text style={{ fontSize: 14, color: bankName ? colors.text : colors.textDisabled }}>
+                    {bankName || "— เลือกธนาคาร —"}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
               </View>
               <View>
                 <Text style={styles.inputLabel}>เลขบัญชี</Text>
@@ -819,6 +839,32 @@ export default function ProfileScreen() {
           onClose={() => { setSelectedVisit(null); if (selectedProvince) setProvinceView("list"); }}
         />
       )}
+
+      {/* Bank picker modal */}
+      <Modal visible={bankPickerVisible} transparent animationType="slide" onRequestClose={() => setBankPickerVisible(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }} activeOpacity={1} onPress={() => setBankPickerVisible(false)} />
+        <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32, maxHeight: "60%", position: "absolute", bottom: 0, left: 0, right: 0 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 0.5, borderBottomColor: "#e5e7eb" }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>เลือกธนาคาร</Text>
+            <TouchableOpacity onPress={() => setBankPickerVisible(false)}>
+              <Ionicons name="close" size={22} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={THAI_BANKS}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => { setBankName(item); setBankPickerVisible(false); }}
+                style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: "#f3f4f6" }}
+              >
+                <Text style={{ fontSize: 15, color: colors.text }}>{item}</Text>
+                {bankName === item && <Ionicons name="checkmark" size={18} color={colors.primary} />}
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </Modal>
     </>
   );
 }
