@@ -471,6 +471,9 @@ export default function RecordScreen() {
             {slipStatus === "verified" && (
               <Text style={slipSt.lockedNote}>ยอดเงินอ้างอิงจาก QR สลิป — แก้ไขไม่ได้</Text>
             )}
+            {slipStatus === "pending_approval" && (
+              <Text style={slipSt.lockedNote}>กรอกจำนวนเงินตามข้อมูลสรุปในสลิป</Text>
+            )}
           </View>
         )}
 
