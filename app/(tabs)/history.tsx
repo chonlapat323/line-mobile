@@ -21,9 +21,29 @@ interface VisitRecord {
   result?: string;
   details?: string;
   orderAmount?: number | null;
+  slipStatus?: string | null;
   imageUrls: string[];
   createdAt: string;
   user?: { fullName: string; email: string };
+}
+
+function SlipStatusBadge({ status }: { status?: string | null }) {
+  if (!status || status === "verified" || status === "approved") return null;
+  if (status === "pending_approval") {
+    return (
+      <View style={{ backgroundColor: "#fffbeb", borderWidth: 1, borderColor: "#fde68a", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
+        <Text style={{ fontSize: 10, fontWeight: "700", color: "#92400e" }}>⏳ รอยืนยัน</Text>
+      </View>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <View style={{ backgroundColor: "#fef2f2", borderWidth: 1, borderColor: "#fecaca", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
+        <Text style={{ fontSize: 10, fontWeight: "700", color: "#991b1b" }}>✕ ปฏิเสธ</Text>
+      </View>
+    );
+  }
+  return null;
 }
 
 const TRIP_LABEL: Record<string, string> = { plan: "ตามแผน", off_plan: "นอกแผน" };
@@ -131,6 +151,7 @@ function DetailModal({ record, onClose }: { record: VisitRecord; onClose: () => 
                       </Text>
                     </View>
                   )}
+                  {resKey === "buy" && <SlipStatusBadge status={record.slipStatus} />}
                 </View>
               ) : null}
 
@@ -266,6 +287,7 @@ export default function HistoryScreen() {
                       ฿{item.orderAmount.toLocaleString("th-TH")}
                     </Text>
                   )}
+                  {resKey === "buy" && <SlipStatusBadge status={item.slipStatus} />}
                 </View>
               ) : null}
             </TouchableOpacity>
