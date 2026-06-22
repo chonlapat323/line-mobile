@@ -61,6 +61,11 @@ export default function RecordScreen() {
   const [slotImages, setSlotImages] = useState<SlotImages>({ ...EMPTY_SLOTS });
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [slipImage, setSlipImage] = useState<PickedImage | null>(null);
+  const [slipVerifying, setSlipVerifying] = useState(false);
+  const [slipStatus, setSlipStatus] = useState<string | null>(null);
+  const [slipUrl, setSlipUrl] = useState<string | null>(null);
+  const [transRef, setTransRef] = useState<string | null>(null);
 
   useEffect(() => {
     getStoredUser().then((u) => { if (u) setUserId(u.id); });
@@ -131,6 +136,55 @@ export default function RecordScreen() {
     }
   }
 
+  function pickSlip() {
+    Alert.alert("แนบสลิป", "เลือกวิธีแนบสลิป", [
+      { text: "📷 ถ่ายรูป", onPress: () => openCameraForSlip() },
+      { text: "🖼 เลือกจาก Gallery", onPress: () => openGalleryForSlip() },
+      { text: "ยกเลิก", style: "cancel" },
+    ]);
+  }
+
+  async function openCameraForSlip() {
+    const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+    if (!granted) { Alert.alert("ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
+    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
+    if (!res.canceled && res.assets[0]) processSlip(res.assets[0].uri);
+  }
+
+  async function openGalleryForSlip() {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8, allowsEditing: false,
+    });
+    if (!res.canceled && res.assets[0]) processSlip(res.assets[0].uri);
+  }
+
+  async function processSlip(uri: string) {
+    const img = await parseAsset(uri);
+    setSlipImage(img);
+    setSlipVerifying(true);
+    setSlipStatus(null);
+    setSlipUrl(null);
+    setTransRef(null);
+    setOrderAmount("");
+    try {
+      const fd = new FormData();
+      fd.append("slip", { uri: img.uri, name: img.name, type: img.type } as unknown as Blob);
+      const res = await api.verifySlip(fd);
+      setSlipUrl(res.slipUrl ?? null);
+      setTransRef(res.transRef ?? null);
+      if (res.success) {
+        setSlipStatus("verified");
+        setOrderAmount(String(res.amount ?? ""));
+      } else {
+        setSlipStatus("pending_approval");
+      }
+    } catch {
+      setSlipStatus("pending_approval");
+    } finally {
+      setSlipVerifying(false);
+    }
+  }
+
   const shopSuggestions = shopName.trim()
     ? shopHistory.filter((s) => s.toLowerCase().includes(shopName.toLowerCase()) && s !== shopName)
     : shopHistory.slice(0, 5);
@@ -168,6 +222,9 @@ export default function RecordScreen() {
       fd.append("result", result);
       fd.append("details", details);
       if (orderAmount.trim()) fd.append("orderAmount", orderAmount.trim());
+      if (slipUrl) fd.append("slipUrl", slipUrl);
+      if (slipStatus) fd.append("slipStatus", slipStatus);
+      if (transRef) fd.append("transRef", transRef);
       await api.createVisit(fd);
       await saveShopToHistory(shopName.trim());
       setShopHistory(await getShopHistory());
@@ -175,6 +232,7 @@ export default function RecordScreen() {
       setShopName("ร้านทดสอบ BeautyUp"); setProvince("กรุงเทพมหานคร"); setDistrict("ลาดพร้าว");
       setTripType("plan"); setCustomerType("new"); setVisitType("tak");
       setResult("buy"); setDetails("ทดสอบระบบ"); setOrderAmount(""); setSlotImages({ ...EMPTY_SLOTS });
+      setSlipImage(null); setSlipVerifying(false); setSlipStatus(null); setSlipUrl(null); setTransRef(null);
       captureLocation();
     } catch (err: unknown) {
       Alert.alert("ผิดพลาด", err instanceof Error ? err.message : String(err));
@@ -185,8 +243,9 @@ export default function RecordScreen() {
 
   const isBangkok = province === BANGKOK_PROVINCE;
   const filledCount = IMAGE_SLOTS.filter((s) => slotImages[s.key] !== null).length;
+  const slipReady = result !== "buy" || (!!slipImage && !slipVerifying && !!slipStatus && !!orderAmount.trim());
   const canSubmit = !!shopName.trim() && !!province && (!isBangkok || !!district) &&
-    !!tripType && !!customerType && !!visitType && !!result && filledCount >= MIN_IMAGES && !loading;
+    !!tripType && !!customerType && !!visitType && !!result && filledCount >= MIN_IMAGES && !loading && slipReady;
 
   const filteredProvinces = PROVINCES.filter((p) => p.toLowerCase().includes(pickerSearch.toLowerCase()));
   const filteredDistricts = BANGKOK_DISTRICTS.filter((d) => d.toLowerCase().includes(pickerSearch.toLowerCase()));
@@ -328,7 +387,14 @@ export default function RecordScreen() {
               <TouchableOpacity
                 key={key}
                 style={[styles.pill, result === key && styles.pillActive]}
-                onPress={() => { setResult(key); if (key !== "buy") setOrderAmount(""); }}
+                onPress={() => {
+                  setResult(key);
+                  if (key !== "buy") {
+                    setOrderAmount("");
+                    setSlipImage(null); setSlipVerifying(false);
+                    setSlipStatus(null); setSlipUrl(null); setTransRef(null);
+                  }
+                }}
               >
                 <Text style={[styles.pillText, result === key && styles.pillTextActive]}>{label}</Text>
               </TouchableOpacity>
@@ -336,18 +402,62 @@ export default function RecordScreen() {
           </View>
         </View>
 
-        {/* Order amount — แสดงเฉพาะเมื่อผลตอบรับ = ซื้อ */}
-        {result === "buy" && <View style={styles.section}>
-          <Text style={styles.label}>ยอดสั่งซื้อ</Text>
-          <TextInput
-            style={styles.input}
-            value={orderAmount}
-            onChangeText={setOrderAmount}
-            placeholder="ระบุยอดสั่งซื้อ (บาท)"
-            placeholderTextColor={colors.textDisabled}
-            keyboardType="numeric"
-          />
-        </View>}
+        {/* Slip + ยอดสั่งซื้อ — แสดงเฉพาะเมื่อผลตอบรับ = ซื้อ */}
+        {result === "buy" && (
+          <View style={styles.section}>
+            <Text style={styles.label}>สลิปการชำระเงิน <Text style={styles.required}>*</Text></Text>
+            <TouchableOpacity
+              onPress={pickSlip}
+              activeOpacity={0.8}
+              style={slipSt.uploadBtn}
+              disabled={slipVerifying}
+            >
+              {slipImage ? (
+                <Image source={{ uri: slipImage.uri }} style={slipSt.preview} resizeMode="contain" />
+              ) : (
+                <View style={slipSt.placeholder}>
+                  <Ionicons name="receipt-outline" size={32} color={colors.textDisabled} />
+                  <Text style={slipSt.placeholderText}>กดเพื่อแนบสลิป</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {slipVerifying && (
+              <View style={slipSt.statusRow}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={slipSt.statusText}>กำลังตรวจสอบ QR บนสลิป...</Text>
+              </View>
+            )}
+            {!slipVerifying && slipStatus === "verified" && (
+              <View style={[slipSt.statusRow, slipSt.statusVerified]}>
+                <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
+                <Text style={[slipSt.statusText, { color: "#16a34a" }]}>ยืนยัน QR สำเร็จ</Text>
+              </View>
+            )}
+            {!slipVerifying && slipStatus === "pending_approval" && (
+              <View style={[slipSt.statusRow, slipSt.statusPending]}>
+                <Ionicons name="time-outline" size={16} color="#d97706" />
+                <Text style={[slipSt.statusText, { color: "#d97706" }]}>ไม่พบ QR บนสลิป — รอ Admin ยืนยัน</Text>
+              </View>
+            )}
+
+            <Text style={[styles.label, { marginTop: 14 }]}>
+              ยอดสั่งซื้อ (บาท) <Text style={styles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={[styles.input, slipStatus === "verified" && slipSt.inputLocked]}
+              value={orderAmount}
+              onChangeText={slipStatus === "verified" ? undefined : setOrderAmount}
+              editable={slipStatus !== "verified"}
+              placeholder="ระบุยอดสั่งซื้อ (บาท)"
+              placeholderTextColor={colors.textDisabled}
+              keyboardType="numeric"
+            />
+            {slipStatus === "verified" && (
+              <Text style={slipSt.lockedNote}>ยอดเงินอ้างอิงจาก QR สลิป — แก้ไขไม่ได้</Text>
+            )}
+          </View>
+        )}
 
         {/* Summary */}
         <View style={styles.section}>
@@ -576,6 +686,26 @@ const styles = StyleSheet.create({
   },
   submitBtnDisabled: { opacity: 0.45 },
   submitBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+});
+
+const slipSt = StyleSheet.create({
+  uploadBtn: {
+    borderWidth: 1.5, borderColor: colors.borderDashed, borderStyle: "dashed",
+    borderRadius: radius.md, backgroundColor: colors.surface,
+    minHeight: 160, overflow: "hidden", alignItems: "center", justifyContent: "center",
+  },
+  preview: { width: "100%", height: 200 },
+  placeholder: { alignItems: "center", justifyContent: "center", gap: 8, padding: 24 },
+  placeholderText: { fontSize: 13, color: colors.textDisabled, fontWeight: "500" },
+  statusRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md,
+  },
+  statusVerified: { backgroundColor: "#f0fdf4" },
+  statusPending: { backgroundColor: "#fffbeb" },
+  statusText: { fontSize: 13, color: colors.textMuted, fontWeight: "500" },
+  inputLocked: { backgroundColor: "#f9fafb", borderColor: "#e5e7eb" },
+  lockedNote: { fontSize: 11, color: "#6b7280", marginTop: 4 },
 });
 
 const modal = StyleSheet.create({

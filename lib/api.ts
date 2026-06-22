@@ -62,6 +62,9 @@ export const api = {
   createVisit: (formData: FormData) =>
     request("/visits", { method: "POST", body: formData }),
 
+  verifySlip: (formData: FormData) =>
+    request("/visits/verify-slip", { method: "POST", body: formData }),
+
   getVisits: () => request("/visits"),
 };
 
