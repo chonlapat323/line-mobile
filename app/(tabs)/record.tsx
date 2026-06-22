@@ -161,6 +161,14 @@ export default function RecordScreen() {
   async function processSlip(uri: string) {
     const img = await parseAsset(uri);
     setSlipImage(img);
+    setSlipStatus(null);
+    setSlipUrl(null);
+    setTransRef(null);
+    setOrderAmount("");
+  }
+
+  async function verifySlipImage() {
+    if (!slipImage) return;
     setSlipVerifying(true);
     setSlipStatus(null);
     setSlipUrl(null);
@@ -168,7 +176,7 @@ export default function RecordScreen() {
     setOrderAmount("");
     try {
       const fd = new FormData();
-      fd.append("slip", { uri: img.uri, name: img.name, type: img.type } as unknown as Blob);
+      fd.append("slip", { uri: slipImage.uri, name: slipImage.name, type: slipImage.type } as unknown as Blob);
       const res = await api.verifySlip(fd);
       setSlipUrl(res.slipUrl ?? null);
       setTransRef(res.transRef ?? null);
@@ -421,6 +429,13 @@ export default function RecordScreen() {
                 </View>
               )}
             </TouchableOpacity>
+
+            {slipImage && !slipStatus && !slipVerifying && (
+              <TouchableOpacity onPress={verifySlipImage} activeOpacity={0.85} style={slipSt.verifyBtn}>
+                <Ionicons name="scan-outline" size={16} color="#fff" />
+                <Text style={slipSt.verifyBtnText}>ตรวจสอบสลิป</Text>
+              </TouchableOpacity>
+            )}
 
             {slipVerifying && (
               <View style={slipSt.statusRow}>
@@ -697,6 +712,12 @@ const slipSt = StyleSheet.create({
   preview: { width: "100%", height: 200 },
   placeholder: { alignItems: "center", justifyContent: "center", gap: 8, padding: 24 },
   placeholderText: { fontSize: 13, color: colors.textDisabled, fontWeight: "500" },
+  verifyBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, marginTop: 8, paddingVertical: 11,
+    backgroundColor: colors.primaryDark, borderRadius: radius.md,
+  },
+  verifyBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   statusRow: {
     flexDirection: "row", alignItems: "center", gap: 6,
     marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md,
