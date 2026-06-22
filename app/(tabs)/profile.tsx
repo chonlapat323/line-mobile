@@ -286,7 +286,9 @@ export default function ProfileScreen() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [commData, setCommData] = useState<{
-    visitCount: number; totalAmount: number; reachedThreshold: boolean;
+    visitCount: number; totalAmount: number; pendingAmount: number;
+    confirmedCount: number; pendingCount: number;
+    reachedThreshold: boolean;
     commission: number; remaining: number; settings: { rate: number; threshold: number };
   } | null>(null);
   const [commLoading, setCommLoading] = useState(false);
@@ -657,6 +659,27 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
+              {/* Status breakdown */}
+              {(commData.confirmedCount > 0 || commData.pendingCount > 0) && (
+                <View style={styles.commStatusRow}>
+                  {commData.confirmedCount > 0 && (
+                    <View style={styles.commStatusChip}>
+                      <Text style={styles.commStatusDot}>✓</Text>
+                      <Text style={styles.commStatusText}>ยืนยันแล้ว {commData.confirmedCount} รายการ</Text>
+                    </View>
+                  )}
+                  {commData.pendingCount > 0 && (
+                    <View style={[styles.commStatusChip, styles.commStatusChipPending]}>
+                      <Text style={[styles.commStatusDot, { color: "#d97706" }]}>⏳</Text>
+                      <Text style={[styles.commStatusText, { color: "#92400e" }]}>
+                        รอยืนยัน {commData.pendingCount} รายการ
+                        {commData.pendingAmount > 0 ? ` (฿${commData.pendingAmount.toLocaleString("th-TH")})` : ""}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
               {/* Progress bar (threshold) */}
               {commData.settings.threshold > 0 && (
                 <View>
@@ -883,6 +906,11 @@ const styles = StyleSheet.create({
   commStat: { flex: 1, paddingVertical: 12, alignItems: "center" },
   commStatNum: { fontSize: 15, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
   commStatLabel: { fontSize: 11, color: colors.textDisabled },
+  commStatusRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  commStatusChip: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+  commStatusChipPending: { backgroundColor: "#fffbeb", borderColor: "#fde68a" },
+  commStatusDot: { fontSize: 11, color: colors.primary },
+  commStatusText: { fontSize: 12, color: "#166534", fontWeight: "600" },
   commProgressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
   commProgressLabel: { fontSize: 12, color: colors.textMuted },
   commProgressTrack: { height: 8, backgroundColor: colors.bg, borderRadius: 4, overflow: "hidden", borderWidth: 0.5, borderColor: colors.borderLight },
