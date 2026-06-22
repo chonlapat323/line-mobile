@@ -280,6 +280,17 @@ export default function ProfileScreen() {
   const [visits, setVisits] = useState<VisitRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Commission
+  const [commMonth, setCommMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [commData, setCommData] = useState<{
+    visitCount: number; totalAmount: number; reachedThreshold: boolean;
+    commission: number; remaining: number; settings: { rate: number; threshold: number };
+  } | null>(null);
+  const [commLoading, setCommLoading] = useState(false);
+
   // Bank account editing
   const [editingBank, setEditingBank] = useState(false);
   const [bankName, setBankName] = useState("");
@@ -399,6 +410,28 @@ export default function ProfileScreen() {
   }
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    setCommLoading(true);
+    api.getMyCommission(commMonth)
+      .then(setCommData)
+      .catch(() => {})
+      .finally(() => setCommLoading(false));
+  }, [commMonth]);
+
+  function prevMonth() {
+    const [y, m] = commMonth.split("-").map(Number);
+    const d = new Date(y, m - 2, 1);
+    setCommMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  function nextMonth() {
+    const [y, m] = commMonth.split("-").map(Number);
+    const d = new Date(y, m, 1);
+    const now = new Date();
+    const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    if (`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` > nowKey) return;
+    setCommMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
 
   async function handleLogout() {
     Alert.alert("ออกจากระบบ", "ต้องการออกจากระบบใช่ไหม?", [
@@ -584,6 +617,99 @@ export default function ProfileScreen() {
           ))}
         </View>
 
+        {/* Commission */}
+        <View style={styles.commSection}>
+          {/* Month nav */}
+          <View style={styles.commMonthRow}>
+            <TouchableOpacity onPress={prevMonth} style={styles.monthNavBtn}>
+              <Ionicons name="chevron-back" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <Text style={styles.commMonthText}>
+              {(() => {
+                const [y, m] = commMonth.split("-").map(Number);
+                return new Date(y, m - 1, 1).toLocaleDateString("th-TH", { month: "long", year: "numeric" });
+              })()}
+            </Text>
+            <TouchableOpacity onPress={nextMonth} style={styles.monthNavBtn}>
+              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {commLoading ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 16 }} />
+          ) : commData ? (
+            <View style={{ gap: 12 }}>
+              {/* Stats row */}
+              <View style={styles.commStatsRow}>
+                <View style={styles.commStat}>
+                  <Text style={styles.commStatNum}>{commData.visitCount}</Text>
+                  <Text style={styles.commStatLabel}>ออเดอร์</Text>
+                </View>
+                <View style={[styles.commStat, { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.borderLight }]}>
+                  <Text style={styles.commStatNum}>฿{commData.totalAmount.toLocaleString("th-TH")}</Text>
+                  <Text style={styles.commStatLabel}>ยอดขายรวม</Text>
+                </View>
+                <View style={styles.commStat}>
+                  <Text style={[styles.commStatNum, { color: commData.commission > 0 ? colors.primary : colors.textDisabled }]}>
+                    ฿{commData.commission.toLocaleString("th-TH")}
+                  </Text>
+                  <Text style={styles.commStatLabel}>ค่าคอม</Text>
+                </View>
+              </View>
+
+              {/* Progress bar (threshold) */}
+              {commData.settings.threshold > 0 && (
+                <View>
+                  <View style={styles.commProgressHeader}>
+                    <Text style={styles.commProgressLabel}>
+                      ยอดขั้นต่ำ ฿{commData.settings.threshold.toLocaleString("th-TH")}
+                    </Text>
+                    <Text style={[styles.commProgressLabel, { color: commData.reachedThreshold ? colors.primary : colors.textMuted }]}>
+                      {commData.reachedThreshold ? "✓ ถึงเป้า" : `ขาดอีก ฿${commData.remaining.toLocaleString("th-TH")}`}
+                    </Text>
+                  </View>
+                  <View style={styles.commProgressTrack}>
+                    <View style={[styles.commProgressFill, {
+                      width: `${Math.min((commData.totalAmount / commData.settings.threshold) * 100, 100)}%` as any,
+                      backgroundColor: commData.reachedThreshold ? colors.primary : "#f59e0b",
+                    }]} />
+                  </View>
+                </View>
+              )}
+
+              {/* Commission result */}
+              <View style={[styles.commResult, {
+                backgroundColor: commData.reachedThreshold ? colors.primaryLight : "#fef9ee",
+                borderColor: commData.reachedThreshold ? colors.primaryBorder : "#fde68a",
+              }]}>
+                {commData.reachedThreshold ? (
+                  <>
+                    <Text style={[styles.commResultLabel, { color: colors.primaryDark }]}>ค่าคอมที่ได้รับ ({commData.settings.rate}%)</Text>
+                    <Text style={[styles.commResultAmount, { color: colors.primary }]}>
+                      ฿{commData.commission.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={[styles.commResultLabel, { color: "#b45309" }]}>
+                      {commData.settings.threshold === 0
+                        ? `ค่าคอม ${commData.settings.rate}% ของยอดขาย`
+                        : `ยังไม่ถึงเป้า — ขาดอีก ฿${commData.remaining.toLocaleString("th-TH")}`}
+                    </Text>
+                    <Text style={[styles.commResultAmount, { color: "#d97706" }]}>
+                      ฿{commData.commission.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                    </Text>
+                  </>
+                )}
+              </View>
+            </View>
+          ) : (
+            <Text style={{ color: colors.textDisabled, fontSize: 13, textAlign: "center", marginVertical: 12 }}>
+              ไม่มีข้อมูล
+            </Text>
+          )}
+        </View>
+
         {/* Bank account */}
         <View style={styles.bankSection}>
           <View style={styles.bankHeader}>
@@ -744,6 +870,26 @@ const styles = StyleSheet.create({
   infoIcon: { width: 32, height: 32, borderRadius: radius.sm, justifyContent: "center", alignItems: "center" },
   infoLabel: { fontSize: 14, color: colors.textSecondary, fontWeight: "500" },
   infoValue: { fontSize: 13, color: colors.textDisabled, maxWidth: 160 },
+
+  commSection: {
+    marginHorizontal: 16, marginTop: 12, backgroundColor: colors.surface,
+    borderRadius: radius.xl, borderWidth: 0.5, borderColor: colors.borderLight,
+    padding: 16, ...shadows.card,
+  },
+  commMonthRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
+  monthNavBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bg, borderWidth: 0.5, borderColor: colors.borderLight, alignItems: "center", justifyContent: "center" },
+  commMonthText: { fontSize: 14, fontWeight: "700", color: colors.textPrimary },
+  commStatsRow: { flexDirection: "row", borderWidth: 0.5, borderColor: colors.borderLight, borderRadius: radius.lg, overflow: "hidden" },
+  commStat: { flex: 1, paddingVertical: 12, alignItems: "center" },
+  commStatNum: { fontSize: 15, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
+  commStatLabel: { fontSize: 11, color: colors.textDisabled },
+  commProgressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  commProgressLabel: { fontSize: 12, color: colors.textMuted },
+  commProgressTrack: { height: 8, backgroundColor: colors.bg, borderRadius: 4, overflow: "hidden", borderWidth: 0.5, borderColor: colors.borderLight },
+  commProgressFill: { height: "100%", borderRadius: 4 },
+  commResult: { borderRadius: radius.lg, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  commResultLabel: { fontSize: 13, fontWeight: "600", flex: 1 },
+  commResultAmount: { fontSize: 18, fontWeight: "800" },
 
   bankSection: {
     marginHorizontal: 16, marginTop: 12, backgroundColor: colors.surface,
