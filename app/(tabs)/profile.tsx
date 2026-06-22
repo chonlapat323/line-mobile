@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView,
   useWindowDimensions, Modal, FlatList, Image, RefreshControl,
@@ -6,7 +6,7 @@ import {
 } from "react-native";
 import MapView, { Polygon, Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter } from "expo-router";
 import { clearToken, getStoredUser, api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 import provincesGeoJSON from "@/lib/thailand-provinces.json";
@@ -398,6 +398,7 @@ export default function ProfileScreen() {
       setVisits(data?.data ?? data ?? []);
     } catch {}
     finally { setRefreshing(false); }
+    if (isRefresh) loadCommission(commMonth);
   }
 
   async function handleSaveBank() {
@@ -411,19 +412,16 @@ export default function ProfileScreen() {
     } finally { setBankSaving(false); }
   }
 
-  useEffect(() => { loadData(); }, []);
-
-  const loadCommission = useCallback((month: string) => {
+  async function loadCommission(month: string) {
     setCommLoading(true);
     api.getMyCommission(month)
       .then(setCommData)
       .catch(() => {})
       .finally(() => setCommLoading(false));
-  }, []);
+  }
 
+  useEffect(() => { loadData(); }, []);
   useEffect(() => { loadCommission(commMonth); }, [commMonth]);
-
-  useFocusEffect(useCallback(() => { loadCommission(commMonth); }, [commMonth]));
 
   function prevMonth() {
     const [y, m] = commMonth.split("-").map(Number);
