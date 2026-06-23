@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "linesender",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#22c55e"
     },
     "ios": {
@@ -15,17 +18,29 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#22c55e"
       },
-      "package": "com.beautyup.linesender"
+      "package": "com.beautyup.linesender",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       [
         "expo-image-picker",
-        { "photosPermission": "Allow BeautyUp Sales to access your photos." }
+        {
+          "photosPermission": "Allow BeautyUp Sales to access your photos."
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "164a363d-5ddb-4197-9383-86743c42bf4b"
+      }
+    }
   }
 }
