@@ -40,7 +40,7 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#22c55e",
+    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -53,19 +53,19 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     marginBottom: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#16a34a",
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
+    color: "#6b7280",
     marginTop: 6,
   },
 });
