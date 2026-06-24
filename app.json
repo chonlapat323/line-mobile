@@ -28,6 +28,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-splash-screen",
       "expo-secure-store",
       [
         "expo-image-picker",
