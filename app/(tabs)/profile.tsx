@@ -4,7 +4,7 @@ import {
   useWindowDimensions, Modal, FlatList, Image, RefreshControl,
   NativeSyntheticEvent, NativeScrollEvent, TextInput, ActivityIndicator,
 } from "react-native";
-import MapView, { Polygon, Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Polygon, Marker, Callout } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { clearToken, getStoredUser, api } from "@/lib/api";
@@ -509,7 +509,6 @@ export default function ProfileScreen() {
 
           <MapView
               ref={mapRef}
-              provider={PROVIDER_GOOGLE}
               style={styles.mapContainer}
               customMapStyle={GRAY_MAP_STYLE}
               initialRegion={THAILAND_REGION}
