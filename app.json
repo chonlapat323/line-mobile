@@ -29,7 +29,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
       "expo-secure-store",
       [
         "expo-image-picker",
@@ -43,6 +50,7 @@
       "eas": {
         "projectId": "164a363d-5ddb-4197-9383-86743c42bf4b"
       }
-    }
+    },
+    "owner": "saberakito"
   }
 }
