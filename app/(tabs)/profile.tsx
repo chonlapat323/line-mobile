@@ -4,12 +4,10 @@ import {
   useWindowDimensions, Modal, FlatList, Image, RefreshControl,
   NativeSyntheticEvent, NativeScrollEvent, TextInput, ActivityIndicator,
 } from "react-native";
-import MapView, { Polygon, Marker, Callout } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { clearToken, getStoredUser, api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
-import provincesGeoJSON from "@/lib/thailand-provinces.json";
 
 // ── Types ─────────────────────────────────────────────────────
 interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string }
@@ -36,92 +34,6 @@ interface VisitRecord {
   details?: string; imageUrls: string[]; createdAt: string;
   user?: { fullName: string; email: string };
 }
-interface LatLng { latitude: number; longitude: number }
-
-// ── Province EN→TH mapping ────────────────────────────────────
-const EN_TO_TH: Record<string, string> = {
-  "Amnat Charoen": "อำนาจเจริญ", "Ang Thong": "อ่างทอง",
-  "Bangkok Metropolis": "กรุงเทพมหานคร", "Bueng Kan": "บึงกาฬ",
-  "Buri Ram": "บุรีรัมย์", "Chachoengsao": "ฉะเชิงเทรา",
-  "Chai Nat": "ชัยนาท", "Chaiyaphum": "ชัยภูมิ",
-  "Chanthaburi": "จันทบุรี", "Chiang Mai": "เชียงใหม่",
-  "Chiang Rai": "เชียงราย", "Chon Buri": "ชลบุรี",
-  "Chumphon": "ชุมพร", "Kalasin": "กาฬสินธุ์",
-  "Kamphaeng Phet": "กำแพงเพชร", "Kanchanaburi": "กาญจนบุรี",
-  "Khon Kaen": "ขอนแก่น", "Krabi": "กระบี่",
-  "Lampang": "ลำปาง", "Lamphun": "ลำพูน",
-  "Loei": "เลย", "Lop Buri": "ลพบุรี",
-  "Mae Hong Son": "แม่ฮ่องสอน", "Maha Sarakham": "มหาสารคาม",
-  "Mukdahan": "มุกดาหาร", "Nakhon Nayok": "นครนายก",
-  "Nakhon Pathom": "นครปฐม", "Nakhon Phanom": "นครพนม",
-  "Nakhon Ratchasima": "นครราชสีมา", "Nakhon Sawan": "นครสวรรค์",
-  "Nakhon Si Thammarat": "นครศรีธรรมราช", "Nan": "น่าน",
-  "Narathiwat": "นราธิวาส", "Nong Bua Lam Phu": "หนองบัวลำภู",
-  "Nong Khai": "หนองคาย", "Nonthaburi": "นนทบุรี",
-  "Pathum Thani": "ปทุมธานี", "Pattani": "ปัตตานี",
-  "Phangnga": "พังงา", "Phatthalung": "พัทลุง",
-  "Phayao": "พะเยา", "Phetchabun": "เพชรบูรณ์",
-  "Phetchaburi": "เพชรบุรี", "Phichit": "พิจิตร",
-  "Phitsanulok": "พิษณุโลก", "Phra Nakhon Si Ayutthaya": "พระนครศรีอยุธยา",
-  "Phrae": "แพร่", "Phuket": "ภูเก็ต",
-  "Prachin Buri": "ปราจีนบุรี", "Prachuap Khiri Khan": "ประจวบคีรีขันธ์",
-  "Ranong": "ระนอง", "Ratchaburi": "ราชบุรี",
-  "Rayong": "ระยอง", "Roi Et": "ร้อยเอ็ด",
-  "Sa Kaeo": "สระแก้ว", "Sakon Nakhon": "สกลนคร",
-  "Samut Prakan": "สมุทรปราการ", "Samut Sakhon": "สมุทรสาคร",
-  "Samut Songkhram": "สมุทรสงคราม", "Saraburi": "สระบุรี",
-  "Satun": "สตูล", "Si Sa Ket": "ศรีสะเกษ",
-  "Sing Buri": "สิงห์บุรี", "Songkhla": "สงขลา",
-  "Sukhothai": "สุโขทัย", "Suphan Buri": "สุพรรณบุรี",
-  "Surat Thani": "สุราษฎร์ธานี", "Surin": "สุรินทร์",
-  "Tak": "ตาก", "Trang": "ตรัง", "Trat": "ตราด",
-  "Ubon Ratchathani": "อุบลราชธานี", "Udon Thani": "อุดรธานี",
-  "Uthai Thani": "อุทัยธานี", "Uttaradit": "อุตรดิตถ์",
-  "Yala": "ยะลา", "Yasothon": "ยโสธร",
-};
-
-// ── Gray map style ────────────────────────────────────────────
-const GRAY_MAP_STYLE = [
-  { elementType: "geometry", stylers: [{ color: "#e8edf2" }] },
-  { elementType: "labels", stylers: [{ visibility: "off" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#c5d8e8" }] },
-  { featureType: "road", stylers: [{ visibility: "off" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#b0bec5", weight: 0.5 }] },
-];
-
-const THAILAND_REGION = {
-  latitude: 13.0, longitude: 101.5,
-  latitudeDelta: 14.0, longitudeDelta: 10.0,
-};
-
-// ── Precompute province data (lat/lng, module-level) ──────────
-type CoordPair = [number, number];
-const PROVINCE_DATA = (provincesGeoJSON as any).features.map((f: any) => {
-  const nameEN: string = f.properties.name;
-  const nameTH: string = EN_TO_TH[nameEN] || nameEN;
-  const { type, coordinates } = f.geometry;
-  const toLatLng = (ring: CoordPair[]): LatLng[] =>
-    ring.map(([lng, lat]) => ({ latitude: lat, longitude: lng }));
-  let polygons: LatLng[][] = [];
-  let mainRing: CoordPair[] = [];
-  if (type === "Polygon") {
-    polygons = [toLatLng(coordinates[0])];
-    mainRing = coordinates[0];
-  } else if (type === "MultiPolygon") {
-    polygons = (coordinates as CoordPair[][][]).map((poly) => toLatLng(poly[0]));
-    mainRing = (coordinates as CoordPair[][][]).reduce(
-      (a, b) => a[0].length >= b[0].length ? a : b
-    )[0];
-  }
-  const centroid: LatLng = {
-    latitude: mainRing.reduce((s, c) => s + c[1], 0) / (mainRing.length || 1),
-    longitude: mainRing.reduce((s, c) => s + c[0], 0) / (mainRing.length || 1),
-  };
-  return { nameEN, nameTH, polygons, centroid };
-});
-
 // ── Helpers ───────────────────────────────────────────────────
 const RESULT_LABEL: Record<string, string> = { buy: "ซื้อ", no_buy: "ไม่ซื้อ", not_found: "ไม่พบ" };
 const SLOT_LABELS = ["หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ Line", "X-ray"];
@@ -130,16 +42,6 @@ function getResultStyle(key: string) {
   if (key === "buy") return { bg: colors.successBg, text: colors.primaryDark };
   if (key === "no_buy") return { bg: colors.errorBg, text: colors.error };
   return { bg: colors.infoBg, text: colors.infoText };
-}
-
-function getProvinceColor(count: number, maxCount: number): string {
-  if (count === 0 || maxCount === 0) return "rgba(220,228,236,0.0)";
-  const ratio = Math.min(count / maxCount, 1);
-  const alpha = 0.55 + ratio * 0.4;
-  const r = Math.round(134 + (22 - 134) * ratio);
-  const g = Math.round(239 + (101 - 239) * ratio);
-  const b = Math.round(172 + (52 - 172) * ratio);
-  return `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
 }
 
 // ── Visit Detail Modal ────────────────────────────────────────
@@ -320,9 +222,7 @@ export default function ProfileScreen() {
   const [provinceView, setProvinceView] = useState<"info" | "list" | null>(null);
   const [selectedVisit, setSelectedVisit] = useState<VisitRecord | null>(null);
 
-  const mapRef = useRef<MapView>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const markerRef = useRef<Marker>(null);
 
   // ── Derived data ─────────────────────────────────────────────
   const provinceCounts = useMemo(() => {
@@ -353,56 +253,7 @@ export default function ProfileScreen() {
     if (!provinceCounts[name]) return;
     setSelectedProvince(name);
     setProvinceView("list");
-    const pd = PROVINCE_DATA.find((p: any) => p.nameTH === name);
-    if (pd && mapRef.current) {
-      const allCoords: LatLng[] = pd.polygons.flat();
-      const lats = allCoords.map((c) => c.latitude);
-      const lngs = allCoords.map((c) => c.longitude);
-      const latDelta = (Math.max(...lats) - Math.min(...lats)) * 2.0;
-      const lngDelta = (Math.max(...lngs) - Math.min(...lngs)) * 2.0;
-      mapRef.current.animateToRegion({
-        latitude: pd.centroid.latitude,
-        longitude: pd.centroid.longitude,
-        latitudeDelta: Math.max(latDelta, 1.0),
-        longitudeDelta: Math.max(lngDelta, 0.8),
-      }, 400);
-    }
   }
-
-  function closeProvince() {
-    setSelectedProvince(null);
-    setProvinceView(null);
-  }
-
-  // zoom ไปจังหวัดที่บันทึกมากที่สุดเมื่อโหลดครั้งแรก
-  const initialZoomed = useRef(false);
-  useEffect(() => {
-    if (initialZoomed.current || topProvinces.length === 0) return;
-    const [topName] = topProvinces[0];
-    const pd = PROVINCE_DATA.find((p: any) => p.nameTH === topName);
-    if (!pd) return;
-    initialZoomed.current = true;
-    const allCoords: LatLng[] = pd.polygons.flat();
-    const lats = allCoords.map((c) => c.latitude);
-    const lngs = allCoords.map((c) => c.longitude);
-    const latDelta = (Math.max(...lats) - Math.min(...lats)) * 2.0;
-    const lngDelta = (Math.max(...lngs) - Math.min(...lngs)) * 2.0;
-    setTimeout(() => {
-      mapRef.current?.animateToRegion({
-        latitude: pd.centroid.latitude,
-        longitude: pd.centroid.longitude,
-        latitudeDelta: Math.max(latDelta, 1.0),
-        longitudeDelta: Math.max(lngDelta, 0.8),
-      }, 800);
-    }, 500);
-  }, [topProvinces]);
-
-  // auto-show callout เมื่อเลือกจังหวัด
-  useEffect(() => {
-    if (!selectedProvince) return;
-    const t = setTimeout(() => markerRef.current?.showCallout(), 300);
-    return () => clearTimeout(t);
-  }, [selectedProvince]);
 
   // ── Data loading ─────────────────────────────────────────────
   async function loadData(isRefresh = false) {
@@ -500,105 +351,55 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Province map */}
+        {/* Province list */}
         <View style={styles.mapSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>แผนที่การเยี่ยม</Text>
-            <Text style={styles.sectionHint}>กดจังหวัดเพื่อดูรายละเอียด</Text>
+            <Text style={styles.sectionTitle}>สรุปการเยี่ยมตามจังหวัด</Text>
+            <Text style={styles.sectionHint}>กดเพื่อดูรายละเอียด</Text>
           </View>
 
-          <MapView
-              ref={mapRef}
-              style={styles.mapContainer}
-              customMapStyle={GRAY_MAP_STYLE}
-              initialRegion={THAILAND_REGION}
-              scrollEnabled
-              zoomEnabled
-              rotateEnabled={false}
-              pitchEnabled={false}
-              onTouchStart={() => scrollRef.current?.setNativeProps({ scrollEnabled: false })}
-              onTouchEnd={() => scrollRef.current?.setNativeProps({ scrollEnabled: true })}
-              onTouchCancel={() => scrollRef.current?.setNativeProps({ scrollEnabled: true })}
-            >
-              {PROVINCE_DATA.map((p: any) => {
-                const count = provinceCounts[p.nameTH] || 0;
-                if (count === 0) return null;
-                return p.polygons.map((coords: LatLng[], i: number) => (
-                  <Polygon
-                    key={`${p.nameEN}-${i}`}
-                    coordinates={coords}
-                    fillColor={getProvinceColor(count, maxCount)}
-                    strokeColor="rgba(80,120,160,0.4)"
-                    strokeWidth={0.8}
-                    tappable
-                    onPress={() => openProvince(p.nameTH)}
-                  />
-                ));
-              })}
-
-              {/* Province info callout — renders in Google Maps layer, guaranteed visible */}
-              {selectedProvince && (() => {
-                const pd = PROVINCE_DATA.find((p: any) => p.nameTH === selectedProvince);
-                if (!pd) return null;
-                const total = provinceRecords.length;
-                const buy = provinceRecords.filter((r) => r.result === "buy").length;
-                const noBuy = provinceRecords.filter((r) => r.result === "no_buy").length;
-                const notFound = provinceRecords.filter((r) => r.result === "not_found").length;
-                const buyPct = total > 0 ? Math.round((buy / total) * 100) : 0;
-                const noBuyPct = total > 0 ? Math.round((noBuy / total) * 100) : 0;
-                const notFoundPct = total > 0 ? Math.round((notFound / total) * 100) : 0;
-                return (
-                  <Marker
-                    ref={markerRef}
-                    key={selectedProvince}
-                    coordinate={pd.centroid}
-                    tracksViewChanges={false}
-                    onDeselect={closeProvince}
-                  >
-                    <View style={{ width: 16, height: 16, opacity: 0 }} />
-                    <Callout onPress={() => setProvinceView("list")}>
-                      <View style={styles.calloutCard}>
-                        <View style={styles.calloutHeader}>
-                          <Text style={styles.calloutTitle} numberOfLines={1}>{selectedProvince}</Text>
-                          <View style={styles.calloutBadge}>
-                            <Text style={styles.calloutBadgeNum}>{total}</Text>
-                            <Text style={styles.calloutBadgeLbl}> บันทึก</Text>
-                          </View>
+          {Object.keys(provinceCounts).length === 0 ? (
+            <View style={styles.emptyProvince}>
+              <Ionicons name="location-outline" size={32} color={colors.textDisabled} />
+              <Text style={styles.emptyProvinceText}>ยังไม่มีข้อมูลการเยี่ยม</Text>
+            </View>
+          ) : (
+            <View style={styles.provinceList}>
+              {Object.entries(provinceCounts)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, count]) => {
+                  const pv = visits.filter((v) => v.province === name);
+                  const buy = pv.filter((v) => v.result === "buy").length;
+                  const noBuy = pv.filter((v) => v.result === "no_buy").length;
+                  const notFound = pv.filter((v) => v.result === "not_found").length;
+                  const barWidth = `${Math.round((count / maxCount) * 100)}%` as any;
+                  return (
+                    <TouchableOpacity
+                      key={name}
+                      style={styles.provinceRow}
+                      onPress={() => openProvince(name)}
+                      activeOpacity={0.75}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.provinceRowTop}>
+                          <Text style={styles.provinceRowName}>{name}</Text>
+                          <Text style={styles.provinceRowCount}>{count} บันทึก</Text>
                         </View>
-                        <View style={styles.calloutChips}>
-                          {buy > 0 && (
-                            <View style={[styles.calloutChip, { backgroundColor: "#dcfce7" }]}>
-                              <Text style={[styles.calloutChipTxt, { color: "#166534" }]}>ซื้อ {buyPct}%</Text>
-                            </View>
-                          )}
-                          {noBuy > 0 && (
-                            <View style={[styles.calloutChip, { backgroundColor: "#fee2e2" }]}>
-                              <Text style={[styles.calloutChipTxt, { color: "#dc2626" }]}>ไม่ซื้อ {noBuyPct}%</Text>
-                            </View>
-                          )}
-                          {notFound > 0 && (
-                            <View style={[styles.calloutChip, { backgroundColor: "#dbeafe" }]}>
-                              <Text style={[styles.calloutChipTxt, { color: "#1d4ed8" }]}>ไม่พบ {notFoundPct}%</Text>
-                            </View>
-                          )}
+                        <View style={styles.provinceBar}>
+                          <View style={[styles.provinceBarFill, { width: barWidth }]} />
+                        </View>
+                        <View style={styles.provinceChips}>
+                          {buy > 0 && <View style={[styles.pChip, { backgroundColor: "#dcfce7" }]}><Text style={[styles.pChipTxt, { color: "#166534" }]}>ซื้อ {buy}</Text></View>}
+                          {noBuy > 0 && <View style={[styles.pChip, { backgroundColor: "#fee2e2" }]}><Text style={[styles.pChipTxt, { color: "#dc2626" }]}>ไม่ซื้อ {noBuy}</Text></View>}
+                          {notFound > 0 && <View style={[styles.pChip, { backgroundColor: "#dbeafe" }]}><Text style={[styles.pChipTxt, { color: "#1d4ed8" }]}>ไม่พบ {notFound}</Text></View>}
                         </View>
                       </View>
-                    </Callout>
-                  </Marker>
-                );
-              })()}
-            </MapView>
-
-          {/* Legend */}
-          <View style={styles.legend}>
-            <Text style={styles.legendText}>น้อย</Text>
-            <View style={styles.legendBar}>
-              {[0.15, 0.35, 0.55, 0.75, 0.95].map((r) => (
-                <View key={r} style={[styles.legendCell, { backgroundColor: getProvinceColor(r * maxCount, maxCount) }]} />
-              ))}
+                      <Ionicons name="chevron-forward" size={14} color={colors.textDisabled} style={{ marginLeft: 8 }} />
+                    </TouchableOpacity>
+                  );
+                })}
             </View>
-            <Text style={styles.legendText}>มาก</Text>
-          </View>
+          )}
 
           {/* Top province chips */}
           {topProvinces.length > 0 && (
@@ -901,16 +702,26 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: "700", color: colors.textPrimary },
   sectionHint: { fontSize: 11, color: colors.textDisabled },
 
-  mapContainer: {
-    width: "100%", height: 320,
-    borderRadius: radius.xl, overflow: "hidden",
-    borderWidth: 1, borderColor: colors.borderLight,
-  },
+  emptyProvince: { alignItems: "center", paddingVertical: 24, gap: 8 },
+  emptyProvinceText: { fontSize: 13, color: colors.textDisabled },
 
-  legend: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8, justifyContent: "flex-end" },
-  legendText: { fontSize: 11, color: colors.textMuted },
-  legendBar: { flexDirection: "row", height: 10, borderRadius: 5, overflow: "hidden", gap: 1 },
-  legendCell: { width: 18, height: 10 },
+  provinceList: {
+    backgroundColor: colors.surface, borderRadius: radius.xl,
+    borderWidth: 0.5, borderColor: colors.borderLight, overflow: "hidden", ...shadows.card,
+  },
+  provinceRow: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 14, paddingVertical: 12,
+    borderBottomWidth: 0.5, borderBottomColor: colors.bg,
+  },
+  provinceRowTop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  provinceRowName: { fontSize: 13, fontWeight: "700", color: colors.textPrimary },
+  provinceRowCount: { fontSize: 12, color: colors.textMuted },
+  provinceBar: { height: 6, backgroundColor: colors.bg, borderRadius: 3, overflow: "hidden", marginBottom: 6 },
+  provinceBarFill: { height: 6, backgroundColor: colors.primary, borderRadius: 3 },
+  provinceChips: { flexDirection: "row", gap: 5 },
+  pChip: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
+  pChipTxt: { fontSize: 11, fontWeight: "600" },
 
   chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
   chip: {
@@ -1008,22 +819,6 @@ const styles = StyleSheet.create({
   },
   logoutText: { color: colors.error, fontWeight: "700", fontSize: 15 },
 
-  calloutCard: {
-    paddingHorizontal: 12, paddingVertical: 8,
-    minWidth: 150, maxWidth: 210,
-  },
-  calloutHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  calloutTitle: { flex: 1, fontSize: 14, fontWeight: "700", color: "#111827" },
-  calloutBadge: {
-    flexDirection: "row", alignItems: "baseline",
-    backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0",
-    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
-  },
-  calloutBadgeNum: { fontSize: 15, fontWeight: "800", color: "#166534" },
-  calloutBadgeLbl: { fontSize: 11, color: "#4b7a5e" },
-  calloutChips: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
-  calloutChip: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
-  calloutChipTxt: { fontSize: 12, fontWeight: "600" },
 });
 
 const det = StyleSheet.create({
