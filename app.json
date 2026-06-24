@@ -2,7 +2,7 @@
   "expo": {
     "name": "BeautyUp Sales",
     "slug": "line-sender-mobile",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "linesender",
@@ -22,6 +22,7 @@
         "backgroundColor": "#22c55e"
       },
       "package": "com.beautyup.linesender",
+      "versionCode": 2,
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ]
