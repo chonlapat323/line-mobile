@@ -22,7 +22,7 @@
         "backgroundColor": "#22c55e"
       },
       "package": "com.beautyup.linesender",
-      "versionCode": 3,
+      "versionCode": 4,
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ]
