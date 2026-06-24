@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { router } from "expo-router";
 
 export const API_URL = "https://sales.beautyup-enterprise.com";
 
@@ -29,6 +30,12 @@ async function request(path: string, options: RequestInit = {}) {
     });
     clearTimeout(timeoutId);
 
+    if (res.status === 401) {
+      await SecureStore.deleteItemAsync("token");
+      await SecureStore.deleteItemAsync("user");
+      router.replace("/login");
+      throw new Error("Unauthorized");
+    }
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error(err.message || "Request failed");
