@@ -274,9 +274,13 @@ export default function HistoryScreen() {
               onPress={() => setSelected(item)}
               activeOpacity={0.8}
             >
-              <View style={[styles.visitThumb, { backgroundColor: getAvatarColor(item.shopName) }]}>
-                <Text style={styles.visitThumbText}>{item.shopName.charAt(0)}</Text>
-              </View>
+              {item.imageUrls?.[0] ? (
+                <Image source={{ uri: item.imageUrls[0] }} style={styles.visitThumb} resizeMode="cover" />
+              ) : (
+                <View style={[styles.visitThumb, { backgroundColor: getAvatarColor(item.shopName), justifyContent: "center", alignItems: "center" }]}>
+                  <Text style={styles.visitThumbText}>{item.shopName.charAt(0)}</Text>
+                </View>
+              )}
               <View style={styles.info}>
                 <Text style={[styles.shopName, { fontSize: fs(13) }]} numberOfLines={1}>
                   {item.shopName}
