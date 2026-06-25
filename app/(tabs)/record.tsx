@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
   gpsText: { flex: 1, fontSize: 11, color: colors.primaryText, fontVariant: ["tabular-nums"] },
   gpsRefresh: { fontSize: 18, color: colors.textMuted },
 
-  label: { fontSize: 12, fontWeight: "600", color: colors.textSecondary, marginBottom: 6 },
+  label: { fontSize: 11, fontWeight: "700", color: colors.textMuted, marginBottom: 6 },
   required: { color: colors.error },
   input: {
     borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
@@ -661,9 +661,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18, paddingVertical: 9, borderRadius: radius.full,
     borderWidth: 1.5, borderColor: colors.borderDashed, backgroundColor: colors.surface,
   },
-  pillActive: { borderColor: colors.primaryDark, backgroundColor: colors.primaryLight },
+  pillActive: { borderColor: "transparent", backgroundColor: colors.primary },
   pillText: { fontSize: 14, color: colors.textMuted, fontWeight: "500" },
-  pillTextActive: { color: colors.primaryDark, fontWeight: "700" },
+  pillTextActive: { color: "#fff", fontWeight: "700" },
 
   imageLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   imageCount: { fontSize: 11, color: colors.textMuted },
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
   slotLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", textAlign: "center", paddingHorizontal: 6 },
 
   submitBtn: {
-    backgroundColor: colors.primaryDark, borderRadius: radius.lg,
+    backgroundColor: colors.primary, borderRadius: radius.lg,
     paddingVertical: 15, alignItems: "center",
   },
   submitBtnDisabled: { opacity: 0.45 },

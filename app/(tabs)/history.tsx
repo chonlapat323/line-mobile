@@ -51,6 +51,11 @@ const MISSION_LABEL: Record<string, string> = { tak: "ทัก", dem: "เด�
 const RESULT_LABEL: Record<string, string> = { buy: "ซื้อ", no_buy: "ไม่ซื้อ", not_found: "ไม่พบ" };
 const SLOT_LABELS = ["หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ Line", "X-ray"];
 
+const AVATAR_COLORS = ["#16a34a", "#d97706", "#4f46e5", "#db2777", "#0f766e", "#0369a1", "#9333ea", "#dc2626"];
+function getAvatarColor(name: string): string {
+  return AVATAR_COLORS[(name.charCodeAt(0) || 0) % AVATAR_COLORS.length];
+}
+
 function getResultStyle(key: string) {
   if (key === "buy") return { bg: colors.successBg, text: colors.primaryDark };
   if (key === "no_buy") return { bg: colors.errorBg, text: colors.error };
@@ -256,23 +261,31 @@ export default function HistoryScreen() {
           const resLabel = RESULT_LABEL[resKey] || "";
           const rs = getResultStyle(resKey);
 
+          const tags: string[] = [
+            item.customerType === "new" ? "ลูกค้าใหม่" : "ลูกค้าเก่า",
+            item.visitType ? MISSION_LABEL[item.visitType] : "",
+            item.tripType ? TRIP_LABEL[item.tripType] : "",
+            item.province ? item.province.replace("กรุงเทพมหานคร", "กรุงเทพฯ") : "",
+          ].filter(Boolean);
+
           return (
             <TouchableOpacity
               style={styles.card}
               onPress={() => setSelected(item)}
               activeOpacity={0.8}
             >
-              <Image
-                source={item.imageUrls?.[0] ? { uri: item.imageUrls[0] } : undefined}
-                style={styles.image}
-              />
+              <View style={[styles.visitThumb, { backgroundColor: getAvatarColor(item.shopName) }]}>
+                <Text style={styles.visitThumbText}>{item.shopName.charAt(0)}</Text>
+              </View>
               <View style={styles.info}>
                 <Text style={[styles.shopName, { fontSize: fs(13) }]} numberOfLines={1}>
                   {item.shopName}
                 </Text>
-                <Text style={[styles.subLabel, { fontSize: fs(11) }]} numberOfLines={1}>
-                  {subParts.join(" · ")}
-                </Text>
+                <View style={styles.tagRow}>
+                  {tags.map((t) => (
+                    <Text key={t} style={styles.tag}>{t}</Text>
+                  ))}
+                </View>
                 <Text style={[styles.date, { fontSize: fs(11) }]}>
                   {new Date(item.createdAt).toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" })}
                 </Text>
@@ -323,15 +336,21 @@ const styles = StyleSheet.create({
     borderColor: colors.borderLight,
     ...shadows.card,
   },
-  image: {
-    width: 56, height: 56,
+  visitThumb: {
+    width: 50, height: 50,
     borderRadius: radius.md,
-    backgroundColor: colors.primaryLight,
+    justifyContent: "center", alignItems: "center", flexShrink: 0,
   },
+  visitThumbText: { fontSize: 20, fontWeight: "800", color: "#fff" },
   info: { flex: 1, minWidth: 0 },
   shopName: { fontSize: 13, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
-  subLabel: { fontSize: 11, color: colors.textMuted, marginBottom: 2 },
-  date: { fontSize: 11, color: colors.textDisabled },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 3, marginBottom: 2 },
+  tag: {
+    fontSize: 10, fontWeight: "600", color: colors.textMuted,
+    backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight,
+    paddingHorizontal: 7, paddingVertical: 1, borderRadius: radius.full,
+  },
+  date: { fontSize: 10, color: colors.textDisabled },
 
   headerBadge: {
     backgroundColor: colors.primaryLight,

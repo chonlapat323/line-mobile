@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { clearToken, getStoredUser, api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 
@@ -192,6 +193,7 @@ const INFO_ROWS: {
 export default function ProfileScreen() {
   const router = useRouter();
   const { fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const fs = (base: number) => base / fontScale;
 
   // ── State ────────────────────────────────────────────────────
@@ -323,38 +325,40 @@ export default function ProfileScreen() {
         contentContainerStyle={{ paddingBottom: 48 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} tintColor={colors.primary} />}
       >
-        {/* Avatar header */}
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user.fullName.charAt(0).toUpperCase()}</Text>
+        {/* Green hero */}
+        <View style={[styles.hero, { paddingTop: (insets.top || 16) + 16 }]}>
+          <View style={styles.heroDecor1} />
+          <View style={styles.heroDecor2} />
+          <View style={styles.heroAvatar}>
+            <Text style={styles.heroAvatarText}>{user.fullName.charAt(0).toUpperCase()}</Text>
           </View>
-          <Text style={[styles.userName, { fontSize: fs(18) }]}>{user.fullName}</Text>
-          <Text style={[styles.userEmail, { fontSize: fs(13) }]}>{user.email}</Text>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>{user.role === "admin" ? "แอดมิน" : "เซล"}</Text>
+          <Text style={styles.heroName}>{user.fullName}</Text>
+          <Text style={styles.heroEmail}>{user.email}</Text>
+          <View style={styles.heroBadge}>
+            <Text style={styles.heroBadgeText}>{user.role === "admin" ? "แอดมิน" : "เซล"}</Text>
           </View>
         </View>
 
-        {/* Stats row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={[styles.statNum, { fontSize: fs(22) }]}>{stats.total}</Text>
-            <Text style={[styles.statLabel, { fontSize: fs(11) }]}>เยี่ยมร้าน</Text>
+        {/* Stats bar */}
+        <View style={styles.statsBar}>
+          <View style={styles.statCol}>
+            <Text style={styles.statN}>{stats.total}</Text>
+            <Text style={styles.statL}>เยี่ยมร้าน</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statNum, { fontSize: fs(22) }]}>{stats.bought}</Text>
-            <Text style={[styles.statLabel, { fontSize: fs(11) }]}>ซื้อสินค้า</Text>
+          <View style={[styles.statCol, styles.statColMid]}>
+            <Text style={styles.statN}>{stats.bought}</Text>
+            <Text style={styles.statL}>ซื้อสินค้า</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statNum, { fontSize: fs(22) }]}>{stats.provinces}</Text>
-            <Text style={[styles.statLabel, { fontSize: fs(11) }]}>จังหวัด</Text>
+          <View style={styles.statCol}>
+            <Text style={styles.statN}>{stats.provinces}</Text>
+            <Text style={styles.statL}>จังหวัด</Text>
           </View>
         </View>
 
         {/* Province list */}
         <View style={styles.mapSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>สรุปการเยี่ยมตามจังหวัด</Text>
+            <Text style={styles.sectionTitle}>สรุปตามจังหวัด</Text>
             <Text style={styles.sectionHint}>กดเพื่อดูรายละเอียด</Text>
           </View>
 
@@ -389,9 +393,9 @@ export default function ProfileScreen() {
                           <View style={[styles.provinceBarFill, { width: barWidth }]} />
                         </View>
                         <View style={styles.provinceChips}>
-                          {buy > 0 && <View style={[styles.pChip, { backgroundColor: "#dcfce7" }]}><Text style={[styles.pChipTxt, { color: "#166534" }]}>ซื้อ {buy}</Text></View>}
-                          {noBuy > 0 && <View style={[styles.pChip, { backgroundColor: "#fee2e2" }]}><Text style={[styles.pChipTxt, { color: "#dc2626" }]}>ไม่ซื้อ {noBuy}</Text></View>}
-                          {notFound > 0 && <View style={[styles.pChip, { backgroundColor: "#dbeafe" }]}><Text style={[styles.pChipTxt, { color: "#1d4ed8" }]}>ไม่พบ {notFound}</Text></View>}
+                          {buy > 0 && <Text style={[styles.pChipTxt, { color: "#16a34a" }]}>ซื้อ {buy}</Text>}
+                          {noBuy > 0 && <Text style={[styles.pChipTxt, { color: "#dc2626" }]}>ไม่ซื้อ {noBuy}</Text>}
+                          {notFound > 0 && <Text style={[styles.pChipTxt, { color: "#2563eb" }]}>ไม่พบ {notFound}</Text>}
                         </View>
                       </View>
                       <Ionicons name="chevron-forward" size={14} color={colors.textDisabled} style={{ marginLeft: 8 }} />
@@ -401,42 +405,6 @@ export default function ProfileScreen() {
             </View>
           )}
 
-          {/* Top province chips */}
-          {topProvinces.length > 0 && (
-            <View style={styles.chipsRow}>
-              {topProvinces.map(([name, count]) => (
-                <TouchableOpacity
-                  key={name}
-                  style={styles.chip}
-                  onPress={() => openProvince(name)}
-                  activeOpacity={0.75}
-                >
-                  <Ionicons name="location" size={11} color={colors.primaryDark} />
-                  <Text style={styles.chipText}>{name}</Text>
-                  <View style={styles.chipBadge}>
-                    <Text style={styles.chipBadgeText}>{count}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Info section */}
-        <View style={styles.infoSection}>
-          {INFO_ROWS.map((row, i) => (
-            <View key={row.key} style={[styles.infoRow, i === INFO_ROWS.length - 1 && { borderBottomWidth: 0 }]}>
-              <View style={styles.infoRowLeft}>
-                <View style={[styles.infoIcon, { backgroundColor: row.iconBg }]}>
-                  <Ionicons name={row.icon} size={16} color={row.iconColor} />
-                </View>
-                <Text style={styles.infoLabel}>{row.label}</Text>
-              </View>
-              <Text style={styles.infoValue} numberOfLines={1}>
-                {row.key === "role" ? (user.role === "admin" ? "แอดมิน" : "เซล") : user[row.key]}
-              </Text>
-            </View>
-          ))}
         </View>
 
         {/* Commission */}
@@ -569,18 +537,28 @@ export default function ProfileScreen() {
           </View>
 
           {!editingBank ? (
-            <View style={{ gap: 10 }}>
+            <View>
               <View style={styles.bankRow}>
-                <Text style={styles.bankLabel}>ธนาคาร</Text>
-                <Text style={[styles.bankValue, !user?.bankName && styles.bankEmpty]}>
-                  {user?.bankName || "ยังไม่ระบุ"}
-                </Text>
+                <View style={styles.bankIconWrap}>
+                  <Ionicons name="home-outline" size={16} color="#3b82f6" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.bankLabel}>ธนาคาร</Text>
+                  <Text style={[styles.bankValue, !user?.bankName && styles.bankEmpty]}>
+                    {user?.bankName || "ยังไม่ระบุ"}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.bankRow}>
-                <Text style={styles.bankLabel}>เลขบัญชี</Text>
-                <Text style={[styles.bankValue, !user?.bankAccount && styles.bankEmpty]}>
-                  {user?.bankAccount || "ยังไม่ระบุ"}
-                </Text>
+              <View style={[styles.bankRow, { borderBottomWidth: 0 }]}>
+                <View style={[styles.bankIconWrap, { backgroundColor: "#f5f3ff" }]}>
+                  <Ionicons name="card-outline" size={16} color="#8b5cf6" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.bankLabel}>เลขบัญชี</Text>
+                  <Text style={[styles.bankValue, !user?.bankAccount && styles.bankEmpty]}>
+                    {user?.bankAccount || "ยังไม่ระบุ"}
+                  </Text>
+                </View>
               </View>
             </View>
           ) : (
@@ -673,29 +651,43 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
 
-  header: {
-    backgroundColor: colors.surface, paddingTop: 36, paddingBottom: 24,
-    paddingHorizontal: 16, alignItems: "center", gap: 6,
-    borderBottomWidth: 0.5, borderBottomColor: colors.borderLight,
+  hero: {
+    backgroundColor: "#16a34a", paddingTop: 24, paddingBottom: 32,
+    paddingHorizontal: 20, alignItems: "center", gap: 6,
+    position: "relative", overflow: "hidden",
   },
-  avatar: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primary,
-    justifyContent: "center", alignItems: "center", marginBottom: 6,
+  heroDecor1: {
+    position: "absolute", width: 200, height: 200, borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.06)", top: -60, right: -40,
   },
-  avatarText: { color: "#fff", fontSize: 28, fontWeight: "700" },
-  userName: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
-  userEmail: { fontSize: 13, color: colors.textDisabled },
-  roleBadge: { backgroundColor: colors.successBg, paddingHorizontal: 14, paddingVertical: 4, borderRadius: radius.full, marginTop: 2 },
-  roleText: { color: colors.primaryDark, fontWeight: "600", fontSize: 12 },
+  heroDecor2: {
+    position: "absolute", width: 120, height: 120, borderRadius: 60,
+    backgroundColor: "rgba(255,255,255,0.04)", bottom: -20, left: 20,
+  },
+  heroAvatar: {
+    width: 68, height: 68, borderRadius: 34,
+    borderWidth: 3, borderColor: "rgba(255,255,255,0.4)",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center", alignItems: "center", zIndex: 1,
+  },
+  heroAvatarText: { color: "#fff", fontSize: 28, fontWeight: "900" },
+  heroName: { fontSize: 18, fontWeight: "800", color: "#fff", zIndex: 1 },
+  heroEmail: { fontSize: 12, color: "rgba(255,255,255,0.65)", zIndex: 1 },
+  heroBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 14, paddingVertical: 3,
+    borderRadius: radius.full, zIndex: 1,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
+  },
+  heroBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
 
-  statsRow: { flexDirection: "row", marginHorizontal: 16, marginTop: 14, gap: 10 },
-  statCard: {
-    flex: 1, backgroundColor: colors.surface, borderWidth: 0.5,
-    borderColor: colors.borderLight, borderRadius: radius.lg,
-    padding: 12, alignItems: "center", ...shadows.card,
+  statsBar: {
+    flexDirection: "row", backgroundColor: colors.surface,
+    borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
-  statNum: { fontSize: 22, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
-  statLabel: { fontSize: 11, color: colors.textDisabled },
+  statCol: { flex: 1, paddingVertical: 14, alignItems: "center" },
+  statColMid: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.borderLight },
+  statN: { fontSize: 22, fontWeight: "900", color: colors.textPrimary },
+  statL: { fontSize: 10, fontWeight: "600", color: colors.textDisabled, marginTop: 2 },
 
   mapSection: { marginHorizontal: 16, marginTop: 14 },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
@@ -791,9 +783,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 5,
   },
   editBtnText: { fontSize: 12, color: colors.primaryDark, fontWeight: "600" },
-  bankRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  bankLabel: { fontSize: 13, color: colors.textMuted },
-  bankValue: { fontSize: 13, color: colors.textPrimary, fontWeight: "600" },
+  bankRow: {
+    flexDirection: "row", alignItems: "center",
+    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight,
+  },
+  bankIconWrap: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    backgroundColor: "#eff6ff", justifyContent: "center", alignItems: "center",
+    marginRight: 12, flexShrink: 0,
+  },
+  bankLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600" },
+  bankValue: { fontSize: 14, color: colors.textPrimary, fontWeight: "700", marginTop: 1 },
   bankEmpty: { color: colors.textDisabled, fontWeight: "400" },
   inputLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "600", marginBottom: 5 },
   bankInput: {
