@@ -11,15 +11,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
 import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-places";
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
-import { colors, radius } from "@/lib/theme";
+import { colors, radius, shadows } from "@/lib/theme";
 
 const MIN_IMAGES = 1;
 
-interface PickedImage {
-  uri: string;
-  name: string;
-  type: string;
-}
+interface PickedImage { uri: string; name: string; type: string; }
 
 type TripType = "plan" | "off_plan";
 type CustomerType = "new" | "existing";
@@ -31,13 +27,19 @@ const IMAGE_SLOTS = [
   { key: "front2",  label: "หน้าร้าน 2" },
   { key: "inside1", label: "ภายในร้าน 1" },
   { key: "inside2", label: "ภายในร้าน 2" },
-  { key: "line",    label: "หน้าจอ Line" },
+  { key: "line",    label: "หน้าจอ LINE" },
   { key: "xray",    label: "X-ray" },
 ] as const;
 
 type SlotKey = typeof IMAGE_SLOTS[number]["key"];
 type SlotImages = Record<SlotKey, PickedImage | null>;
 const EMPTY_SLOTS: SlotImages = { front1: null, front2: null, inside1: null, inside2: null, line: null, xray: null };
+
+const RESULT_OPTIONS: { key: ResultType; emoji: string; label: string }[] = [
+  { key: "buy",       emoji: "🛍️", label: "ซื้อ" },
+  { key: "no_buy",    emoji: "🙅", label: "ไม่ซื้อ" },
+  { key: "not_found", emoji: "🔍", label: "ไม่พบ" },
+];
 
 export default function RecordScreen() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -138,8 +140,8 @@ export default function RecordScreen() {
 
   function pickSlip() {
     Alert.alert("แนบสลิป", "เลือกวิธีแนบสลิป", [
-      { text: "📷 ถ่ายรูป", onPress: () => openCameraForSlip() },
-      { text: "🖼 เลือกจาก Gallery", onPress: () => openGalleryForSlip() },
+      { text: "📷 ถ่ายรูป", onPress: openCameraForSlip },
+      { text: "🖼 เลือกจาก Gallery", onPress: openGalleryForSlip },
       { text: "ยกเลิก", style: "cancel" },
     ]);
   }
@@ -161,56 +163,26 @@ export default function RecordScreen() {
   async function processSlip(uri: string) {
     const img = await parseAsset(uri);
     setSlipImage(img);
-    setSlipStatus(null);
-    setSlipUrl(null);
-    setTransRef(null);
-    setOrderAmount("");
+    setSlipStatus(null); setSlipUrl(null); setTransRef(null); setOrderAmount("");
   }
 
   async function verifySlipImage() {
     if (!slipImage) return;
     setSlipVerifying(true);
-    setSlipStatus(null);
-    setSlipUrl(null);
-    setTransRef(null);
-    setOrderAmount("");
+    setSlipStatus(null); setSlipUrl(null); setTransRef(null); setOrderAmount("");
     try {
       const fd = new FormData();
       fd.append("slip", { uri: slipImage.uri, name: slipImage.name, type: slipImage.type } as unknown as Blob);
       const res = await api.verifySlip(fd);
       setSlipUrl(res.slipUrl ?? null);
       setTransRef(res.transRef ?? null);
-      if (res.success) {
-        setSlipStatus("verified");
-        setOrderAmount(String(res.amount ?? ""));
-      } else {
-        setSlipStatus("pending_approval");
-      }
-    } catch {
-      setSlipStatus("pending_approval");
-    } finally {
-      setSlipVerifying(false);
-    }
+      if (res.success) { setSlipStatus("verified"); setOrderAmount(String(res.amount ?? "")); }
+      else setSlipStatus("pending_approval");
+    } catch { setSlipStatus("pending_approval"); }
+    finally { setSlipVerifying(false); }
   }
 
-  const shopSuggestions = shopName.trim()
-    ? shopHistory.filter((s) => s.toLowerCase().includes(shopName.toLowerCase()) && s !== shopName)
-    : shopHistory.slice(0, 5);
-
   async function handleSubmit() {
-    if (!shopName.trim()) { Alert.alert("แจ้งเตือน", "กรุณากรอกชื่อร้าน"); return; }
-    if (!province) { Alert.alert("แจ้งเตือน", "กรุณาเลือกจังหวัด"); return; }
-    if (province === BANGKOK_PROVINCE && !district) { Alert.alert("แจ้งเตือน", "กรุณาเลือกเขต (กรุงเทพฯ)"); return; }
-    if (!tripType) { Alert.alert("แจ้งเตือน", "กรุณาเลือกทริป"); return; }
-    if (!customerType) { Alert.alert("แจ้งเตือน", "กรุณาเลือกประเภทลูกค้า"); return; }
-    if (!visitType) { Alert.alert("แจ้งเตือน", "กรุณาเลือกภารกิจ"); return; }
-    if (!result) { Alert.alert("แจ้งเตือน", "กรุณาเลือกผลตอบรับ"); return; }
-    const filledCount = IMAGE_SLOTS.filter((s) => slotImages[s.key] !== null).length;
-    if (filledCount < MIN_IMAGES) {
-      const missing = IMAGE_SLOTS.filter((s) => slotImages[s.key] === null).map((s) => s.label).join(", ");
-      Alert.alert("แจ้งเตือน", `กรุณาแนบรูปให้ครบทุก slot\nยังขาด: ${missing}`);
-      return;
-    }
     if (!userId) { Alert.alert("ข้อผิดพลาด", "ไม่พบข้อมูลผู้ใช้ กรุณา login ใหม่"); return; }
     setLoading(true);
     try {
@@ -224,10 +196,10 @@ export default function RecordScreen() {
       fd.append("district", district);
       fd.append("latitude", String(latitude ?? 0));
       fd.append("longitude", String(longitude ?? 0));
-      fd.append("tripType", tripType);
-      fd.append("customerType", customerType);
-      fd.append("visitType", visitType);
-      fd.append("result", result);
+      fd.append("tripType", tripType!);
+      fd.append("customerType", customerType!);
+      fd.append("visitType", visitType!);
+      fd.append("result", result!);
       fd.append("details", details);
       if (orderAmount.trim()) fd.append("orderAmount", orderAmount.trim());
       if (slipUrl) fd.append("slipUrl", slipUrl);
@@ -239,21 +211,31 @@ export default function RecordScreen() {
       Alert.alert("บันทึกสำเร็จ", "ข้อมูลการเยี่ยมร้านบันทึกแล้ว");
       setShopName("ร้านทดสอบ BeautyUp"); setProvince("กรุงเทพมหานคร"); setDistrict("ลาดพร้าว");
       setTripType("plan"); setCustomerType("new"); setVisitType("tak");
-      setResult("buy"); setDetails("ทดสอบระบบ"); setOrderAmount(""); setSlotImages({ ...EMPTY_SLOTS });
+      setResult("buy"); setDetails("ทดสอบระบบ"); setOrderAmount("");
+      setSlotImages({ ...EMPTY_SLOTS });
       setSlipImage(null); setSlipVerifying(false); setSlipStatus(null); setSlipUrl(null); setTransRef(null);
       captureLocation();
     } catch (err: unknown) {
       Alert.alert("ผิดพลาด", err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
+
+  const shopSuggestions = shopName.trim()
+    ? shopHistory.filter((s) => s.toLowerCase().includes(shopName.toLowerCase()) && s !== shopName)
+    : shopHistory.slice(0, 5);
 
   const isBangkok = province === BANGKOK_PROVINCE;
   const filledCount = IMAGE_SLOTS.filter((s) => slotImages[s.key] !== null).length;
   const slipReady = result !== "buy" || (!!slipImage && !slipVerifying && !!slipStatus && !!orderAmount.trim());
-  const canSubmit = !!shopName.trim() && !!province && (!isBangkok || !!district) &&
-    !!tripType && !!customerType && !!visitType && !!result && filledCount >= MIN_IMAGES && !loading && slipReady;
+
+  // Step progress: green when section is complete
+  const step1Done = !!shopName.trim() && !!province && !!tripType && !!customerType && !!visitType;
+  const step2Done = !!result && slipReady;
+  const step3Done = filledCount >= MIN_IMAGES;
+  const step4Done = step1Done && step2Done && step3Done;
+  const stepsDone = [step1Done, step2Done, step3Done, step4Done];
+
+  const canSubmit = step1Done && step2Done && step3Done;
 
   const filteredProvinces = PROVINCES.filter((p) => p.toLowerCase().includes(pickerSearch.toLowerCase()));
   const filteredDistricts = BANGKOK_DISTRICTS.filter((d) => d.toLowerCase().includes(pickerSearch.toLowerCase()));
@@ -261,311 +243,350 @@ export default function RecordScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 48 }}
+        style={st.container}
+        contentContainerStyle={{ paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
-        {/* GPS */}
-        <View style={styles.section}>
-          <View style={styles.gpsRow}>
-            <View style={[styles.gpsDot, { backgroundColor: latitude ? colors.primary : colors.textDisabled }]} />
-            <Text style={[styles.gpsText, !latitude && { color: colors.textDisabled }]}>
+        {/* ── GPS Banner ── */}
+        <View style={st.gpsBanner}>
+          <View style={st.gpsIconCircle}>
+            <Ionicons name="location" size={16} color="#fff" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={st.gpsLabel}>GPS พิกัด</Text>
+            <Text style={st.gpsCoords}>
               {locationLoading ? "กำลังดึงพิกัด..." : latitude ? `${latitude.toFixed(6)}, ${longitude?.toFixed(6)}` : "ไม่พบพิกัด"}
             </Text>
-            <TouchableOpacity onPress={captureLocation} disabled={locationLoading}>
-              {locationLoading
-                ? <ActivityIndicator size="small" color={colors.textMuted} />
-                : <Text style={styles.gpsRefresh}>↻</Text>}
-            </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Shop name */}
-        <View style={styles.section}>
-          <Text style={styles.label}>ชื่อร้าน <Text style={styles.required}>*</Text></Text>
-          <TextInput
-            style={styles.input}
-            value={shopName}
-            onChangeText={(t) => { setShopName(t); setShowSuggestions(true); }}
-            onFocus={() => setShowSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-            placeholder="ระบุชื่อร้านค้า"
-            placeholderTextColor={colors.textDisabled}
-          />
-          {showSuggestions && shopSuggestions.length > 0 && (
-            <View style={styles.suggestionBox}>
-              {shopSuggestions.map((s) => (
-                <TouchableOpacity key={s} style={styles.suggestionItem} onPress={() => { setShopName(s); setShowSuggestions(false); }}>
-                  <Ionicons name="time-outline" size={14} color={colors.textDisabled} style={{ marginRight: 6 }} />
-                  <Text style={styles.suggestionText}>{s}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Province */}
-        <View style={styles.section}>
-          <Text style={styles.label}>จังหวัด <Text style={styles.required}>*</Text></Text>
-          <TouchableOpacity style={styles.pickerButton} onPress={() => { setPickerSearch(""); setShowProvincePicker(true); }}>
-            <Text style={province ? styles.pickerText : styles.pickerPlaceholder}>{province || "เลือกจังหวัด"}</Text>
-            <Ionicons name="chevron-down" size={16} color={colors.textDisabled} />
+          <TouchableOpacity style={st.gpsRefreshBtn} onPress={captureLocation} disabled={locationLoading}>
+            {locationLoading
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Ionicons name="refresh" size={14} color="#fff" />}
           </TouchableOpacity>
         </View>
 
-        {/* District (Bangkok only) */}
-        {isBangkok && (
-          <View style={styles.section}>
-            <Text style={styles.label}>เขต (กรุงเทพฯ) <Text style={styles.required}>*</Text></Text>
-            <TouchableOpacity style={styles.pickerButton} onPress={() => { setPickerSearch(""); setShowDistrictPicker(true); }}>
-              <Text style={district ? styles.pickerText : styles.pickerPlaceholder}>{district || "เลือกเขต"}</Text>
-              <Ionicons name="chevron-down" size={16} color={colors.textDisabled} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Trip type */}
-        <View style={styles.section}>
-          <Text style={styles.label}>ทริป <Text style={styles.required}>*</Text></Text>
-          <View style={styles.pillRow}>
-            {([
-              { key: "plan",     label: "ตามแผน" },
-              { key: "off_plan", label: "นอกแผน" },
-            ] as { key: TripType; label: string }[]).map(({ key, label }) => (
-              <TouchableOpacity
-                key={key}
-                style={[styles.pill, tripType === key && styles.pillActive]}
-                onPress={() => setTripType(key)}
-              >
-                <Text style={[styles.pillText, tripType === key && styles.pillTextActive]}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Customer type */}
-        <View style={styles.section}>
-          <Text style={styles.label}>ลูกค้า <Text style={styles.required}>*</Text></Text>
-          <View style={styles.pillRow}>
-            {([
-              { key: "new",      label: "ลูกค้าใหม่" },
-              { key: "existing", label: "ลูกค้าเก่า" },
-            ] as { key: CustomerType; label: string }[]).map(({ key, label }) => (
-              <TouchableOpacity
-                key={key}
-                style={[styles.pill, customerType === key && styles.pillActive]}
-                onPress={() => setCustomerType(key)}
-              >
-                <Text style={[styles.pillText, customerType === key && styles.pillTextActive]}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Mission type */}
-        <View style={styles.section}>
-          <Text style={styles.label}>ภารกิจ <Text style={styles.required}>*</Text></Text>
-          <View style={styles.pillRow}>
-            {([
-              { key: "tak", label: "ทัก" },
-              { key: "dem", label: "เดม" },
-              { key: "tel", label: "โทร" },
-            ] as { key: VisitType; label: string }[]).map(({ key, label }) => (
-              <TouchableOpacity
-                key={key}
-                style={[styles.pill, visitType === key && styles.pillActive]}
-                onPress={() => setVisitType(key)}
-              >
-                <Text style={[styles.pillText, visitType === key && styles.pillTextActive]}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Result */}
-        <View style={styles.section}>
-          <Text style={styles.label}>ผลตอบรับ <Text style={styles.required}>*</Text></Text>
-          <View style={styles.pillRow}>
-            {([
-              { key: "buy",       label: "ซื้อ" },
-              { key: "no_buy",    label: "ไม่ซื้อ" },
-              { key: "not_found", label: "ไม่พบ" },
-            ] as { key: ResultType; label: string }[]).map(({ key, label }) => (
-              <TouchableOpacity
-                key={key}
-                style={[styles.pill, result === key && styles.pillActive]}
-                onPress={() => {
-                  setResult(key);
-                  if (key !== "buy") {
-                    setOrderAmount("");
-                    setSlipImage(null); setSlipVerifying(false);
-                    setSlipStatus(null); setSlipUrl(null); setTransRef(null);
-                  }
-                }}
-              >
-                <Text style={[styles.pillText, result === key && styles.pillTextActive]}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Slip + ยอดสั่งซื้อ — แสดงเฉพาะเมื่อผลตอบรับ = ซื้อ */}
-        {result === "buy" && (
-          <View style={styles.section}>
-            <Text style={styles.label}>สลิปการชำระเงิน <Text style={styles.required}>*</Text></Text>
-            <TouchableOpacity
-              onPress={pickSlip}
-              activeOpacity={0.8}
-              style={slipSt.uploadBtn}
-              disabled={slipVerifying}
-            >
-              {slipImage ? (
-                <Image source={{ uri: slipImage.uri }} style={slipSt.preview} resizeMode="contain" />
-              ) : (
-                <View style={slipSt.placeholder}>
-                  <Ionicons name="receipt-outline" size={32} color={colors.textDisabled} />
-                  <Text style={slipSt.placeholderText}>กดเพื่อแนบสลิป</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            {slipImage && !slipStatus && !slipVerifying && (
-              <TouchableOpacity onPress={verifySlipImage} activeOpacity={0.85} style={slipSt.verifyBtn}>
-                <Ionicons name="scan-outline" size={16} color="#fff" />
-                <Text style={slipSt.verifyBtnText}>ตรวจสอบสลิป</Text>
-              </TouchableOpacity>
-            )}
-
-            {slipVerifying && (
-              <View style={slipSt.statusRow}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={slipSt.statusText}>กำลังตรวจสอบ QR บนสลิป...</Text>
-              </View>
-            )}
-            {!slipVerifying && slipStatus === "verified" && (
-              <View style={[slipSt.statusRow, slipSt.statusVerified]}>
-                <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
-                <Text style={[slipSt.statusText, { color: "#16a34a" }]}>ยืนยัน QR สำเร็จ</Text>
-              </View>
-            )}
-            {!slipVerifying && slipStatus === "pending_approval" && (
-              <View style={[slipSt.statusRow, slipSt.statusPending]}>
-                <Ionicons name="time-outline" size={16} color="#d97706" />
-                <Text style={[slipSt.statusText, { color: "#d97706" }]}>ไม่พบ QR บนสลิป — รอ Admin ยืนยัน</Text>
-              </View>
-            )}
-
-            <Text style={[styles.label, { marginTop: 14 }]}>
-              ยอดสั่งซื้อ (บาท) <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={[styles.input, slipStatus === "verified" && slipSt.inputLocked]}
-              value={orderAmount}
-              onChangeText={slipStatus === "verified" ? undefined : setOrderAmount}
-              editable={slipStatus !== "verified"}
-              placeholder="ระบุยอดสั่งซื้อ (บาท)"
-              placeholderTextColor={colors.textDisabled}
-              keyboardType="numeric"
-            />
-            {slipStatus === "verified" && (
-              <Text style={slipSt.lockedNote}>ยอดเงินอ้างอิงจาก QR สลิป — แก้ไขไม่ได้</Text>
-            )}
-            {slipStatus === "pending_approval" && (
-              <Text style={slipSt.lockedNote}>กรอกจำนวนเงินตามข้อมูลสรุปในสลิป</Text>
-            )}
-          </View>
-        )}
-
-        {/* Summary */}
-        <View style={styles.section}>
-          <Text style={styles.label}>สรุปผล</Text>
-          <TextInput
-            style={[styles.input, { height: 88, paddingTop: 10 }]}
-            value={details}
-            onChangeText={setDetails}
-            placeholder="บันทึกสรุปผลเพิ่มเติม..."
-            placeholderTextColor={colors.textDisabled}
-            multiline
-            textAlignVertical="top"
-          />
-        </View>
-
-        {/* Images */}
-        <View style={styles.section}>
-          <View style={styles.imageLabelRow}>
-            <Text style={styles.label}>รูปภาพ <Text style={styles.required}>*</Text></Text>
-            <Text style={[styles.imageCount, filledCount < MIN_IMAGES && styles.imageCountWarn]}>
-              {filledCount}/6 · ต้องการครบทุกรูป
-            </Text>
-          </View>
-          <View style={styles.imageGrid}>
-            {IMAGE_SLOTS.map((slot) => {
-              const img = slotImages[slot.key];
-              return img ? (
-                <TouchableOpacity
-                  key={slot.key}
-                  style={styles.imageCell}
-                  onPress={() => pickForSlot(slot.key)}
-                  activeOpacity={0.85}
-                >
-                  <Image source={{ uri: img.uri }} style={styles.imageCellImg} />
-                  <View style={styles.slotLabelFilled}>
-                    <Text style={styles.slotLabelFilledText} numberOfLines={1}>{slot.label}</Text>
+        {/* ── Progress Steps ── */}
+        <View style={st.stepsWrap}>
+          <View style={st.stepsRow}>
+            {["ข้อมูล", "ผลลัพธ์", "รูปภาพ", "ส่ง"].map((label, i) => {
+              const num = i + 1;
+              const done = stepsDone[i];
+              return [
+                <View key={`s${num}`} style={st.stepCol}>
+                  <View style={[st.stepCircle, done ? st.stepCircleFilled : st.stepCircleGrey]}>
+                    <Text style={[st.stepNum, done ? st.stepNumFilled : st.stepNumGrey]}>{num}</Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.removeBtn}
-                    onPress={() => pickForSlot(slot.key)}
-                  >
-                    <Ionicons name="camera-outline" size={14} color="#fff" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  key={slot.key}
-                  style={styles.addCell}
-                  onPress={() => pickForSlot(slot.key)}
-                >
-                  <View style={styles.addCellInner}>
-                    <Ionicons name="camera-outline" size={26} color={colors.textDisabled} />
-                    <Text style={styles.slotLabel}>{slot.label}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
+                  <Text style={[st.stepLabel, done ? st.stepLabelFilled : st.stepLabelGrey]}>{label}</Text>
+                </View>,
+                i < 3 && (
+                  <View key={`l${num}`} style={[st.stepLine, stepsDone[i] ? st.stepLineFilled : st.stepLineGrey]} />
+                ),
+              ];
             })}
           </View>
         </View>
 
-        {/* Submit */}
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
-            onPress={handleSubmit}
-            disabled={!canSubmit}
-            activeOpacity={0.8}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.submitBtnText}>บันทึกการเยี่ยมร้าน</Text>}
-          </TouchableOpacity>
+        {/* ── Card 1: ข้อมูลร้าน ── */}
+        <View style={st.cardWrap}>
+          <View style={st.card}>
+            <View style={st.cardHeader}>
+              <View style={[st.cardIconBox, { backgroundColor: colors.primaryLight }]}>
+                <Ionicons name="home-outline" size={16} color={colors.primaryDark} />
+              </View>
+              <Text style={st.cardTitle}>ข้อมูลร้าน</Text>
+            </View>
+            <View style={st.cardBody}>
+              <Text style={st.fieldLabel}>ชื่อร้าน <Text style={st.req}>*</Text></Text>
+              <View style={[st.inputRow, st.inputFocused]}>
+                <Ionicons name="search" size={15} color={colors.primary} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={st.inputText}
+                  value={shopName}
+                  onChangeText={(t) => { setShopName(t); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  placeholder="ระบุชื่อร้านค้า"
+                  placeholderTextColor={colors.textDisabled}
+                />
+              </View>
+              {showSuggestions && shopSuggestions.length > 0 && (
+                <View style={st.suggestionBox}>
+                  {shopSuggestions.map((s) => (
+                    <TouchableOpacity key={s} style={st.suggestionRow} onPress={() => { setShopName(s); setShowSuggestions(false); }}>
+                      <Ionicons name="time-outline" size={14} color={colors.textDisabled} style={{ marginRight: 6 }} />
+                      <Text style={st.suggestionText}>{s}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {/* Province + District: 2-column */}
+              <View style={st.twoCol}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[st.fieldLabel, { marginTop: 12 }]}>จังหวัด <Text style={st.req}>*</Text></Text>
+                  <TouchableOpacity style={st.pickerBtn} onPress={() => { setPickerSearch(""); setShowProvincePicker(true); }}>
+                    <Text style={province ? st.pickerText : st.pickerPlaceholder} numberOfLines={1}>{province || "เลือกจังหวัด"}</Text>
+                    <Ionicons name="chevron-down" size={12} color={colors.textDisabled} />
+                  </TouchableOpacity>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[st.fieldLabel, { marginTop: 12 }]}>เขต{isBangkok && <Text style={st.req}> *</Text>}</Text>
+                  <TouchableOpacity
+                    style={[st.pickerBtn, !isBangkok && { opacity: 0.4 }]}
+                    onPress={() => { if (!isBangkok) return; setPickerSearch(""); setShowDistrictPicker(true); }}
+                    disabled={!isBangkok}
+                  >
+                    <Text style={district && isBangkok ? st.pickerText : st.pickerPlaceholder} numberOfLines={1}>
+                      {isBangkok ? (district || "เลือกเขต") : "—"}
+                    </Text>
+                    {isBangkok && <Ionicons name="chevron-down" size={12} color={colors.textDisabled} />}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
         </View>
+
+        {/* ── Card 2: ประเภทการเยี่ยม ── */}
+        <View style={[st.cardWrap, { marginTop: 10 }]}>
+          <View style={st.card}>
+            <View style={st.cardHeader}>
+              <View style={[st.cardIconBox, { backgroundColor: "#eff6ff" }]}>
+                <Ionicons name="time-outline" size={16} color="#3b82f6" />
+              </View>
+              <Text style={st.cardTitle}>ประเภทการเยี่ยม</Text>
+            </View>
+            <View style={st.cardBody}>
+              {/* ทริป */}
+              <View style={st.toggleRow}>
+                <Text style={st.toggleLabel}>ทริป</Text>
+                <View style={st.toggleGroup}>
+                  {([ { key: "plan", label: "ตามแผน" }, { key: "off_plan", label: "นอกแผน" } ] as { key: TripType; label: string }[]).map(({ key, label }) => (
+                    <TouchableOpacity key={key} style={[st.toggle, tripType === key && st.toggleOn]} onPress={() => setTripType(key)}>
+                      <Text style={[st.toggleText, tripType === key && st.toggleTextOn]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              {/* ลูกค้า */}
+              <View style={[st.toggleRow, { marginTop: 14 }]}>
+                <Text style={st.toggleLabel}>ลูกค้า</Text>
+                <View style={st.toggleGroup}>
+                  {([ { key: "new", label: "ลูกค้าใหม่" }, { key: "existing", label: "ลูกค้าเก่า" } ] as { key: CustomerType; label: string }[]).map(({ key, label }) => (
+                    <TouchableOpacity key={key} style={[st.toggle, customerType === key && st.toggleOn]} onPress={() => setCustomerType(key)}>
+                      <Text style={[st.toggleText, customerType === key && st.toggleTextOn]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              {/* ภารกิจ */}
+              <View style={[st.toggleRow, { marginTop: 14 }]}>
+                <Text style={st.toggleLabel}>ภารกิจ</Text>
+                <View style={st.toggleGroup}>
+                  {([ { key: "tak", label: "ทัก" }, { key: "dem", label: "เดม" }, { key: "tel", label: "โทร" } ] as { key: VisitType; label: string }[]).map(({ key, label }) => (
+                    <TouchableOpacity key={key} style={[st.toggle, visitType === key && st.toggleOn]} onPress={() => setVisitType(key)}>
+                      <Text style={[st.toggleText, visitType === key && st.toggleTextOn]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* ── Card 3: ผลตอบรับ + Slip ── */}
+        <View style={[st.cardWrap, { marginTop: 10 }]}>
+          <View style={st.card}>
+            <View style={st.cardHeader}>
+              <View style={[st.cardIconBox, { backgroundColor: "#fefce8" }]}>
+                <Ionicons name="pulse-outline" size={16} color="#ca8a04" />
+              </View>
+              <Text style={st.cardTitle}>ผลตอบรับ</Text>
+            </View>
+            <View style={st.cardBody}>
+              {/* 3-column emoji result cards */}
+              <View style={st.resultGrid}>
+                {RESULT_OPTIONS.map(({ key, emoji, label }) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={[st.resultCard, result === key && st.resultCardActive]}
+                    onPress={() => {
+                      setResult(key);
+                      if (key !== "buy") {
+                        setOrderAmount(""); setSlipImage(null);
+                        setSlipVerifying(false); setSlipStatus(null);
+                        setSlipUrl(null); setTransRef(null);
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={st.resultEmoji}>{emoji}</Text>
+                    <Text style={[st.resultLabel, result === key && st.resultLabelActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Slip section — inside ผลตอบรับ card when ซื้อ */}
+              {result === "buy" && (
+                <View style={{ marginTop: 14 }}>
+                  <Text style={st.fieldLabel}>สลิปการชำระเงิน <Text style={st.req}>*</Text></Text>
+                  <TouchableOpacity onPress={pickSlip} style={st.slipBox} activeOpacity={0.8} disabled={slipVerifying}>
+                    {slipImage ? (
+                      <Image source={{ uri: slipImage.uri }} style={st.slipPreview} resizeMode="contain" />
+                    ) : (
+                      <View style={st.slipPlaceholder}>
+                        <View style={st.slipIconWrap}>
+                          <Ionicons name="cloud-upload-outline" size={20} color={colors.primary} />
+                        </View>
+                        <Text style={st.slipUploadText}>อัปโหลดสลิป</Text>
+                        <Text style={st.slipUploadSub}>ถ่ายรูปหรือเลือกจาก Gallery</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                  {slipImage && !slipStatus && !slipVerifying && (
+                    <TouchableOpacity onPress={verifySlipImage} style={st.verifyBtn}>
+                      <Ionicons name="scan-outline" size={16} color="#fff" />
+                      <Text style={st.verifyBtnText}>ตรวจสอบสลิป</Text>
+                    </TouchableOpacity>
+                  )}
+                  {slipVerifying && (
+                    <View style={st.statusRow}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                      <Text style={st.statusText}>กำลังตรวจสอบ QR บนสลิป...</Text>
+                    </View>
+                  )}
+                  {!slipVerifying && slipStatus === "verified" && (
+                    <View style={[st.statusRow, st.statusVerified]}>
+                      <Ionicons name="checkmark-circle" size={16} color={colors.primaryDark} />
+                      <Text style={[st.statusText, { color: colors.primaryDark }]}>ยืนยัน QR สำเร็จ</Text>
+                    </View>
+                  )}
+                  {!slipVerifying && slipStatus === "pending_approval" && (
+                    <View style={[st.statusRow, st.statusPending]}>
+                      <Ionicons name="time-outline" size={16} color="#d97706" />
+                      <Text style={[st.statusText, { color: "#d97706" }]}>ไม่พบ QR — รอ Admin ยืนยัน</Text>
+                    </View>
+                  )}
+                  <View style={{ marginTop: 10 }}>
+                    <Text style={st.fieldLabel}>ยอดสั่งซื้อ (บาท) <Text style={st.req}>*</Text></Text>
+                    <View style={[st.inputRow, slipStatus === "verified" && { backgroundColor: "#f9fafb" }]}>
+                      <Text style={st.bahtSign}>฿</Text>
+                      <TextInput
+                        style={st.inputText}
+                        value={orderAmount}
+                        onChangeText={slipStatus === "verified" ? undefined : setOrderAmount}
+                        editable={slipStatus !== "verified"}
+                        placeholder="ระบุยอดสั่งซื้อ"
+                        placeholderTextColor={colors.textDisabled}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    {slipStatus === "verified" && <Text style={st.lockedNote}>ยอดเงินอ้างอิงจาก QR สลิป</Text>}
+                    {slipStatus === "pending_approval" && <Text style={st.lockedNote}>กรอกจำนวนเงินตามข้อมูลในสลิป</Text>}
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* ── Card 4: สรุปผล ── */}
+        <View style={[st.cardWrap, { marginTop: 10 }]}>
+          <View style={st.card}>
+            <View style={st.cardHeader}>
+              <View style={[st.cardIconBox, { backgroundColor: "#f5f3ff" }]}>
+                <Ionicons name="pencil-outline" size={16} color="#8b5cf6" />
+              </View>
+              <Text style={st.cardTitle}>สรุปผล</Text>
+            </View>
+            <View style={st.cardBody}>
+              <TextInput
+                style={st.textarea}
+                value={details}
+                onChangeText={setDetails}
+                placeholder="บันทึกสรุปผลเพิ่มเติม..."
+                placeholderTextColor={colors.textDisabled}
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* ── Card 5: รูปภาพ (3-column grid) ── */}
+        <View style={[st.cardWrap, { marginTop: 10 }]}>
+          <View style={st.card}>
+            <View style={st.cardHeader}>
+              <View style={[st.cardIconBox, { backgroundColor: "#fff7ed" }]}>
+                <Ionicons name="image-outline" size={16} color="#ea580c" />
+              </View>
+              <Text style={st.cardTitle}>รูปภาพ <Text style={st.req}>*</Text></Text>
+              <View style={{ flex: 1, alignItems: "flex-end" }}>
+                <View style={[st.imgCountBadge, filledCount > 0 ? st.imgCountOk : st.imgCountWarn]}>
+                  <Text style={[st.imgCountText, filledCount > 0 ? st.imgCountTextOk : st.imgCountTextWarn]}>
+                    {filledCount} / 6
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View style={[st.cardBody, { paddingTop: 14 }]}>
+              <View style={st.imgGrid}>
+                {IMAGE_SLOTS.map((slot) => {
+                  const img = slotImages[slot.key];
+                  return img ? (
+                    <TouchableOpacity key={slot.key} style={st.imgCellFilled} onPress={() => pickForSlot(slot.key)} activeOpacity={0.85}>
+                      <Image source={{ uri: img.uri }} style={st.imgCellImage} />
+                      <View style={st.imgCellOverlay}>
+                        <Text style={st.imgCellOverlayText} numberOfLines={1}>{slot.label}</Text>
+                      </View>
+                      <View style={st.imgCheckBadge}>
+                        <Ionicons name="checkmark" size={8} color="#fff" />
+                      </View>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity key={slot.key} style={st.imgCellEmpty} onPress={() => pickForSlot(slot.key)} activeOpacity={0.7}>
+                      <Ionicons name="camera-outline" size={18} color={colors.textDisabled} />
+                      <Text style={st.imgSlotLabel} numberOfLines={2}>{slot.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={st.imgNote}>กดที่ช่องเพื่อเพิ่มรูป</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── Submit button ── */}
+        <View style={st.submitWrap}>
+          <TouchableOpacity
+            style={[st.submitBtn, !canSubmit && st.submitBtnOff]}
+            onPress={handleSubmit}
+            disabled={!canSubmit || loading}
+            activeOpacity={0.88}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="send-outline" size={18} color="#fff" />
+                <Text style={st.submitText}>บันทึกการเยี่ยมร้าน</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          {!canSubmit && <Text style={st.submitHint}>กรอกข้อมูลให้ครบเพื่อส่ง</Text>}
+        </View>
+
       </ScrollView>
 
       <SearchPickerModal
-        visible={showProvincePicker}
-        title="เลือกจังหวัด"
-        items={filteredProvinces}
-        search={pickerSearch}
-        onSearch={setPickerSearch}
+        visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}
+        search={pickerSearch} onSearch={setPickerSearch}
         onSelect={(p) => { setProvince(p); setDistrict(""); setShowProvincePicker(false); }}
         onClose={() => setShowProvincePicker(false)}
       />
       <SearchPickerModal
-        visible={showDistrictPicker}
-        title="เลือกเขต (กรุงเทพฯ)"
-        items={filteredDistricts}
-        search={pickerSearch}
-        onSearch={setPickerSearch}
+        visible={showDistrictPicker} title="เลือกเขต (กรุงเทพฯ)" items={filteredDistricts}
+        search={pickerSearch} onSearch={setPickerSearch}
         onSelect={(d) => { setDistrict(d); setShowDistrictPicker(false); }}
         onClose={() => setShowDistrictPicker(false)}
       />
@@ -590,18 +611,11 @@ function SearchPickerModal({ visible, title, items, search, onSearch, onSelect, 
           </View>
           <View style={modal.searchWrap}>
             <Ionicons name="search" size={16} color={colors.textDisabled} style={{ marginRight: 8 }} />
-            <TextInput
-              style={modal.searchInput}
-              value={search}
-              onChangeText={onSearch}
-              placeholder="ค้นหา..."
-              placeholderTextColor={colors.textDisabled}
-              autoFocus
-            />
+            <TextInput style={modal.searchInput} value={search} onChangeText={onSearch}
+              placeholder="ค้นหา..." placeholderTextColor={colors.textDisabled} autoFocus />
           </View>
           <FlatList
-            data={items}
-            keyExtractor={(item) => item}
+            data={items} keyExtractor={(item) => item}
             renderItem={({ item }) => (
               <TouchableOpacity style={modal.item} onPress={() => onSelect(item)}>
                 <Text style={modal.itemText}>{item}</Text>
@@ -615,121 +629,210 @@ function SearchPickerModal({ visible, title, items, search, onSearch, onSelect, 
   );
 }
 
-const styles = StyleSheet.create({
+const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  section: { paddingHorizontal: 16, marginTop: 16 },
 
-  gpsRow: {
+  // GPS Banner
+  gpsBanner: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: "#16a34a", paddingHorizontal: 16, paddingVertical: 12,
+  },
+  gpsIconCircle: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
+  gpsLabel: {
+    fontSize: 10, color: "rgba(255,255,255,0.65)", fontWeight: "600",
+    textTransform: "uppercase", letterSpacing: 0.5,
+  },
+  gpsCoords: { fontSize: 12, color: "#fff", fontWeight: "700", marginTop: 1 },
+  gpsRefreshBtn: {
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center", justifyContent: "center",
+  },
+
+  // Progress Steps
+  stepsWrap: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10,
+    borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+  },
+  stepsRow: { flexDirection: "row", alignItems: "center" },
+  stepCol: { flex: 1, alignItems: "center", gap: 4 },
+  stepCircle: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  stepCircleFilled: { backgroundColor: colors.primary },
+  stepCircleGrey: { backgroundColor: colors.borderLight },
+  stepNum: { fontSize: 11, fontWeight: "800" },
+  stepNumFilled: { color: "#fff" },
+  stepNumGrey: { color: colors.textDisabled },
+  stepLabel: { fontSize: 9, fontWeight: "700", textAlign: "center" },
+  stepLabelFilled: { color: colors.primaryDark },
+  stepLabelGrey: { color: colors.textDisabled },
+  stepLine: { flex: 1, height: 2, borderRadius: 2, marginBottom: 14 },
+  stepLineFilled: { backgroundColor: colors.primary },
+  stepLineGrey: { backgroundColor: colors.borderLight },
+
+  // Cards
+  cardWrap: { paddingHorizontal: 14, marginTop: 12 },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius["3xl"],
+    borderWidth: 1, borderColor: colors.borderLight,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+  },
+  cardIconBox: { width: 30, height: 30, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
+  cardTitle: { fontSize: 13, fontWeight: "800", color: colors.textPrimary },
+  cardBody: { paddingHorizontal: 16, paddingVertical: 14 },
+
+  // Fields
+  fieldLabel: {
+    fontSize: 10, fontWeight: "700", color: colors.textDisabled,
+    textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 7,
+  },
+  req: { color: colors.error },
+  inputRow: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: colors.primaryLight, borderWidth: 1,
-    borderColor: colors.primaryBorder, borderRadius: radius.md,
-    paddingHorizontal: 12, paddingVertical: 10, gap: 8,
-  },
-  gpsDot: { width: 8, height: 8, borderRadius: 4 },
-  gpsText: { flex: 1, fontSize: 11, color: colors.primaryText, fontVariant: ["tabular-nums"] },
-  gpsRefresh: { fontSize: 18, color: colors.textMuted },
-
-  label: { fontSize: 11, fontWeight: "700", color: colors.textMuted, marginBottom: 6 },
-  required: { color: colors.error },
-  input: {
     borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
-    backgroundColor: colors.surface, color: colors.textPrimary,
+    paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surface,
   },
+  inputFocused: { borderColor: colors.primary },
+  inputText: { flex: 1, fontSize: 14, fontWeight: "500", color: colors.textPrimary },
+  bahtSign: { fontSize: 15, fontWeight: "800", color: colors.textMuted, marginRight: 6 },
 
   suggestionBox: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
-    backgroundColor: colors.surface, marginTop: 2, overflow: "hidden",
+    borderWidth: 1, borderColor: colors.border,
+    borderRadius: radius.md, backgroundColor: colors.surface,
+    marginTop: 2, overflow: "hidden",
   },
-  suggestionItem: {
+  suggestionRow: {
     flexDirection: "row", alignItems: "center",
     paddingHorizontal: 12, paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
   suggestionText: { fontSize: 14, color: colors.textSecondary },
 
-  pickerButton: {
+  twoCol: { flexDirection: "row", gap: 10 },
+  pickerBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
-    paddingHorizontal: 12, paddingVertical: 11, backgroundColor: colors.surface,
+    paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surface,
   },
-  pickerText: { fontSize: 14, color: colors.textPrimary },
-  pickerPlaceholder: { fontSize: 14, color: colors.textDisabled },
+  pickerText: { fontSize: 13, fontWeight: "600", color: colors.textPrimary, flex: 1 },
+  pickerPlaceholder: { fontSize: 13, color: colors.textDisabled, flex: 1 },
 
-  pillRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
-  pill: {
-    paddingHorizontal: 18, paddingVertical: 9, borderRadius: radius.full,
-    borderWidth: 1.5, borderColor: colors.borderDashed, backgroundColor: colors.surface,
+  // Toggle pills
+  toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  toggleLabel: { fontSize: 12, fontWeight: "700", color: colors.textSecondary },
+  toggleGroup: { flexDirection: "row", gap: 6 },
+  toggle: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full,
+    borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.bg,
   },
-  pillActive: { borderColor: "transparent", backgroundColor: colors.primary },
-  pillText: { fontSize: 14, color: colors.textMuted, fontWeight: "500" },
-  pillTextActive: { color: "#fff", fontWeight: "700" },
+  toggleOn: { backgroundColor: colors.primary, borderColor: "transparent" },
+  toggleText: { fontSize: 12, fontWeight: "700", color: colors.textMuted },
+  toggleTextOn: { color: "#fff" },
 
-  imageLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  imageCount: { fontSize: 11, color: colors.textMuted },
-  imageCountWarn: { color: colors.error, fontWeight: "600" },
+  // Result emoji cards
+  resultGrid: { flexDirection: "row", gap: 8 },
+  resultCard: {
+    flex: 1, alignItems: "center", paddingVertical: 12, paddingHorizontal: 8,
+    borderRadius: radius.md, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.surface,
+  },
+  resultCardActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  resultEmoji: { fontSize: 18, marginBottom: 4 },
+  resultLabel: { fontSize: 12, fontWeight: "800", color: colors.textMuted },
+  resultLabelActive: { color: colors.primaryDark },
 
-  imageGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  imageCell: {
-    width: "48%", aspectRatio: 1.2,
-    borderRadius: radius.md, overflow: "hidden", position: "relative",
+  // Slip
+  slipBox: {
+    borderWidth: 2, borderColor: colors.primaryBorder, borderStyle: "dashed",
+    borderRadius: radius.lg, backgroundColor: colors.primaryLight,
+    minHeight: 100, overflow: "hidden",
   },
-  imageCellImg: { width: "100%", height: "100%", resizeMode: "cover" },
-  slotLabelFilled: {
-    position: "absolute", bottom: 0, left: 0, right: 0,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    paddingHorizontal: 8, paddingVertical: 4,
+  slipPreview: { width: "100%", height: 180 },
+  slipPlaceholder: { alignItems: "center", justifyContent: "center", gap: 6, padding: 20 },
+  slipIconWrap: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: colors.surface, alignItems: "center", justifyContent: "center",
+    ...shadows.card,
   },
-  slotLabelFilledText: { color: "#fff", fontSize: 11, fontWeight: "600" },
-  removeBtn: {
-    position: "absolute", top: 6, right: 6, width: 24, height: 24,
-    borderRadius: 12, backgroundColor: "rgba(0,0,0,0.55)",
-    alignItems: "center", justifyContent: "center",
-  },
-  addCell: {
-    width: "48%", aspectRatio: 1.2,
-    borderRadius: radius.md,
-    borderWidth: 1.5, borderColor: colors.borderDashed, borderStyle: "dashed",
-    backgroundColor: colors.surface,
-    overflow: "hidden",
-  },
-  addCellInner: {
-    flex: 1, alignItems: "center", justifyContent: "center", gap: 6,
-  },
-  slotLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", textAlign: "center", paddingHorizontal: 6 },
-
-  submitBtn: {
-    backgroundColor: colors.primary, borderRadius: radius.lg,
-    paddingVertical: 15, alignItems: "center",
-  },
-  submitBtnDisabled: { opacity: 0.45 },
-  submitBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-});
-
-const slipSt = StyleSheet.create({
-  uploadBtn: {
-    borderWidth: 1.5, borderColor: colors.borderDashed, borderStyle: "dashed",
-    borderRadius: radius.md, backgroundColor: colors.surface,
-    minHeight: 160, overflow: "hidden", alignItems: "center", justifyContent: "center",
-  },
-  preview: { width: "100%", height: 200 },
-  placeholder: { alignItems: "center", justifyContent: "center", gap: 8, padding: 24 },
-  placeholderText: { fontSize: 13, color: colors.textDisabled, fontWeight: "500" },
+  slipUploadText: { fontSize: 13, fontWeight: "700", color: colors.primaryDark },
+  slipUploadSub: { fontSize: 11, color: colors.textMuted },
   verifyBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 6, marginTop: 8, paddingVertical: 11,
-    backgroundColor: colors.primaryDark, borderRadius: radius.md,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    marginTop: 8, paddingVertical: 11, backgroundColor: colors.primaryDark, borderRadius: radius.md,
   },
   verifyBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   statusRow: {
     flexDirection: "row", alignItems: "center", gap: 6,
     marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md,
   },
-  statusVerified: { backgroundColor: "#f0fdf4" },
+  statusVerified: { backgroundColor: colors.primaryLight },
   statusPending: { backgroundColor: "#fffbeb" },
   statusText: { fontSize: 13, color: colors.textMuted, fontWeight: "500" },
-  inputLocked: { backgroundColor: "#f9fafb", borderColor: "#e5e7eb" },
-  lockedNote: { fontSize: 11, color: "#6b7280", marginTop: 4 },
+  lockedNote: { fontSize: 11, color: colors.textDisabled, marginTop: 4 },
+
+  // Textarea
+  textarea: {
+    borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
+    padding: 12, minHeight: 78, fontSize: 14, fontWeight: "500",
+    color: colors.textSecondary, backgroundColor: colors.bg,
+  },
+
+  // Image grid (3-column square)
+  imgGrid: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  imgCellFilled: {
+    width: "31.5%", aspectRatio: 1,
+    borderRadius: radius.md, overflow: "hidden",
+    position: "relative",
+    borderWidth: 2, borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  imgCellImage: { width: "100%", height: "100%" },
+  imgCellOverlay: {
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    backgroundColor: "rgba(0,0,0,0.45)", paddingHorizontal: 6, paddingVertical: 3,
+  },
+  imgCellOverlayText: { color: "#fff", fontSize: 9, fontWeight: "600" },
+  imgCheckBadge: {
+    position: "absolute", top: 4, right: 4,
+    width: 14, height: 14, borderRadius: 7,
+    backgroundColor: colors.primary,
+    alignItems: "center", justifyContent: "center",
+  },
+  imgCellEmpty: {
+    width: "31.5%", aspectRatio: 1,
+    borderRadius: radius.md,
+    borderWidth: 1.5, borderColor: colors.borderDashed, borderStyle: "dashed",
+    backgroundColor: colors.bg,
+    alignItems: "center", justifyContent: "center", gap: 4,
+  },
+  imgSlotLabel: { fontSize: 9, fontWeight: "700", color: colors.textDisabled, textAlign: "center", paddingHorizontal: 4 },
+  imgCountBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full },
+  imgCountOk: { backgroundColor: colors.successBg, borderWidth: 1, borderColor: colors.primaryBorder },
+  imgCountWarn: { backgroundColor: colors.errorBg, borderWidth: 1, borderColor: "#fecaca" },
+  imgCountText: { fontSize: 10, fontWeight: "800" },
+  imgCountTextOk: { color: colors.primaryDark },
+  imgCountTextWarn: { color: colors.error },
+  imgNote: { marginTop: 10, fontSize: 10, color: colors.textDisabled, textAlign: "center", fontWeight: "500" },
+
+  // Submit
+  submitWrap: { paddingHorizontal: 14, marginTop: 14, marginBottom: 6 },
+  submitBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
+    backgroundColor: colors.primary, borderRadius: radius["3xl"], paddingVertical: 16,
+  },
+  submitBtnOff: { opacity: 0.4 },
+  submitText: { color: "#fff", fontWeight: "800", fontSize: 15, letterSpacing: -0.2 },
+  submitHint: { textAlign: "center", marginTop: 8, fontSize: 11, color: colors.textDisabled, fontWeight: "500" },
 });
 
 const modal = StyleSheet.create({
@@ -742,9 +845,10 @@ const modal = StyleSheet.create({
   },
   title: { fontSize: 16, fontWeight: "700", color: colors.textPrimary },
   searchWrap: {
-    flexDirection: "row", alignItems: "center", margin: 12,
-    paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.bg,
-    borderRadius: radius.md, borderWidth: 1, borderColor: colors.border,
+    flexDirection: "row", alignItems: "center",
+    margin: 12, paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: colors.bg, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border,
   },
   searchInput: { flex: 1, fontSize: 14, color: colors.textPrimary },
   item: { paddingHorizontal: 20, paddingVertical: 14 },
