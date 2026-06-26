@@ -545,8 +545,10 @@ export default function RecordScreen() {
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity key={slot.key} style={st.imgCellEmpty} onPress={() => pickForSlot(slot.key)} activeOpacity={0.7}>
-                      <Ionicons name="camera-outline" size={18} color={colors.textDisabled} />
-                      <Text style={st.imgSlotLabel} numberOfLines={2}>{slot.label}</Text>
+                      <View style={st.imgCellContent}>
+                        <Ionicons name="camera-outline" size={18} color={colors.textDisabled} />
+                        <Text style={st.imgSlotLabel} numberOfLines={2}>{slot.label}</Text>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -813,9 +815,12 @@ const st = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1.5, borderColor: colors.borderDashed, borderStyle: "dashed",
     backgroundColor: colors.bg,
-    alignItems: "center", justifyContent: "center", gap: 4,
+    overflow: "hidden",
   },
-  imgSlotLabel: { fontSize: 9, fontWeight: "700", color: colors.textDisabled, textAlign: "center", paddingHorizontal: 4 },
+  imgCellContent: {
+    flex: 1, alignItems: "center", justifyContent: "center", gap: 4,
+  },
+  imgSlotLabel: { fontSize: 9, fontWeight: "700", color: colors.textDisabled, textAlign: "center", paddingHorizontal: 4, marginTop: 2 },
   imgCountBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full },
   imgCountOk: { backgroundColor: colors.successBg, borderWidth: 1, borderColor: colors.primaryBorder },
   imgCountWarn: { backgroundColor: colors.errorBg, borderWidth: 1, borderColor: "#fecaca" },
