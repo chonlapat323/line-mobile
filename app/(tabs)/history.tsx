@@ -9,6 +9,7 @@ import { useNavigation, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
+import { SkeletonBox } from "@/lib/Skeleton";
 
 interface VisitRecord {
   id: string;
@@ -223,8 +224,25 @@ export default function HistoryScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.container}>
+        <View style={{ padding: 14, gap: 10 }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <View key={i} style={skSt.card}>
+              <View style={skSt.row}>
+                <SkeletonBox width={44} height={44} borderRadius={12} />
+                <View style={{ flex: 1, gap: 8 }}>
+                  <SkeletonBox height={14} width="65%" borderRadius={6} />
+                  <SkeletonBox height={10} width="45%" borderRadius={6} />
+                  <SkeletonBox height={10} width="55%" borderRadius={6} />
+                </View>
+                <View style={{ gap: 6, alignItems: "flex-end" }}>
+                  <SkeletonBox width={52} height={18} borderRadius={20} />
+                  <SkeletonBox width={44} height={14} borderRadius={6} />
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
     );
   }
@@ -318,6 +336,18 @@ export default function HistoryScreen() {
     </>
   );
 }
+
+const skSt = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.card,
+  },
+  row: { flexDirection: "row", gap: 10, alignItems: "center" },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },

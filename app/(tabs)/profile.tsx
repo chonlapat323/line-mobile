@@ -9,6 +9,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { clearToken, getStoredUser, api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
+import { SkeletonBox } from "@/lib/Skeleton";
 
 // ── Types ─────────────────────────────────────────────────────
 interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string }
@@ -315,7 +316,39 @@ export default function ProfileScreen() {
     ]);
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        {/* Hero skeleton */}
+        <View style={{ backgroundColor: "#16a34a", paddingTop: insets.top + 16, paddingBottom: 28, alignItems: "center", gap: 10 }}>
+          <SkeletonBox width={68} height={68} borderRadius={34} style={{ backgroundColor: "rgba(255,255,255,0.25)" }} />
+          <SkeletonBox width={120} height={16} borderRadius={8} style={{ backgroundColor: "rgba(255,255,255,0.25)" }} />
+          <SkeletonBox width={80} height={12} borderRadius={6} style={{ backgroundColor: "rgba(255,255,255,0.2)" }} />
+        </View>
+        {/* Stats row skeleton */}
+        <View style={{ flexDirection: "row", backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={{ flex: 1, alignItems: "center", paddingVertical: 14, gap: 6, borderRightWidth: i < 3 ? 1 : 0, borderRightColor: colors.borderLight }}>
+              <SkeletonBox width={40} height={22} borderRadius={6} />
+              <SkeletonBox width={48} height={10} borderRadius={4} />
+            </View>
+          ))}
+        </View>
+        {/* Card skeleton */}
+        <View style={{ margin: 14, gap: 10 }}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, gap: 12, borderWidth: 1, borderColor: colors.borderLight, ...shadows.card }}>
+            <SkeletonBox height={16} width="50%" borderRadius={6} />
+            <SkeletonBox height={48} borderRadius={10} />
+            <SkeletonBox height={34} borderRadius={10} />
+          </View>
+          <View style={{ backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, gap: 12, borderWidth: 1, borderColor: colors.borderLight, ...shadows.card }}>
+            <SkeletonBox height={16} width="40%" borderRadius={6} />
+            <SkeletonBox height={80} borderRadius={10} />
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <>

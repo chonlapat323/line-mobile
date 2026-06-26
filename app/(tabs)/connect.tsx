@@ -6,6 +6,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
 import { colors, radius } from "@/lib/theme";
+import { SkeletonBox } from "@/lib/Skeleton";
 
 const STEPS = [
   { num: "1", text: 'กด "เพิ่ม Bot" แล้วเพิ่ม Bot เป็นเพื่อนใน LINE ก่อน' },
@@ -18,12 +19,15 @@ export default function ConnectScreen() {
   const [code, setCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [lineBotId, setLineBotId] = useState<string | null>(null);
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    getStoredUser().then((u) => { if (u) setUserId(u.id); });
-    api.getSettings().then((s: { lineBotId: string | null }) => {
-      if (s.lineBotId) setLineBotId(s.lineBotId);
-    }).catch(console.error);
+    Promise.all([
+      getStoredUser().then((u) => { if (u) setUserId(u.id); }),
+      api.getSettings().then((s: { lineBotId: string | null }) => {
+        if (s.lineBotId) setLineBotId(s.lineBotId);
+      }).catch(console.error),
+    ]).finally(() => setInitializing(false));
   }, []);
 
   async function generateCode() {
@@ -44,6 +48,24 @@ export default function ConnectScreen() {
     if (!code) return;
     Clipboard.setString(code.code);
     Alert.alert("คัดลอกแล้ว", `รหัส ${code.code} ถูกคัดลอกแล้ว`);
+  }
+
+  if (initializing) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+        <View style={[styles.stepsCard, { gap: 14 }]}>
+          <SkeletonBox height={16} width="55%" />
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <SkeletonBox width={26} height={26} borderRadius={13} />
+              <SkeletonBox height={13} style={{ flex: 1 }} />
+            </View>
+          ))}
+        </View>
+        <SkeletonBox height={48} borderRadius={12} style={{ marginBottom: 10 }} />
+        <SkeletonBox height={48} borderRadius={12} />
+      </ScrollView>
+    );
   }
 
   return (
