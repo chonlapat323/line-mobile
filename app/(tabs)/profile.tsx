@@ -33,7 +33,10 @@ const THAI_BANKS = [
 interface VisitRecord {
   id: string; shopName: string; province: string; district?: string;
   tripType?: string; customerType: string; visitType?: string; result?: string;
-  details?: string; imageUrls: string[]; createdAt: string;
+  details?: string; orderAmount?: number | null; slipStatus?: string | null;
+  slipUrl?: string | null; transRef?: string | null;
+  latitude?: number | null; longitude?: number | null;
+  imageUrls: string[]; createdAt: string;
   user?: { fullName: string; email: string };
 }
 // ── Helpers ───────────────────────────────────────────────────
@@ -94,18 +97,45 @@ function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: (
           )}
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={det.body}>
+              {/* Result + order amount */}
               {resKey ? (
-                <View style={[det.resultBadge, { backgroundColor: rs.bg }]}>
-                  <Text style={[det.resultBadgeText, { color: rs.text }]}>
-                    ผลตอบรับ: {RESULT_LABEL[resKey]}
-                  </Text>
+                <View style={det.resultRow}>
+                  <View style={[det.resultBadge, { backgroundColor: rs.bg }]}>
+                    <Text style={[det.resultBadgeText, { color: rs.text }]}>
+                      ผลตอบรับ: {RESULT_LABEL[resKey]}
+                    </Text>
+                  </View>
+                  {resKey === "buy" && record.orderAmount != null && (
+                    <View style={det.orderBadge}>
+                      <Text style={det.orderText}>฿{record.orderAmount.toLocaleString("th-TH")}</Text>
+                    </View>
+                  )}
                 </View>
               ) : null}
+
+              {/* Slip image */}
+              {record.slipUrl ? (
+                <View style={det.slipSection}>
+                  <Text style={det.slipSectionLabel}>สลิปการชำระเงิน</Text>
+                  <Image source={{ uri: record.slipUrl }} style={det.slipImg} resizeMode="contain" />
+                  {record.transRef ? (
+                    <View style={det.transRefRow}>
+                      <Ionicons name="barcode-outline" size={14} color={colors.textMuted} />
+                      <Text style={det.transRefText}>อ้างอิง: {record.transRef}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+
               {[
+                { icon: "location-outline" as const, label: "สถานที่", value: locationLabel },
                 { icon: "swap-horizontal-outline" as const, label: "ทริป", value: record.tripType === "plan" ? "ตามแผน" : record.tripType === "off_plan" ? "นอกแผน" : "-" },
                 { icon: "people-outline" as const, label: "ลูกค้า", value: record.customerType === "new" ? "ลูกค้าใหม่" : "ลูกค้าเก่า" },
-                { icon: "checkmark-circle-outline" as const, label: "ภารกิจ", value: record.visitType === "tak" ? "ทัก" : record.visitType === "dem" ? "เดม" : "-" },
+                { icon: "checkmark-circle-outline" as const, label: "ภารกิจ", value: record.visitType === "tak" ? "ทัก" : record.visitType === "dem" ? "เดม" : record.visitType === "tel" ? "โทร" : "-" },
                 { icon: "calendar-outline" as const, label: "วันที่", value: new Date(record.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) },
+                ...(record.latitude && record.longitude
+                  ? [{ icon: "navigate-outline" as const, label: "พิกัด GPS", value: `${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)}` }]
+                  : []),
               ].map((row) => (
                 <View key={row.label} style={det.infoRow}>
                   <Ionicons name={row.icon} size={16} color={colors.textMuted} style={det.infoIcon} />
@@ -877,6 +907,15 @@ const det = StyleSheet.create({
   noteBox: { marginTop: 16, backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14, borderWidth: 1, borderColor: colors.borderLight },
   noteLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", marginBottom: 6 },
   noteText: { fontSize: 13, color: colors.textPrimary, lineHeight: 20 },
+
+  resultRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" },
+  orderBadge: { borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0" },
+  orderText: { fontSize: 13, fontWeight: "700", color: "#15803d" },
+  slipSection: { marginBottom: 16, backgroundColor: colors.surface, borderRadius: radius.lg, padding: 12, borderWidth: 1, borderColor: colors.borderLight },
+  slipSectionLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", marginBottom: 8 },
+  slipImg: { width: "100%", height: 180, borderRadius: radius.md },
+  transRefRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
+  transRefText: { fontSize: 11, color: colors.textMuted, fontWeight: "500" },
 });
 
 const prov = StyleSheet.create({

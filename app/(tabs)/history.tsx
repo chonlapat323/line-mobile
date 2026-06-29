@@ -23,6 +23,10 @@ interface VisitRecord {
   details?: string;
   orderAmount?: number | null;
   slipStatus?: string | null;
+  slipUrl?: string | null;
+  transRef?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   imageUrls: string[];
   createdAt: string;
   user?: { fullName: string; email: string };
@@ -86,6 +90,9 @@ function DetailModal({ record, onClose }: { record: VisitRecord; onClose: () => 
     { icon: "people-outline", label: "ลูกค้า", value: record.customerType === "new" ? "ลูกค้าใหม่" : "ลูกค้าเก่า" },
     { icon: "checkmark-circle-outline", label: "ภารกิจ", value: MISSION_LABEL[record.visitType || ""] || "-" },
     { icon: "calendar-outline", label: "วันที่", value: new Date(record.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) },
+    ...(record.latitude && record.longitude
+      ? [{ icon: "navigate-outline" as const, label: "พิกัด GPS", value: `${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)}` }]
+      : []),
   ];
 
   return (
@@ -158,6 +165,20 @@ function DetailModal({ record, onClose }: { record: VisitRecord; onClose: () => 
                     </View>
                   )}
                   {resKey === "buy" && <SlipStatusBadge status={record.slipStatus} />}
+                </View>
+              ) : null}
+
+              {/* Slip image */}
+              {record.slipUrl ? (
+                <View style={det.slipSection}>
+                  <Text style={det.slipSectionLabel}>สลิปการชำระเงิน</Text>
+                  <Image source={{ uri: record.slipUrl }} style={det.slipImg} resizeMode="contain" />
+                  {record.transRef ? (
+                    <View style={det.transRefRow}>
+                      <Ionicons name="barcode-outline" size={14} color={colors.textMuted} />
+                      <Text style={det.transRefText}>อ้างอิง: {record.transRef}</Text>
+                    </View>
+                  ) : null}
                 </View>
               ) : null}
 
@@ -471,4 +492,17 @@ const det = StyleSheet.create({
   },
   noteLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", marginBottom: 6 },
   noteText: { fontSize: 13, color: colors.textPrimary, lineHeight: 20 },
+
+  slipSection: {
+    marginBottom: 16, backgroundColor: colors.surface,
+    borderRadius: radius.lg, padding: 12,
+    borderWidth: 1, borderColor: colors.borderLight,
+  },
+  slipSectionLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", marginBottom: 8 },
+  slipImg: { width: "100%", height: 180, borderRadius: radius.md },
+  transRefRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginTop: 8,
+  },
+  transRefText: { fontSize: 11, color: colors.textMuted, fontWeight: "500" },
 });
