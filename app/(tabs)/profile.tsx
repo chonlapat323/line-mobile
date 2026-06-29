@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { clearToken, getStoredUser, api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 import { SkeletonBox } from "@/lib/Skeleton";
+import { ImageViewer } from "@/lib/ImageViewer";
 
 // ── Types ─────────────────────────────────────────────────────
 interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string }
@@ -53,6 +54,7 @@ function getResultStyle(key: string) {
 function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: () => void }) {
   const { width } = useWindowDimensions();
   const [imgIndex, setImgIndex] = useState(0);
+  const [viewerIdx, setViewerIdx] = useState<number | null>(null);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     setImgIndex(Math.round(e.nativeEvent.contentOffset.x / width));
   };
@@ -86,8 +88,13 @@ function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: (
                 horizontal pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 onScroll={onScroll} scrollEventThrottle={16}
-                renderItem={({ item }) => (
-                  <Image source={{ uri: item }} style={[det.galleryImg, { width }]} resizeMode="cover" />
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity activeOpacity={0.92} onPress={() => setViewerIdx(index)}>
+                    <Image source={{ uri: item }} style={[det.galleryImg, { width }]} resizeMode="cover" />
+                    <View style={det.zoomHint}>
+                      <Ionicons name="expand-outline" size={14} color="#fff" />
+                    </View>
+                  </TouchableOpacity>
                 )}
               />
               <View style={det.galleryMeta}>
@@ -100,6 +107,15 @@ function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: (
               </View>
             </View>
           )}
+          {viewerIdx !== null && (
+            <ImageViewer
+              images={allImages}
+              labels={allLabels}
+              initialIndex={viewerIdx}
+              onClose={() => setViewerIdx(null)}
+            />
+          )}
+
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={det.body}>
               {/* Result + order amount */}
@@ -891,6 +907,12 @@ const det = StyleSheet.create({
   byUser: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
   closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight, alignItems: "center", justifyContent: "center" },
   galleryImg: { height: 240 },
+  zoomHint: {
+    position: "absolute", bottom: 8, right: 8,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center", justifyContent: "center",
+  },
   galleryMeta: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4, alignItems: "center", gap: 6 },
   slotLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
   dots: { flexDirection: "row", gap: 5 },

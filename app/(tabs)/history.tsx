@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 import { SkeletonBox } from "@/lib/Skeleton";
+import { ImageViewer } from "@/lib/ImageViewer";
 
 interface VisitRecord {
   id: string;
@@ -71,6 +72,7 @@ function getResultStyle(key: string) {
 function DetailModal({ record, onClose }: { record: VisitRecord; onClose: () => void }) {
   const { width } = useWindowDimensions();
   const [imgIndex, setImgIndex] = useState(0);
+  const [viewerIdx, setViewerIdx] = useState<number | null>(null);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -129,12 +131,17 @@ function DetailModal({ record, onClose }: { record: VisitRecord; onClose: () => 
                 showsHorizontalScrollIndicator={false}
                 onScroll={onScroll}
                 scrollEventThrottle={16}
-                renderItem={({ item }) => (
-                  <Image
-                    source={{ uri: item }}
-                    style={[det.galleryImg, { width }]}
-                    resizeMode="cover"
-                  />
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity activeOpacity={0.92} onPress={() => setViewerIdx(index)}>
+                    <Image
+                      source={{ uri: item }}
+                      style={[det.galleryImg, { width }]}
+                      resizeMode="cover"
+                    />
+                    <View style={det.zoomHint}>
+                      <Ionicons name="expand-outline" size={14} color="#fff" />
+                    </View>
+                  </TouchableOpacity>
                 )}
               />
               <View style={det.galleryMeta}>
@@ -151,6 +158,15 @@ function DetailModal({ record, onClose }: { record: VisitRecord; onClose: () => 
               <Ionicons name="image-outline" size={40} color={colors.textDisabled} />
               <Text style={det.noImgText}>ไม่มีรูปภาพ</Text>
             </View>
+          )}
+
+          {viewerIdx !== null && (
+            <ImageViewer
+              images={allImages}
+              labels={allLabels}
+              initialIndex={viewerIdx}
+              onClose={() => setViewerIdx(null)}
+            />
           )}
 
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -446,6 +462,12 @@ const det = StyleSheet.create({
   },
 
   galleryImg: { height: 240 },
+  zoomHint: {
+    position: "absolute", bottom: 8, right: 8,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center", justifyContent: "center",
+  },
   galleryMeta: {
     paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4,
     alignItems: "center", gap: 6,
