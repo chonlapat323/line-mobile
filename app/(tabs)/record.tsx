@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Modal, FlatList,
   ScrollView, Alert, ActivityIndicator, Image, StyleSheet,
-  KeyboardAvoidingView, Platform, RefreshControl, Linking,
+  KeyboardAvoidingView, Platform, RefreshControl, Linking, Keyboard,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -208,6 +208,7 @@ export default function RecordScreen() {
       await api.createVisit(fd);
       await saveShopToHistory(shopName.trim());
       setShopHistory(await getShopHistory());
+      Keyboard.dismiss();
       Alert.alert("บันทึกสำเร็จ", "ข้อมูลการเยี่ยมร้านบันทึกแล้ว");
       setShopName(""); setProvince(""); setDistrict("");
       setTripType(null); setCustomerType(null); setVisitType(null);
