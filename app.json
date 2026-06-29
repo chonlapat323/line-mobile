@@ -2,7 +2,7 @@
   "expo": {
     "name": "BeautyUp Sales",
     "slug": "line-sender-mobile",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "linesender",
@@ -19,7 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#22c55e"
+        "backgroundColor": "#ffffff"
       },
       "package": "com.beautyup.linesender",
       "versionCode": 6,
