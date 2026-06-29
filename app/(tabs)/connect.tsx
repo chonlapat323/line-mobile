@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  Alert, ActivityIndicator, Clipboard, Linking,
+  ActivityIndicator, Clipboard, Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
 import { colors, radius } from "@/lib/theme";
+import { AppAlert, AlertButton } from "@/lib/AppModal";
 import { SkeletonBox } from "@/lib/Skeleton";
 
 const STEPS = [
@@ -20,6 +21,11 @@ export default function ConnectScreen() {
   const [loading, setLoading] = useState(false);
   const [lineBotId, setLineBotId] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [appAlert, setAppAlert] = useState<{ visible: boolean; type: "error" | "success" | "info"; title: string; message: string; buttons: AlertButton[] }>({ visible: false, type: "info", title: "", message: "", buttons: [] });
+
+  function showAlert(type: "error" | "success" | "info", title: string, message = "") {
+    setAppAlert({ visible: true, type, title, message, buttons: [{ text: "ตกลง", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) }] });
+  }
 
   useEffect(() => {
     Promise.all([
@@ -38,7 +44,7 @@ export default function ConnectScreen() {
       const data = await api.getVerificationCode(userId);
       setCode(data);
     } catch {
-      Alert.alert("ผิดพลาด", "ไม่สามารถสร้างรหัสได้");
+      showAlert("error", "ผิดพลาด", "ไม่สามารถสร้างรหัสได้");
     } finally {
       setLoading(false);
     }
@@ -47,7 +53,7 @@ export default function ConnectScreen() {
   function copyCode() {
     if (!code) return;
     Clipboard.setString(code.code);
-    Alert.alert("คัดลอกแล้ว", `รหัส ${code.code} ถูกคัดลอกแล้ว`);
+    showAlert("success", "คัดลอกแล้ว", `รหัส ${code.code} ถูกคัดลอกแล้ว`);
   }
 
   if (initializing) {
@@ -129,6 +135,7 @@ export default function ConnectScreen() {
           <Text style={styles.codeHint}>พิมพ์หรือวางรหัสนี้ในกลุ่ม LINE</Text>
         </View>
       )}
+      <AppAlert {...appAlert} />
     </ScrollView>
   );
 }

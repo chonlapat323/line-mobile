@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView,
   useWindowDimensions, Modal, FlatList, Image, RefreshControl,
   NativeSyntheticEvent, NativeScrollEvent, TextInput, ActivityIndicator,
 } from "react-native";
@@ -11,6 +11,7 @@ import { clearToken, getStoredUser, api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 import { SkeletonBox } from "@/lib/Skeleton";
 import { ImageViewer } from "@/lib/ImageViewer";
+import { AppAlert, AlertButton } from "@/lib/AppModal";
 
 // ── Types ─────────────────────────────────────────────────────
 interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string }
@@ -271,6 +272,11 @@ export default function ProfileScreen() {
   const [selectedVisit, setSelectedVisit] = useState<VisitRecord | null>(null);
 
   const scrollRef = useRef<ScrollView>(null);
+  const [appAlert, setAppAlert] = useState<{ visible: boolean; type: "error" | "confirm" | "info"; title: string; message: string; buttons: AlertButton[] }>({ visible: false, type: "error", title: "", message: "", buttons: [] });
+
+  function showAlert(type: "error" | "confirm" | "info", title: string, message = "", buttons?: AlertButton[]) {
+    setAppAlert({ visible: true, type, title, message, buttons: buttons ?? [{ text: "ตกลง", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) }] });
+  }
 
   // ── Derived data ─────────────────────────────────────────────
   const provinceCounts = useMemo(() => {
@@ -325,7 +331,7 @@ export default function ProfileScreen() {
       setUser((u) => u ? { ...u, bankName: bankName.trim(), bankAccount: bankAccount.trim() } : u);
       setEditingBank(false);
     } catch {
-      Alert.alert("เกิดข้อผิดพลาด", "ไม่สามารถบันทึกได้ กรุณาลองใหม่");
+      showAlert("error", "เกิดข้อผิดพลาด", "ไม่สามารถบันทึกได้ กรุณาลองใหม่");
     } finally { setBankSaving(false); }
   }
 
@@ -354,10 +360,10 @@ export default function ProfileScreen() {
     setCommMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   }
 
-  async function handleLogout() {
-    Alert.alert("ออกจากระบบ", "ต้องการออกจากระบบใช่ไหม?", [
-      { text: "ยกเลิก", style: "cancel" },
-      { text: "ออกจากระบบ", style: "destructive", onPress: async () => { await clearToken(); router.replace("/login"); } },
+  function handleLogout() {
+    showAlert("confirm", "ออกจากระบบ", "ต้องการออกจากระบบใช่ไหม?", [
+      { text: "ยกเลิก", style: "cancel", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) },
+      { text: "ออกจากระบบ", style: "destructive", onPress: async () => { setAppAlert((p) => ({ ...p, visible: false })); await clearToken(); router.replace("/login"); } },
     ]);
   }
 
@@ -721,6 +727,7 @@ export default function ProfileScreen() {
           />
         </View>
       </Modal>
+      <AppAlert {...appAlert} />
     </>
   );
 }

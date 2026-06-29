@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Modal, FlatList,
-  ScrollView, Alert, ActivityIndicator, Image, StyleSheet,
+  ScrollView, ActivityIndicator, Image, StyleSheet,
   KeyboardAvoidingView, Platform, RefreshControl, Linking, Keyboard,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -9,6 +9,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
+import { AppAlert, AlertButton, ImagePickerSheet } from "@/lib/AppModal";
 import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-places";
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
 import { colors, radius, shadows } from "@/lib/theme";
@@ -70,6 +71,12 @@ export default function RecordScreen() {
   const [transRef, setTransRef] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [savedShop, setSavedShop] = useState("");
+  const [appAlert, setAppAlert] = useState<{ visible: boolean; type: "error" | "confirm" | "info"; title: string; message: string; buttons: AlertButton[] }>({ visible: false, type: "error", title: "", message: "", buttons: [] });
+  const [pickerSheet, setPickerSheet] = useState<{ visible: boolean; title: string; onCamera: () => void; onGallery: () => void }>({ visible: false, title: "", onCamera: () => {}, onGallery: () => {} });
+
+  function showAlert(type: "error" | "confirm" | "info", title: string, message = "", buttons?: AlertButton[]) {
+    setAppAlert({ visible: true, type, title, message, buttons: buttons ?? [{ text: "ตกลง", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) }] });
+  }
 
   useEffect(() => {
     getStoredUser().then((u) => { if (u) setUserId(u.id); });
@@ -88,9 +95,9 @@ export default function RecordScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Location เพื่อบันทึกพิกัด", [
-          { text: "ไม่ใช่ตอนนี้", style: "cancel" },
-          { text: "ไปที่ตั้งค่า", onPress: () => Linking.openSettings() },
+        showAlert("confirm", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Location เพื่อบันทึกพิกัด", [
+          { text: "ไม่ใช่ตอนนี้", style: "cancel", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) },
+          { text: "ไปที่ตั้งค่า", onPress: () => { setAppAlert((p) => ({ ...p, visible: false })); Linking.openSettings(); } },
         ]);
         return;
       }
@@ -98,7 +105,7 @@ export default function RecordScreen() {
       setLatitude(loc.coords.latitude);
       setLongitude(loc.coords.longitude);
     } catch {
-      Alert.alert("ข้อผิดพลาด", "ไม่สามารถดึงพิกัดได้ กรุณาตรวจสอบ GPS");
+      showAlert("error", "ข้อผิดพลาด", "ไม่สามารถดึงพิกัดได้ กรุณาตรวจสอบ GPS");
     } finally {
       setLocationLoading(false);
     }
@@ -113,16 +120,12 @@ export default function RecordScreen() {
   }
 
   function pickForSlot(slotKey: SlotKey) {
-    Alert.alert("เพิ่มรูป", "เลือกวิธีเพิ่มรูป", [
-      { text: "📷 ถ่ายรูป", onPress: () => openCameraForSlot(slotKey) },
-      { text: "🖼 เลือกจาก Gallery", onPress: () => openGalleryForSlot(slotKey) },
-      { text: "ยกเลิก", style: "cancel" },
-    ]);
+    setPickerSheet({ visible: true, title: "เพิ่มรูป", onCamera: () => openCameraForSlot(slotKey), onGallery: () => openGalleryForSlot(slotKey) });
   }
 
   async function openCameraForSlot(slotKey: SlotKey) {
     const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-    if (!granted) { Alert.alert("ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
+    if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
     const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
     if (!res.canceled && res.assets[0]) {
       const img = await parseAsset(res.assets[0].uri);
@@ -141,16 +144,12 @@ export default function RecordScreen() {
   }
 
   function pickSlip() {
-    Alert.alert("แนบสลิป", "เลือกวิธีแนบสลิป", [
-      { text: "📷 ถ่ายรูป", onPress: openCameraForSlip },
-      { text: "🖼 เลือกจาก Gallery", onPress: openGalleryForSlip },
-      { text: "ยกเลิก", style: "cancel" },
-    ]);
+    setPickerSheet({ visible: true, title: "แนบสลิป", onCamera: openCameraForSlip, onGallery: openGalleryForSlip });
   }
 
   async function openCameraForSlip() {
     const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-    if (!granted) { Alert.alert("ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
+    if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
     const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
     if (!res.canceled && res.assets[0]) processSlip(res.assets[0].uri);
   }
@@ -185,7 +184,7 @@ export default function RecordScreen() {
   }
 
   async function handleSubmit() {
-    if (!userId) { Alert.alert("ข้อผิดพลาด", "ไม่พบข้อมูลผู้ใช้ กรุณา login ใหม่"); return; }
+    if (!userId) { showAlert("error", "ข้อผิดพลาด", "ไม่พบข้อมูลผู้ใช้ กรุณา login ใหม่"); return; }
     setLoading(true);
     try {
       const fd = new FormData();
@@ -220,7 +219,7 @@ export default function RecordScreen() {
       setSlipImage(null); setSlipVerifying(false); setSlipStatus(null); setSlipUrl(null); setTransRef(null);
       captureLocation();
     } catch (err: unknown) {
-      Alert.alert("ผิดพลาด", err instanceof Error ? err.message : String(err));
+      showAlert("error", "ผิดพลาด", err instanceof Error ? err.message : String(err));
     } finally { setLoading(false); }
   }
 
@@ -606,6 +605,12 @@ export default function RecordScreen() {
           </View>
         </View>
       </Modal>
+
+      <AppAlert {...appAlert} />
+      <ImagePickerSheet
+        {...pickerSheet}
+        onClose={() => setPickerSheet((p) => ({ ...p, visible: false }))}
+      />
 
       <SearchPickerModal
         visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}
