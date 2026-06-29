@@ -31,10 +31,13 @@ async function request(path: string, options: RequestInit = {}) {
     clearTimeout(timeoutId);
 
     if (res.status === 401) {
-      await SecureStore.deleteItemAsync("token");
-      await SecureStore.deleteItemAsync("user");
-      router.replace("/login");
-      throw new Error("Unauthorized");
+      if (path !== "/auth/login") {
+        await SecureStore.deleteItemAsync("token");
+        await SecureStore.deleteItemAsync("user");
+        router.replace("/login");
+      }
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     }
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }));
