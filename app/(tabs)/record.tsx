@@ -234,6 +234,7 @@ export default function RecordScreen() {
   const step3Done = filledCount >= MIN_IMAGES;
   const step4Done = step1Done && step2Done && step3Done;
   const stepsDone = [step1Done, step2Done, step3Done, step4Done];
+  const currentStep = !step1Done ? 1 : !step2Done ? 2 : !step3Done ? 3 : 4;
 
   const canSubmit = step1Done && step2Done && step3Done;
 
@@ -242,12 +243,38 @@ export default function RecordScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView
-        style={st.container}
-        contentContainerStyle={{ paddingBottom: 32 }}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-      >
+      <View style={{ flex: 1 }}>
+        {/* ── Progress Steps (fixed at top) ── */}
+        <View style={st.stepsWrap}>
+          <View style={st.stepsRow}>
+            {["ข้อมูล", "ผลลัพธ์", "รูปภาพ", "ส่ง"].map((label, i) => {
+              const num = i + 1;
+              const done = stepsDone[i];
+              const isCurrent = !done && num === currentStep;
+              return [
+                <View key={`s${num}`} style={st.stepCol}>
+                  <View style={[st.stepCircle, done ? st.stepCircleFilled : isCurrent ? st.stepCircleCurrent : st.stepCircleGrey]}>
+                    {done
+                      ? <Ionicons name="checkmark" size={12} color="#fff" />
+                      : <Text style={[st.stepNum, isCurrent ? st.stepNumCurrent : st.stepNumGrey]}>{num}</Text>
+                    }
+                  </View>
+                  <Text style={[st.stepLabel, done ? st.stepLabelFilled : isCurrent ? st.stepLabelCurrent : st.stepLabelGrey]}>{label}</Text>
+                </View>,
+                i < 3 && (
+                  <View key={`l${num}`} style={[st.stepLine, done ? st.stepLineFilled : st.stepLineGrey]} />
+                ),
+              ];
+            })}
+          </View>
+        </View>
+
+        <ScrollView
+          style={st.container}
+          contentContainerStyle={{ paddingBottom: 32 }}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        >
         {/* ── GPS Banner ── */}
         <View style={st.gpsBanner}>
           <View style={st.gpsIconCircle}>
@@ -264,27 +291,6 @@ export default function RecordScreen() {
               ? <ActivityIndicator size="small" color="#fff" />
               : <Ionicons name="refresh" size={14} color="#fff" />}
           </TouchableOpacity>
-        </View>
-
-        {/* ── Progress Steps ── */}
-        <View style={st.stepsWrap}>
-          <View style={st.stepsRow}>
-            {["ข้อมูล", "ผลลัพธ์", "รูปภาพ", "ส่ง"].map((label, i) => {
-              const num = i + 1;
-              const done = stepsDone[i];
-              return [
-                <View key={`s${num}`} style={st.stepCol}>
-                  <View style={[st.stepCircle, done ? st.stepCircleFilled : st.stepCircleGrey]}>
-                    <Text style={[st.stepNum, done ? st.stepNumFilled : st.stepNumGrey]}>{num}</Text>
-                  </View>
-                  <Text style={[st.stepLabel, done ? st.stepLabelFilled : st.stepLabelGrey]}>{label}</Text>
-                </View>,
-                i < 3 && (
-                  <View key={`l${num}`} style={[st.stepLine, stepsDone[i] ? st.stepLineFilled : st.stepLineGrey]} />
-                ),
-              ];
-            })}
-          </View>
         </View>
 
         {/* ── Card 1: ข้อมูลร้าน ── */}
@@ -578,7 +584,8 @@ export default function RecordScreen() {
           {!canSubmit && <Text style={st.submitHint}>กรอกข้อมูลให้ครบเพื่อส่ง</Text>}
         </View>
 
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       <SearchPickerModal
         visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}
@@ -675,6 +682,9 @@ const st = StyleSheet.create({
   stepLine: { flex: 1, height: 2, borderRadius: 2, marginBottom: 14 },
   stepLineFilled: { backgroundColor: colors.primary },
   stepLineGrey: { backgroundColor: colors.borderLight },
+  stepCircleCurrent: { backgroundColor: "#fff", borderWidth: 2, borderColor: colors.primary },
+  stepNumCurrent: { color: colors.primary },
+  stepLabelCurrent: { color: colors.primary },
 
   // Cards
   cardWrap: { paddingHorizontal: 14, marginTop: 12 },
