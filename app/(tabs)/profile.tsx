@@ -59,6 +59,11 @@ function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: (
   const resKey = record.result || "";
   const rs = getResultStyle(resKey);
   const locationLabel = record.district ? `${record.province} · ${record.district}` : record.province;
+  const allImages = [
+    ...record.imageUrls,
+    ...(record.slipUrl ? [record.slipUrl] : []),
+  ];
+  const allLabels = [...SLOT_LABELS, "สลิปการชำระเงิน"];
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
@@ -73,10 +78,10 @@ function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: (
               <Ionicons name="close" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          {record.imageUrls.length > 0 && (
+          {allImages.length > 0 && (
             <View>
               <FlatList
-                data={record.imageUrls}
+                data={allImages}
                 keyExtractor={(_, i) => String(i)}
                 horizontal pagingEnabled
                 showsHorizontalScrollIndicator={false}
@@ -86,9 +91,9 @@ function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: (
                 )}
               />
               <View style={det.galleryMeta}>
-                <Text style={det.slotLabel}>{SLOT_LABELS[imgIndex] ?? `รูป ${imgIndex + 1}`}</Text>
+                <Text style={det.slotLabel}>{allLabels[imgIndex] ?? `รูป ${imgIndex + 1}`}</Text>
                 <View style={det.dots}>
-                  {record.imageUrls.map((_, i) => (
+                  {allImages.map((_, i) => (
                     <View key={i} style={[det.dot, i === imgIndex && det.dotActive]} />
                   ))}
                 </View>
@@ -113,17 +118,11 @@ function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: (
                 </View>
               ) : null}
 
-              {/* Slip image */}
-              {record.slipUrl ? (
-                <View style={det.slipSection}>
-                  <Text style={det.slipSectionLabel}>สลิปการชำระเงิน</Text>
-                  <Image source={{ uri: record.slipUrl }} style={det.slipImg} resizeMode="contain" />
-                  {record.transRef ? (
-                    <View style={det.transRefRow}>
-                      <Ionicons name="barcode-outline" size={14} color={colors.textMuted} />
-                      <Text style={det.transRefText}>อ้างอิง: {record.transRef}</Text>
-                    </View>
-                  ) : null}
+              {/* Transaction ref */}
+              {record.transRef ? (
+                <View style={det.transRefBox}>
+                  <Ionicons name="barcode-outline" size={14} color={colors.textMuted} />
+                  <Text style={det.transRefText}>เลขอ้างอิงสลิป: {record.transRef}</Text>
                 </View>
               ) : null}
 
@@ -911,11 +910,13 @@ const det = StyleSheet.create({
   resultRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" },
   orderBadge: { borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0" },
   orderText: { fontSize: 13, fontWeight: "700", color: "#15803d" },
-  slipSection: { marginBottom: 16, backgroundColor: colors.surface, borderRadius: radius.lg, padding: 12, borderWidth: 1, borderColor: colors.borderLight },
-  slipSectionLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", marginBottom: 8 },
-  slipImg: { width: "100%", height: 180, borderRadius: radius.md },
-  transRefRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
-  transRefText: { fontSize: 11, color: colors.textMuted, fontWeight: "500" },
+  transRefBox: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginBottom: 12, paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.borderLight,
+  },
+  transRefText: { fontSize: 12, color: colors.textMuted, fontWeight: "500", flex: 1 },
 });
 
 const prov = StyleSheet.create({
