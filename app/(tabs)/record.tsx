@@ -68,6 +68,8 @@ export default function RecordScreen() {
   const [slipStatus, setSlipStatus] = useState<string | null>(null);
   const [slipUrl, setSlipUrl] = useState<string | null>(null);
   const [transRef, setTransRef] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [savedShop, setSavedShop] = useState("");
 
   useEffect(() => {
     getStoredUser().then((u) => { if (u) setUserId(u.id); });
@@ -209,7 +211,8 @@ export default function RecordScreen() {
       await saveShopToHistory(shopName.trim());
       setShopHistory(await getShopHistory());
       Keyboard.dismiss();
-      Alert.alert("บันทึกสำเร็จ", "ข้อมูลการเยี่ยมร้านบันทึกแล้ว");
+      setSavedShop(shopName.trim());
+      setShowSuccess(true);
       setShopName(""); setProvince(""); setDistrict("");
       setTripType(null); setCustomerType(null); setVisitType(null);
       setResult(null); setDetails(""); setOrderAmount("");
@@ -588,6 +591,22 @@ export default function RecordScreen() {
         </ScrollView>
       </View>
 
+      <Modal visible={showSuccess} transparent animationType="fade" onRequestClose={() => setShowSuccess(false)}>
+        <View style={st.successOverlay}>
+          <View style={st.successCard}>
+            <View style={st.successCircle}>
+              <Ionicons name="checkmark" size={40} color="#fff" />
+            </View>
+            <Text style={st.successTitle}>บันทึกสำเร็จ!</Text>
+            {!!savedShop && <Text style={st.successShop}>{savedShop}</Text>}
+            <Text style={st.successSub}>ข้อมูลการเยี่ยมร้านถูกบันทึกแล้ว</Text>
+            <TouchableOpacity style={st.successBtn} onPress={() => setShowSuccess(false)} activeOpacity={0.8}>
+              <Text style={st.successBtnText}>ปิด</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <SearchPickerModal
         visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}
         search={pickerSearch} onSearch={setPickerSearch}
@@ -849,6 +868,38 @@ const st = StyleSheet.create({
   submitBtnOff: { opacity: 0.4 },
   submitText: { color: "#fff", fontWeight: "800", fontSize: 15, letterSpacing: -0.2 },
   submitHint: { textAlign: "center", marginTop: 8, fontSize: 11, color: colors.textDisabled, fontWeight: "500" },
+
+  // Success modal
+  successOverlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center", justifyContent: "center", padding: 32,
+  },
+  successCard: {
+    backgroundColor: "#fff", borderRadius: 24, padding: 32,
+    alignItems: "center", width: "100%", maxWidth: 320,
+    shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 20, elevation: 10,
+  },
+  successCircle: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: colors.primary,
+    alignItems: "center", justifyContent: "center", marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 22, fontWeight: "800", color: colors.textPrimary,
+    marginBottom: 6, letterSpacing: -0.5,
+  },
+  successShop: {
+    fontSize: 15, fontWeight: "700", color: colors.primary,
+    marginBottom: 6, textAlign: "center",
+  },
+  successSub: {
+    fontSize: 13, color: colors.textMuted, marginBottom: 24, textAlign: "center",
+  },
+  successBtn: {
+    backgroundColor: colors.primary, borderRadius: 12,
+    paddingVertical: 12, paddingHorizontal: 40,
+  },
+  successBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });
 
 const modal = StyleSheet.create({
