@@ -2,7 +2,7 @@
   "expo": {
     "name": "BeautyUp Sales",
     "slug": "line-sender-mobile",
-    "version": "2.1.2",
+    "version": "2.1.3",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "linesender",
