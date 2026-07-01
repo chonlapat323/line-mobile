@@ -222,18 +222,36 @@ function DetailModal({ record, onClose }: { record: VisitRecord; onClose: () => 
   );
 }
 
+type DateFilter = "today" | "month" | "all";
+
+function getDateBounds(f: DateFilter): { dateFrom?: string; dateTo?: string } {
+  const now = new Date();
+  if (f === "today") {
+    const start = new Date(now); start.setHours(0, 0, 0, 0);
+    const end = new Date(now); end.setHours(23, 59, 59, 999);
+    return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
+  }
+  if (f === "month") {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
+  }
+  return {};
+}
+
 // ── Main Screen ───────────────────────────────────────────────
 export default function HistoryScreen() {
   const [records, setRecords] = useState<VisitRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<VisitRecord | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilter>("month");
   const navigation = useNavigation();
   const { fontScale } = useWindowDimensions();
 
-  async function loadVisits() {
+  async function loadVisits(f: DateFilter = dateFilter) {
     try {
-      const res = await api.getVisits();
+      const res = await api.getVisits(getDateBounds(f));
       setRecords(res?.data ?? []);
     } catch (err) {
       console.error(err);
@@ -243,7 +261,7 @@ export default function HistoryScreen() {
     }
   }
 
-  useFocusEffect(useCallback(() => { loadVisits(); }, []));
+  useFocusEffect(useCallback(() => { loadVisits(dateFilter); }, [dateFilter]));
 
   useEffect(() => {
     if (loading) return;
@@ -257,7 +275,7 @@ export default function HistoryScreen() {
     });
   }, [records, loading]);
 
-  const onRefresh = useCallback(() => { setRefreshing(true); loadVisits(); }, []);
+  const onRefresh = useCallback(() => { setRefreshing(true); loadVisits(dateFilter); }, [dateFilter]);
 
   if (loading) {
     return (
@@ -286,8 +304,27 @@ export default function HistoryScreen() {
 
   const fs = (base: number) => base / fontScale;
 
+  const DATE_FILTER_OPTS: { value: DateFilter; label: string }[] = [
+    { value: "today", label: "วันนี้" },
+    { value: "month", label: "เดือนนี้" },
+    { value: "all", label: "ทั้งหมด" },
+  ];
+
   return (
     <>
+      <View style={styles.filterBar}>
+        {DATE_FILTER_OPTS.map((opt) => (
+          <TouchableOpacity
+            key={opt.value}
+            style={[styles.filterChip, dateFilter === opt.value && styles.filterChipActive]}
+            onPress={() => { setDateFilter(opt.value); setLoading(true); }}
+          >
+            <Text style={[styles.filterChipText, dateFilter === opt.value && styles.filterChipTextActive]}>
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <FlatList
         data={records}
         keyExtractor={(item) => item.id}
@@ -422,6 +459,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7, paddingVertical: 1, borderRadius: radius.full,
   },
   date: { fontSize: 10, color: colors.textDisabled },
+
+  filterBar: {
+    flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: colors.bg, borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+  },
+  filterChip: {
+    paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.full,
+    borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary, borderColor: colors.primary,
+  },
+  filterChipText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+  filterChipTextActive: { color: "#fff" },
 
   headerBadge: {
     backgroundColor: colors.primaryLight,

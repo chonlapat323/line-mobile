@@ -75,7 +75,12 @@ export const api = {
   verifySlip: (formData: FormData) =>
     request("/visits/verify-slip", { method: "POST", body: formData }),
 
-  getVisits: () => request("/visits?limit=100"),
+  getVisits: (params?: { dateFrom?: string; dateTo?: string }) => {
+    const q = new URLSearchParams({ limit: "100" });
+    if (params?.dateFrom) q.set("dateFrom", params.dateFrom);
+    if (params?.dateTo) q.set("dateTo", params.dateTo);
+    return request(`/visits?${q.toString()}`);
+  },
   updateMe: (data: { bankName?: string; bankAccount?: string }) =>
     request("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
   getMyCommission: (month: string) => request(`/visits/my-commission?month=${month}`),
