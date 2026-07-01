@@ -439,58 +439,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Province list */}
-        <View style={styles.mapSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>สรุปตามจังหวัด</Text>
-            <Text style={styles.sectionHint}>กดเพื่อดูรายละเอียด</Text>
-          </View>
-
-          {Object.keys(provinceCounts).length === 0 ? (
-            <View style={styles.emptyProvince}>
-              <Ionicons name="location-outline" size={32} color={colors.textDisabled} />
-              <Text style={styles.emptyProvinceText}>ยังไม่มีข้อมูลการเยี่ยม</Text>
-            </View>
-          ) : (
-            <View style={styles.provinceList}>
-              {Object.entries(provinceCounts)
-                .sort((a, b) => b[1] - a[1])
-                .map(([name, count]) => {
-                  const pv = visits.filter((v) => v.province === name);
-                  const buy = pv.filter((v) => v.result === "buy").length;
-                  const noBuy = pv.filter((v) => v.result === "no_buy").length;
-                  const notFound = pv.filter((v) => v.result === "not_found").length;
-                  const barWidth = `${Math.round((count / maxCount) * 100)}%` as any;
-                  return (
-                    <TouchableOpacity
-                      key={name}
-                      style={styles.provinceRow}
-                      onPress={() => openProvince(name)}
-                      activeOpacity={0.75}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.provinceRowTop}>
-                          <Text style={styles.provinceRowName}>{name}</Text>
-                          <Text style={styles.provinceRowCount}>{count} บันทึก</Text>
-                        </View>
-                        <View style={styles.provinceBar}>
-                          <View style={[styles.provinceBarFill, { width: barWidth }]} />
-                        </View>
-                        <View style={styles.provinceChips}>
-                          {buy > 0 && <Text style={[styles.pChipTxt, { color: "#16a34a" }]}>ซื้อ {buy}</Text>}
-                          {noBuy > 0 && <Text style={[styles.pChipTxt, { color: "#dc2626" }]}>ไม่ซื้อ {noBuy}</Text>}
-                          {notFound > 0 && <Text style={[styles.pChipTxt, { color: "#2563eb" }]}>ไม่พบ {notFound}</Text>}
-                        </View>
-                      </View>
-                      <Ionicons name="chevron-forward" size={14} color={colors.textDisabled} style={{ marginLeft: 8 }} />
-                    </TouchableOpacity>
-                  );
-                })}
-            </View>
-          )}
-
-        </View>
-
         {/* Commission */}
         <View style={styles.commSection}>
           {/* Month nav */}
@@ -676,6 +624,57 @@ export default function ProfileScreen() {
                     : <Text style={styles.saveBtnText}>บันทึก</Text>}
                 </TouchableOpacity>
               </View>
+            </View>
+          )}
+        </View>
+
+        {/* Province list */}
+        <View style={styles.mapSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>สรุปตามจังหวัด</Text>
+            <Text style={styles.sectionHint}>กดเพื่อดูรายละเอียด</Text>
+          </View>
+
+          {Object.keys(provinceCounts).length === 0 ? (
+            <View style={styles.emptyProvince}>
+              <Ionicons name="location-outline" size={32} color={colors.textDisabled} />
+              <Text style={styles.emptyProvinceText}>ยังไม่มีข้อมูลการเยี่ยม</Text>
+            </View>
+          ) : (
+            <View style={styles.provinceList}>
+              {Object.entries(provinceCounts)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, count]) => {
+                  const pv = visits.filter((v) => v.province === name);
+                  const buy = pv.filter((v) => v.result === "buy").length;
+                  const noBuy = pv.filter((v) => v.result === "no_buy").length;
+                  const notFound = pv.filter((v) => v.result === "not_found").length;
+                  const barWidth = `${Math.round((count / maxCount) * 100)}%` as any;
+                  return (
+                    <TouchableOpacity
+                      key={name}
+                      style={styles.provinceRow}
+                      onPress={() => openProvince(name)}
+                      activeOpacity={0.75}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.provinceRowTop}>
+                          <Text style={styles.provinceRowName}>{name}</Text>
+                          <Text style={styles.provinceRowCount}>{count} บันทึก</Text>
+                        </View>
+                        <View style={styles.provinceBar}>
+                          <View style={[styles.provinceBarFill, { width: barWidth }]} />
+                        </View>
+                        <View style={styles.provinceChips}>
+                          {buy > 0 && <Text style={[styles.pChipTxt, { color: "#16a34a" }]}>ซื้อ {buy}</Text>}
+                          {noBuy > 0 && <Text style={[styles.pChipTxt, { color: "#dc2626" }]}>ไม่ซื้อ {noBuy}</Text>}
+                          {notFound > 0 && <Text style={[styles.pChipTxt, { color: "#2563eb" }]}>ไม่พบ {notFound}</Text>}
+                        </View>
+                      </View>
+                      <Ionicons name="chevron-forward" size={14} color={colors.textDisabled} style={{ marginLeft: 8 }} />
+                    </TouchableOpacity>
+                  );
+                })}
             </View>
           )}
         </View>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Modal, FlatList,
-  ScrollView, ActivityIndicator, Image, StyleSheet,
+  ScrollView, ActivityIndicator, Image, StyleSheet, Alert,
   KeyboardAvoidingView, Platform, RefreshControl, Linking, Keyboard,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -9,7 +9,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
-import { AppAlert, AlertButton, ImagePickerSheet } from "@/lib/AppModal";
+import { AppAlert, AlertButton } from "@/lib/AppModal";
 import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-places";
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
 import { colors, radius, shadows } from "@/lib/theme";
@@ -47,19 +47,19 @@ export default function RecordScreen() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [shopName, setShopName] = useState("");
+  const [shopName, setShopName] = useState("ร้านบิ๊กบิวตี้");
   const [shopHistory, setShopHistory] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [province, setProvince] = useState("");
-  const [district, setDistrict] = useState("");
+  const [province, setProvince] = useState("กรุงเทพมหานคร");
+  const [district, setDistrict] = useState("ลาดพร้าว");
   const [showProvincePicker, setShowProvincePicker] = useState(false);
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
-  const [tripType, setTripType] = useState<TripType | null>(null);
-  const [customerType, setCustomerType] = useState<CustomerType | null>(null);
-  const [visitType, setVisitType] = useState<VisitType | null>(null);
-  const [result, setResult] = useState<ResultType | null>(null);
-  const [details, setDetails] = useState("");
+  const [tripType, setTripType] = useState<TripType | null>("plan");
+  const [customerType, setCustomerType] = useState<CustomerType | null>("existing");
+  const [visitType, setVisitType] = useState<VisitType | null>("dem");
+  const [result, setResult] = useState<ResultType | null>("buy");
+  const [details, setDetails] = useState("ลูกค้าสนใจสินค้าใหม่ พร้อมสั่งซื้อครับ");
   const [orderAmount, setOrderAmount] = useState("");
   const [slotImages, setSlotImages] = useState<SlotImages>({ ...EMPTY_SLOTS });
   const [loading, setLoading] = useState(false);
@@ -72,7 +72,6 @@ export default function RecordScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [savedShop, setSavedShop] = useState("");
   const [appAlert, setAppAlert] = useState<{ visible: boolean; type: "error" | "confirm" | "info"; title: string; message: string; buttons: AlertButton[] }>({ visible: false, type: "error", title: "", message: "", buttons: [] });
-  const [pickerSheet, setPickerSheet] = useState<{ visible: boolean; title: string; onCamera: () => void; onGallery: () => void }>({ visible: false, title: "", onCamera: () => {}, onGallery: () => {} });
 
   function showAlert(type: "error" | "confirm" | "info", title: string, message = "", buttons?: AlertButton[]) {
     setAppAlert({ visible: true, type, title, message, buttons: buttons ?? [{ text: "ตกลง", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) }] });
@@ -120,7 +119,11 @@ export default function RecordScreen() {
   }
 
   function pickForSlot(slotKey: SlotKey) {
-    setPickerSheet({ visible: true, title: "เพิ่มรูป", onCamera: () => openCameraForSlot(slotKey), onGallery: () => openGalleryForSlot(slotKey) });
+    Alert.alert("เพิ่มรูป", "", [
+      { text: "ถ่ายรูป",          onPress: () => openCameraForSlot(slotKey) },
+      { text: "เลือกจาก Gallery", onPress: () => openGalleryForSlot(slotKey) },
+      { text: "ยกเลิก", style: "cancel" },
+    ]);
   }
 
   async function openCameraForSlot(slotKey: SlotKey) {
@@ -134,6 +137,8 @@ export default function RecordScreen() {
   }
 
   async function openGalleryForSlot(slotKey: SlotKey) {
+    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8, allowsEditing: false,
     });
@@ -144,7 +149,11 @@ export default function RecordScreen() {
   }
 
   function pickSlip() {
-    setPickerSheet({ visible: true, title: "แนบสลิป", onCamera: openCameraForSlip, onGallery: openGalleryForSlip });
+    Alert.alert("แนบสลิป", "", [
+      { text: "ถ่ายรูป",          onPress: openCameraForSlip },
+      { text: "เลือกจาก Gallery", onPress: openGalleryForSlip },
+      { text: "ยกเลิก", style: "cancel" },
+    ]);
   }
 
   async function openCameraForSlip() {
@@ -155,6 +164,8 @@ export default function RecordScreen() {
   }
 
   async function openGalleryForSlip() {
+    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8, allowsEditing: false,
     });
@@ -212,8 +223,7 @@ export default function RecordScreen() {
       Keyboard.dismiss();
       setSavedShop(shopName.trim());
       setShowSuccess(true);
-      setShopName(""); setProvince(""); setDistrict("");
-      setTripType(null); setCustomerType(null); setVisitType(null);
+      setShopName("");
       setResult(null); setDetails(""); setOrderAmount("");
       setSlotImages({ ...EMPTY_SLOTS });
       setSlipImage(null); setSlipVerifying(false); setSlipStatus(null); setSlipUrl(null); setTransRef(null);
@@ -478,20 +488,21 @@ export default function RecordScreen() {
                   )}
                   <View style={{ marginTop: 10 }}>
                     <Text style={st.fieldLabel}>ยอดสั่งซื้อ (บาท) <Text style={st.req}>*</Text></Text>
-                    <View style={[st.inputRow, slipStatus === "verified" && { backgroundColor: "#f9fafb" }]}>
+                    <View style={[st.inputRow, slipStatus !== "pending_approval" && { backgroundColor: "#f9fafb" }]}>
                       <Text style={st.bahtSign}>฿</Text>
                       <TextInput
                         style={st.inputText}
                         value={orderAmount}
-                        onChangeText={slipStatus === "verified" ? undefined : setOrderAmount}
-                        editable={slipStatus !== "verified"}
+                        onChangeText={slipStatus === "pending_approval" ? setOrderAmount : undefined}
+                        editable={slipStatus === "pending_approval"}
                         placeholder="ระบุยอดสั่งซื้อ"
                         placeholderTextColor={colors.textDisabled}
                         keyboardType="numeric"
                       />
                     </View>
                     {slipStatus === "verified" && <Text style={st.lockedNote}>ยอดเงินอ้างอิงจาก QR สลิป</Text>}
-                    {slipStatus === "pending_approval" && <Text style={st.lockedNote}>กรอกจำนวนเงินตามข้อมูลในสลิป</Text>}
+                    {slipStatus === "pending_approval" && <Text style={st.lockedNote}>ไม่พบ QR — กรอกจำนวนเงินตามข้อมูลในสลิป</Text>}
+                    {!slipStatus && !!slipImage && <Text style={st.lockedNote}>กำลังตรวจสอบ...</Text>}
                   </View>
                 </View>
               )}
@@ -607,10 +618,6 @@ export default function RecordScreen() {
       </Modal>
 
       <AppAlert {...appAlert} />
-      <ImagePickerSheet
-        {...pickerSheet}
-        onClose={() => setPickerSheet((p) => ({ ...p, visible: false }))}
-      />
 
       <SearchPickerModal
         visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}

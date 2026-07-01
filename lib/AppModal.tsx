@@ -113,14 +113,14 @@ export function ImagePickerSheet({ visible, title, onCamera, onGallery, onClose 
         <View style={ps.sheet}>
           <View style={ps.handle} />
           <Text style={ps.title}>{title}</Text>
-          <TouchableOpacity style={ps.option} onPress={() => { onClose(); onCamera(); }} activeOpacity={0.7}>
+          <TouchableOpacity style={ps.option} onPress={onCamera} activeOpacity={0.7}>
             <View style={ps.optionIcon}>
               <Ionicons name="camera-outline" size={22} color={colors.primary} />
             </View>
             <Text style={ps.optionText}>ถ่ายรูป</Text>
             <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
           </TouchableOpacity>
-          <TouchableOpacity style={ps.option} onPress={() => { onClose(); onGallery(); }} activeOpacity={0.7}>
+          <TouchableOpacity style={ps.option} onPress={onGallery} activeOpacity={0.7}>
             <View style={ps.optionIcon}>
               <Ionicons name="images-outline" size={22} color={colors.primary} />
             </View>

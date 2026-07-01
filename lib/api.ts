@@ -75,7 +75,7 @@ export const api = {
   verifySlip: (formData: FormData) =>
     request("/visits/verify-slip", { method: "POST", body: formData }),
 
-  getVisits: () => request("/visits"),
+  getVisits: () => request("/visits?limit=100"),
   updateMe: (data: { bankName?: string; bankAccount?: string }) =>
     request("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
   getMyCommission: (month: string) => request(`/visits/my-commission?month=${month}`),
