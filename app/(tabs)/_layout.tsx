@@ -49,10 +49,30 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "ประวัติการเยี่ยม",
+          title: "ประวัติบันทึก",
           tabBarLabel: "ประวัติ",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="time-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="slip"
+        options={{
+          title: "ส่งสลิป",
+          tabBarLabel: "ส่งสลิป",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="receipt-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="slip-history"
+        options={{
+          title: "ประวัติสลิป",
+          tabBarLabel: "ประวัติสลิป",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="document-text-outline" size={size} color={color} />
           ),
         }}
       />
