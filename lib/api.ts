@@ -84,6 +84,10 @@ export const api = {
   updateMe: (data: { bankName?: string; bankAccount?: string }) =>
     request("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
   getMyCommission: (month: string) => request(`/visits/my-commission?month=${month}`),
+
+  submitSlip: (data: object) =>
+    request("/slips", { method: "POST", body: JSON.stringify(data) }),
+  getSlips: () => request("/slips"),
 };
 
 export async function saveToken(token: string, user: object) {

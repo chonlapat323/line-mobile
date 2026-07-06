@@ -87,8 +87,8 @@ export default function SlipHistoryScreen() {
 
   async function loadData() {
     try {
-      const res = await api.get("/slips");
-      setData(res.data);
+      const res = await api.getSlips();
+      setData(res);
     } catch {
       // silent
     } finally {

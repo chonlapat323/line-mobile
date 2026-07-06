@@ -42,17 +42,14 @@ export default function SlipScreen() {
     setSlipUrl(null);
     try {
       const fd = new FormData();
-      // ใช้ original URI (ไม่ compress) เพื่อให้ QR อ่านได้ชัด
       const verifyUri = slipOriginalUri ?? picked.uri;
       fd.append("slip", { uri: verifyUri, name: picked.name, type: picked.type } as unknown as Blob);
-      const res = await api.post("/visits/verify-slip", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setSlipUrl(res.data.slipUrl ?? null);
-      setTransRef(res.data.transRef ?? "");
-      if (res.data.success && res.data.amount) {
+      const res = await api.verifySlip(fd);
+      setSlipUrl(res.slipUrl ?? null);
+      setTransRef(res.transRef ?? "");
+      if (res.success && res.amount) {
         setSlipStatus("verified");
-        setAmount(String(res.data.amount));
+        setAmount(String(res.amount));
       } else {
         setSlipStatus("pending_approval");
       }
@@ -108,7 +105,7 @@ export default function SlipScreen() {
     if (!slipUrl || !shopName.trim() || !amount.trim()) return;
     setLoading(true);
     try {
-      await api.post("/slips", {
+      await api.submitSlip({
         shopName: shopName.trim(),
         amount: amount.trim(),
         details: details.trim(),
