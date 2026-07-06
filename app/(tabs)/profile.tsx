@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   useWindowDimensions, Modal, FlatList, Image, RefreshControl,
@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { clearToken, getStoredUser, api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
@@ -343,7 +344,7 @@ export default function ProfileScreen() {
       .finally(() => setCommLoading(false));
   }
 
-  useEffect(() => { loadData(); }, []);
+  useFocusEffect(useCallback(() => { loadData(); }, []));
   useEffect(() => { loadCommission(commMonth); }, [commMonth]);
 
   function prevMonth() {
