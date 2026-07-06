@@ -679,6 +679,15 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {/* LINE connect */}
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/(tabs)/connect")} activeOpacity={0.75}>
+          <View style={[styles.menuIconWrap, { backgroundColor: "#f0fdf4" }]}>
+            <Ionicons name="link-outline" size={16} color={colors.primary} />
+          </View>
+          <Text style={styles.menuLabel}>เชื่อม LINE</Text>
+          <Ionicons name="chevron-forward" size={14} color={colors.textDisabled} />
+        </TouchableOpacity>
+
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
           <Ionicons name="log-out-outline" size={18} color={colors.error} style={{ marginRight: 8 }} />
@@ -895,6 +904,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary, alignItems: "center",
   },
   saveBtnText: { fontSize: 14, color: "#fff", fontWeight: "700" },
+
+  menuItem: {
+    marginHorizontal: 16, marginTop: 12, backgroundColor: colors.surface,
+    borderRadius: radius.xl, borderWidth: 0.5, borderColor: colors.borderLight,
+    flexDirection: "row", alignItems: "center", padding: 14, gap: 12, ...shadows.card,
+  },
+  menuIconWrap: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    justifyContent: "center", alignItems: "center", flexShrink: 0,
+  },
+  menuLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: colors.textPrimary },
 
   logoutButton: {
     marginHorizontal: 16, marginTop: 12, backgroundColor: colors.errorBg,

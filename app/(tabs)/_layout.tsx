@@ -60,10 +60,7 @@ export default function TabsLayout() {
         name="connect"
         options={{
           title: "เชื่อมต่อ LINE",
-          tabBarLabel: "เชื่อม LINE",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="link-outline" size={size} color={color} />
-          ),
+          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
