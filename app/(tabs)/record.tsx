@@ -64,11 +64,7 @@ export default function RecordScreen() {
   const [slotImages, setSlotImages] = useState<SlotImages>({ ...EMPTY_SLOTS });
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [slipImage, setSlipImage] = useState<PickedImage | null>(null);
-  const [slipVerifying, setSlipVerifying] = useState(false);
-  const [slipStatus, setSlipStatus] = useState<string | null>(null);
-  const [slipUrl, setSlipUrl] = useState<string | null>(null);
-  const [transRef, setTransRef] = useState<string | null>(null);
+  const [quotationImage, setQuotationImage] = useState<PickedImage | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [savedShop, setSavedShop] = useState("");
   const [appAlert, setAppAlert] = useState<{ visible: boolean; type: "error" | "confirm" | "info"; title: string; message: string; buttons: AlertButton[] }>({ visible: false, type: "error", title: "", message: "", buttons: [] });
@@ -148,50 +144,22 @@ export default function RecordScreen() {
     }
   }
 
-  function pickSlip() {
-    Alert.alert("แนบสลิป", "", [
-      { text: "ถ่ายรูป",          onPress: openCameraForSlip },
-      { text: "เลือกจาก Gallery", onPress: openGalleryForSlip },
+  function pickQuotation() {
+    Alert.alert("แนบใบเสนอราคา", "", [
+      { text: "ถ่ายรูป", onPress: async () => {
+        const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+        if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
+        const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
+        if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
+      }},
+      { text: "เลือกจาก Gallery", onPress: async () => {
+        const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
+        const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8 });
+        if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
+      }},
       { text: "ยกเลิก", style: "cancel" },
     ]);
-  }
-
-  async function openCameraForSlip() {
-    const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-    if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
-    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
-    if (!res.canceled && res.assets[0]) processSlip(res.assets[0].uri);
-  }
-
-  async function openGalleryForSlip() {
-    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8, allowsEditing: false,
-    });
-    if (!res.canceled && res.assets[0]) processSlip(res.assets[0].uri);
-  }
-
-  async function processSlip(uri: string) {
-    const img = await parseAsset(uri);
-    setSlipImage(img);
-    setSlipStatus(null); setSlipUrl(null); setTransRef(null); setOrderAmount("");
-  }
-
-  async function verifySlipImage() {
-    if (!slipImage) return;
-    setSlipVerifying(true);
-    setSlipStatus(null); setSlipUrl(null); setTransRef(null); setOrderAmount("");
-    try {
-      const fd = new FormData();
-      fd.append("slip", { uri: slipImage.uri, name: slipImage.name, type: slipImage.type } as unknown as Blob);
-      const res = await api.verifySlip(fd);
-      setSlipUrl(res.slipUrl ?? null);
-      setTransRef(res.transRef ?? null);
-      if (res.success) { setSlipStatus("verified"); setOrderAmount(String(res.amount ?? "")); }
-      else setSlipStatus("pending_approval");
-    } catch { setSlipStatus("pending_approval"); }
-    finally { setSlipVerifying(false); }
   }
 
   async function handleSubmit() {
@@ -214,9 +182,7 @@ export default function RecordScreen() {
       fd.append("result", result!);
       fd.append("details", details);
       if (orderAmount.trim()) fd.append("orderAmount", orderAmount.trim());
-      if (slipUrl) fd.append("slipUrl", slipUrl);
-      if (slipStatus) fd.append("slipStatus", slipStatus);
-      if (transRef) fd.append("transRef", transRef);
+      if (quotationImage) fd.append("images", { uri: quotationImage.uri, name: `quotation-${quotationImage.name}`, type: quotationImage.type } as unknown as Blob);
       await api.createVisit(fd);
       await saveShopToHistory(shopName.trim());
       setShopHistory(await getShopHistory());
@@ -226,7 +192,7 @@ export default function RecordScreen() {
       setShopName("");
       setResult(null); setDetails(""); setOrderAmount("");
       setSlotImages({ ...EMPTY_SLOTS });
-      setSlipImage(null); setSlipVerifying(false); setSlipStatus(null); setSlipUrl(null); setTransRef(null);
+      setQuotationImage(null);
       captureLocation();
     } catch (err: unknown) {
       showAlert("error", "ผิดพลาด", err instanceof Error ? err.message : String(err));
@@ -239,7 +205,7 @@ export default function RecordScreen() {
 
   const isBangkok = province === BANGKOK_PROVINCE;
   const filledCount = IMAGE_SLOTS.filter((s) => slotImages[s.key] !== null).length;
-  const slipReady = result !== "buy" || (!!slipImage && !slipVerifying && !!slipStatus && !!orderAmount.trim());
+  const slipReady = result !== "buy" || !!orderAmount.trim();
 
   // Step progress: green when section is complete
   const step1Done = !!shopName.trim() && !!province && !!tripType && !!customerType && !!visitType;
@@ -432,9 +398,7 @@ export default function RecordScreen() {
                     onPress={() => {
                       setResult(key);
                       if (key !== "buy") {
-                        setOrderAmount(""); setSlipImage(null);
-                        setSlipVerifying(false); setSlipStatus(null);
-                        setSlipUrl(null); setTransRef(null);
+                        setOrderAmount(""); setQuotationImage(null);
                       }
                     }}
                     activeOpacity={0.8}
@@ -445,64 +409,43 @@ export default function RecordScreen() {
                 ))}
               </View>
 
-              {/* Slip section — inside ผลตอบรับ card when ซื้อ */}
+              {/* ยอดสั่งซื้อ + ใบเสนอราคา — เมื่อผล = ซื้อ */}
               {result === "buy" && (
-                <View style={{ marginTop: 14 }}>
-                  <Text style={st.fieldLabel}>สลิปการชำระเงิน <Text style={st.req}>*</Text></Text>
-                  <TouchableOpacity onPress={pickSlip} style={st.slipBox} activeOpacity={0.8} disabled={slipVerifying}>
-                    {slipImage ? (
-                      <Image source={{ uri: slipImage.uri }} style={st.slipPreview} resizeMode="contain" />
-                    ) : (
-                      <View style={st.slipPlaceholder}>
-                        <View style={st.slipIconWrap}>
-                          <Ionicons name="cloud-upload-outline" size={20} color={colors.primary} />
-                        </View>
-                        <Text style={st.slipUploadText}>อัปโหลดสลิป</Text>
-                        <Text style={st.slipUploadSub}>ถ่ายรูปหรือเลือกจาก Gallery</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                  {slipImage && !slipStatus && !slipVerifying && (
-                    <TouchableOpacity onPress={verifySlipImage} style={st.verifyBtn}>
-                      <Ionicons name="scan-outline" size={16} color="#fff" />
-                      <Text style={st.verifyBtnText}>ตรวจสอบสลิป</Text>
-                    </TouchableOpacity>
-                  )}
-                  {slipVerifying && (
-                    <View style={st.statusRow}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                      <Text style={st.statusText}>กำลังตรวจสอบ QR บนสลิป...</Text>
-                    </View>
-                  )}
-                  {!slipVerifying && slipStatus === "verified" && (
-                    <View style={[st.statusRow, st.statusVerified]}>
-                      <Ionicons name="checkmark-circle" size={16} color={colors.primaryDark} />
-                      <Text style={[st.statusText, { color: colors.primaryDark }]}>ยืนยัน QR สำเร็จ</Text>
-                    </View>
-                  )}
-                  {!slipVerifying && slipStatus === "pending_approval" && (
-                    <View style={[st.statusRow, st.statusPending]}>
-                      <Ionicons name="time-outline" size={16} color="#d97706" />
-                      <Text style={[st.statusText, { color: "#d97706" }]}>ไม่พบ QR — รอ Admin ยืนยัน</Text>
-                    </View>
-                  )}
-                  <View style={{ marginTop: 10 }}>
+                <View style={{ marginTop: 14, gap: 12 }}>
+                  <View>
                     <Text style={st.fieldLabel}>ยอดสั่งซื้อ (บาท) <Text style={st.req}>*</Text></Text>
-                    <View style={[st.inputRow, slipStatus !== "pending_approval" && { backgroundColor: "#f9fafb" }]}>
+                    <View style={st.inputRow}>
                       <Text style={st.bahtSign}>฿</Text>
                       <TextInput
                         style={st.inputText}
                         value={orderAmount}
-                        onChangeText={slipStatus === "pending_approval" ? setOrderAmount : undefined}
-                        editable={slipStatus === "pending_approval"}
+                        onChangeText={setOrderAmount}
                         placeholder="ระบุยอดสั่งซื้อ"
                         placeholderTextColor={colors.textDisabled}
                         keyboardType="numeric"
                       />
                     </View>
-                    {slipStatus === "verified" && <Text style={st.lockedNote}>ยอดเงินอ้างอิงจาก QR สลิป</Text>}
-                    {slipStatus === "pending_approval" && <Text style={st.lockedNote}>ไม่พบ QR — กรอกจำนวนเงินตามข้อมูลในสลิป</Text>}
-                    {!slipStatus && !!slipImage && <Text style={st.lockedNote}>กำลังตรวจสอบ...</Text>}
+                  </View>
+                  <View>
+                    <Text style={st.fieldLabel}>ใบเสนอราคา <Text style={{ color: colors.textDisabled, fontWeight: "400" }}>(ถ้ามี)</Text></Text>
+                    <TouchableOpacity onPress={pickQuotation} style={st.slipBox} activeOpacity={0.8}>
+                      {quotationImage ? (
+                        <Image source={{ uri: quotationImage.uri }} style={st.slipPreview} resizeMode="contain" />
+                      ) : (
+                        <View style={st.slipPlaceholder}>
+                          <View style={st.slipIconWrap}>
+                            <Ionicons name="document-outline" size={20} color={colors.primary} />
+                          </View>
+                          <Text style={st.slipUploadText}>แนบใบเสนอราคา</Text>
+                          <Text style={st.slipUploadSub}>ถ่ายรูปหรือเลือกจาก Gallery</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                    {quotationImage && (
+                      <TouchableOpacity onPress={() => setQuotationImage(null)} style={{ alignSelf: "flex-end", marginTop: 4 }}>
+                        <Text style={{ fontSize: 12, color: colors.error }}>ลบรูป</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               )}
@@ -813,19 +756,6 @@ const st = StyleSheet.create({
   },
   slipUploadText: { fontSize: 13, fontWeight: "700", color: colors.primaryDark },
   slipUploadSub: { fontSize: 11, color: colors.textMuted },
-  verifyBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    marginTop: 8, paddingVertical: 11, backgroundColor: colors.primaryDark, borderRadius: radius.md,
-  },
-  verifyBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  statusRow: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md,
-  },
-  statusVerified: { backgroundColor: colors.primaryLight },
-  statusPending: { backgroundColor: "#fffbeb" },
-  statusText: { fontSize: 13, color: colors.textMuted, fontWeight: "500" },
-  lockedNote: { fontSize: 11, color: colors.textDisabled, marginTop: 4 },
 
   // Textarea
   textarea: {
