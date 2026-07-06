@@ -68,7 +68,7 @@ export default function SlipScreen() {
           if (!r.canceled && r.assets[0]) {
             const picked = await parseAsset(r.assets[0].uri);
             setSlipImage(picked);
-            verifySlip(picked);
+            setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount("");
           }
         },
       },
@@ -78,7 +78,7 @@ export default function SlipScreen() {
           if (!r.canceled && r.assets[0]) {
             const picked = await parseAsset(r.assets[0].uri);
             setSlipImage(picked);
-            verifySlip(picked);
+            setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount("");
           }
         },
       },
@@ -151,6 +151,14 @@ export default function SlipScreen() {
               )}
             </TouchableOpacity>
 
+            {/* ปุ่มตรวจสอบ — แสดงเมื่อเลือกรูปแล้วแต่ยังไม่ verify */}
+            {slipImage && !slipStatus && !verifying && (
+              <TouchableOpacity onPress={() => verifySlip(slipImage)} style={st.verifyBtn}>
+                <Ionicons name="scan-outline" size={16} color="#fff" />
+                <Text style={st.verifyBtnText}>ตรวจสอบสลิป</Text>
+              </TouchableOpacity>
+            )}
+
             {/* Verify status */}
             {verifying && (
               <View style={st.statusRow}>
@@ -172,10 +180,18 @@ export default function SlipScreen() {
             )}
 
             {slipImage && (
-              <TouchableOpacity onPress={pickSlip} style={st.changeBtn}>
-                <Ionicons name="refresh-outline" size={13} color={colors.textMuted} />
-                <Text style={st.changeBtnText}>เปลี่ยนรูปสลิป</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 6, gap: 12 }}>
+                {slipStatus && (
+                  <TouchableOpacity onPress={() => { setSlipStatus(null); verifySlip(slipImage); }} style={st.changeBtn}>
+                    <Ionicons name="scan-outline" size={13} color={colors.textMuted} />
+                    <Text style={st.changeBtnText}>ตรวจสอบใหม่</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={pickSlip} style={st.changeBtn}>
+                  <Ionicons name="refresh-outline" size={13} color={colors.textMuted} />
+                  <Text style={st.changeBtnText}>เปลี่ยนรูปสลิป</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </View>
@@ -313,9 +329,14 @@ const st = StyleSheet.create({
   statusPending: { backgroundColor: "#fffbeb" },
   statusText: { fontSize: 12, color: colors.textMuted, fontWeight: "500", flex: 1 },
 
+  verifyBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    marginTop: 10, paddingVertical: 11, backgroundColor: colors.primaryDark, borderRadius: radius.md,
+  },
+  verifyBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+
   changeBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    alignSelf: "flex-end", marginTop: 6,
   },
   changeBtnText: { fontSize: 12, color: colors.textMuted },
 
