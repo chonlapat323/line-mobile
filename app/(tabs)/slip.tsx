@@ -67,7 +67,7 @@ export default function SlipScreen() {
     Alert.alert("แนบสลิป", "", [
       {
         text: "ถ่ายรูป", onPress: async () => {
-          const r = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+          const r = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaType.Images, quality: 1 });
           if (!r.canceled && r.assets[0]) {
             const originalUri = r.assets[0].uri;
             const picked = await parseAsset(originalUri);
@@ -79,7 +79,7 @@ export default function SlipScreen() {
       },
       {
         text: "เลือกจาก Gallery", onPress: async () => {
-          const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+          const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaType.Images, quality: 1 });
           if (!r.canceled && r.assets[0]) {
             const originalUri = r.assets[0].uri;
             const picked = await parseAsset(originalUri);
