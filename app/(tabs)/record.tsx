@@ -642,30 +642,33 @@ function SearchPickerModal({ visible, title, items, search, onSearch, onSelect, 
 }) {
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={modal.overlay}>
-        <View style={modal.sheet}>
-          <View style={modal.header}>
-            <Text style={modal.title}>{title}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={22} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-          <View style={modal.searchWrap}>
-            <Ionicons name="search" size={16} color={colors.textDisabled} style={{ marginRight: 8 }} />
-            <TextInput style={modal.searchInput} value={search} onChangeText={onSearch}
-              placeholder="ค้นหา..." placeholderTextColor={colors.textDisabled} autoFocus />
-          </View>
-          <FlatList
-            data={items} keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={modal.item} onPress={() => onSelect(item)}>
-                <Text style={modal.itemText}>{item}</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <View style={modal.overlay}>
+          <View style={modal.sheet}>
+            <View style={modal.header}>
+              <Text style={modal.title}>{title}</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
-            )}
-            ItemSeparatorComponent={() => <View style={modal.separator} />}
-          />
+            </View>
+            <View style={modal.searchWrap}>
+              <Ionicons name="search" size={16} color={colors.textDisabled} style={{ marginRight: 8 }} />
+              <TextInput style={modal.searchInput} value={search} onChangeText={onSearch}
+                placeholder="ค้นหา..." placeholderTextColor={colors.textDisabled} autoFocus />
+            </View>
+            <FlatList
+              data={items} keyExtractor={(item) => item}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <TouchableOpacity style={modal.item} onPress={() => onSelect(item)}>
+                  <Text style={modal.itemText}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={modal.separator} />}
+            />
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
