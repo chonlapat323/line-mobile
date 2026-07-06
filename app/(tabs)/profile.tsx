@@ -418,7 +418,8 @@ export default function ProfileScreen() {
             onPress={() => router.push("/(tabs)/connect")}
             activeOpacity={0.7}
           >
-            <Ionicons name="link-outline" size={18} color="rgba(255,255,255,0.9)" />
+            <Ionicons name="link-outline" size={14} color="rgba(255,255,255,0.9)" />
+            <Text style={styles.heroLineBtnText}>เชื่อม LINE</Text>
           </TouchableOpacity>
           <View style={styles.heroAvatar}>
             <Text style={styles.heroAvatarText}>{user.fullName.charAt(0).toUpperCase()}</Text>
@@ -905,11 +906,13 @@ const styles = StyleSheet.create({
 
   heroLineBtn: {
     position: "absolute", right: 16, zIndex: 2,
-    width: 36, height: 36, borderRadius: 18,
+    flexDirection: "row", alignItems: "center", gap: 5,
     backgroundColor: "rgba(255,255,255,0.15)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
-    alignItems: "center", justifyContent: "center",
+    borderRadius: radius.full,
+    paddingHorizontal: 12, paddingVertical: 6,
   },
+  heroLineBtnText: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.9)" },
 
   logoutButton: {
     marginHorizontal: 16, marginTop: 12, backgroundColor: colors.errorBg,
