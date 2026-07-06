@@ -15,6 +15,7 @@ type SlipStatus = "verified" | "pending_approval" | null;
 
 export default function SlipScreen() {
   const [slipImage, setSlipImage] = useState<PickedImage | null>(null);
+  const [slipOriginalUri, setSlipOriginalUri] = useState<string | null>(null);
   const [slipUrl, setSlipUrl] = useState<string | null>(null);
   const [slipStatus, setSlipStatus] = useState<SlipStatus>(null);
   const [transRef, setTransRef] = useState("");
@@ -41,7 +42,9 @@ export default function SlipScreen() {
     setSlipUrl(null);
     try {
       const fd = new FormData();
-      fd.append("slip", { uri: picked.uri, name: picked.name, type: picked.type } as unknown as Blob);
+      // ใช้ original URI (ไม่ compress) เพื่อให้ QR อ่านได้ชัด
+      const verifyUri = slipOriginalUri ?? picked.uri;
+      fd.append("slip", { uri: verifyUri, name: picked.name, type: picked.type } as unknown as Blob);
       const res = await api.post("/visits/verify-slip", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -64,9 +67,11 @@ export default function SlipScreen() {
     Alert.alert("แนบสลิป", "", [
       {
         text: "ถ่ายรูป", onPress: async () => {
-          const r = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.9 });
+          const r = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
           if (!r.canceled && r.assets[0]) {
-            const picked = await parseAsset(r.assets[0].uri);
+            const originalUri = r.assets[0].uri;
+            const picked = await parseAsset(originalUri);
+            setSlipOriginalUri(originalUri);
             setSlipImage(picked);
             setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount("");
           }
@@ -74,9 +79,11 @@ export default function SlipScreen() {
       },
       {
         text: "เลือกจาก Gallery", onPress: async () => {
-          const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.9 });
+          const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
           if (!r.canceled && r.assets[0]) {
-            const picked = await parseAsset(r.assets[0].uri);
+            const originalUri = r.assets[0].uri;
+            const picked = await parseAsset(originalUri);
+            setSlipOriginalUri(originalUri);
             setSlipImage(picked);
             setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount("");
           }
@@ -88,6 +95,7 @@ export default function SlipScreen() {
 
   function resetForm() {
     setSlipImage(null);
+    setSlipOriginalUri(null);
     setSlipUrl(null);
     setSlipStatus(null);
     setTransRef("");
