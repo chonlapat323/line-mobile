@@ -11,12 +11,13 @@ export default function TabsLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textDisabled,
+        tabBarShowLabel: false,
         tabBarStyle: {
           borderTopColor: colors.borderLight,
           borderTopWidth: 1,
-          paddingBottom: insets.bottom || 8,
+          paddingBottom: insets.bottom || 4,
           paddingTop: 4,
-          height: 58 + (insets.bottom || 0),
+          height: 50 + (insets.bottom || 0),
         },
         headerStyle: { backgroundColor: colors.surface },
         headerTitleStyle: {
