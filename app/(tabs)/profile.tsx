@@ -425,7 +425,7 @@ export default function ProfileScreen() {
               color={user?.lineConnected ? "#86efac" : "rgba(255,255,255,0.9)"}
             />
             <Text style={[styles.heroLineBtnText, user?.lineConnected && { color: "#86efac" }]}>
-              {user?.lineConnected ? "เชื่อมแล้ว" : "เชื่อม LINE"}
+              {user?.lineConnected ? "LINE เชื่อมแล้ว" : "เชื่อม LINE"}
             </Text>
           </TouchableOpacity>
           <View style={styles.heroAvatar}>
