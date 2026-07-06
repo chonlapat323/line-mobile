@@ -14,7 +14,7 @@ import { ImageViewer } from "@/lib/ImageViewer";
 import { AppAlert, AlertButton } from "@/lib/AppModal";
 
 // ── Types ─────────────────────────────────────────────────────
-interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string }
+interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string; lineConnected?: boolean }
 
 const THAI_BANKS = [
   "กรุงเทพ (BBL)",
@@ -418,8 +418,14 @@ export default function ProfileScreen() {
             onPress={() => router.push("/(tabs)/connect")}
             activeOpacity={0.7}
           >
-            <Ionicons name="link-outline" size={14} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.heroLineBtnText}>เชื่อม LINE</Text>
+            <Ionicons
+              name={user?.lineConnected ? "checkmark-circle" : "link-outline"}
+              size={14}
+              color={user?.lineConnected ? "#86efac" : "rgba(255,255,255,0.9)"}
+            />
+            <Text style={[styles.heroLineBtnText, user?.lineConnected && { color: "#86efac" }]}>
+              {user?.lineConnected ? "เชื่อมแล้ว" : "เชื่อม LINE"}
+            </Text>
           </TouchableOpacity>
           <View style={styles.heroAvatar}>
             <Text style={styles.heroAvatarText}>{user.fullName.charAt(0).toUpperCase()}</Text>
