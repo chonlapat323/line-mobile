@@ -413,6 +413,13 @@ export default function ProfileScreen() {
         <View style={[styles.hero, { paddingTop: (insets.top || 16) + 16 }]}>
           <View style={styles.heroDecor1} />
           <View style={styles.heroDecor2} />
+          <TouchableOpacity
+            style={[styles.heroLineBtn, { top: (insets.top || 16) + 10 }]}
+            onPress={() => router.push("/(tabs)/connect")}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="link-outline" size={18} color="rgba(255,255,255,0.9)" />
+          </TouchableOpacity>
           <View style={styles.heroAvatar}>
             <Text style={styles.heroAvatarText}>{user.fullName.charAt(0).toUpperCase()}</Text>
           </View>
@@ -679,15 +686,6 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* LINE connect */}
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/(tabs)/connect")} activeOpacity={0.75}>
-          <View style={[styles.menuIconWrap, { backgroundColor: "#f0fdf4" }]}>
-            <Ionicons name="link-outline" size={16} color={colors.primary} />
-          </View>
-          <Text style={styles.menuLabel}>เชื่อม LINE</Text>
-          <Ionicons name="chevron-forward" size={14} color={colors.textDisabled} />
-        </TouchableOpacity>
-
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
           <Ionicons name="log-out-outline" size={18} color={colors.error} style={{ marginRight: 8 }} />
@@ -905,16 +903,13 @@ const styles = StyleSheet.create({
   },
   saveBtnText: { fontSize: 14, color: "#fff", fontWeight: "700" },
 
-  menuItem: {
-    marginHorizontal: 16, marginTop: 12, backgroundColor: colors.surface,
-    borderRadius: radius.xl, borderWidth: 0.5, borderColor: colors.borderLight,
-    flexDirection: "row", alignItems: "center", padding: 14, gap: 12, ...shadows.card,
+  heroLineBtn: {
+    position: "absolute", right: 16, zIndex: 2,
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center", justifyContent: "center",
   },
-  menuIconWrap: {
-    width: 32, height: 32, borderRadius: radius.sm,
-    justifyContent: "center", alignItems: "center", flexShrink: 0,
-  },
-  menuLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: colors.textPrimary },
 
   logoutButton: {
     marginHorizontal: 16, marginTop: 12, backgroundColor: colors.errorBg,
