@@ -315,7 +315,7 @@ export default function ProfileScreen() {
     if (isRefresh) setRefreshing(true);
     try {
       const [u, me, data] = await Promise.all([getStoredUser(), api.getMe(), api.getVisits()]);
-      const merged = { ...u, bankName: me?.bankName ?? "", bankAccount: me?.bankAccount ?? "" };
+      const merged = { ...u, bankName: me?.bankName ?? "", bankAccount: me?.bankAccount ?? "", lineConnected: me?.lineConnected ?? false };
       setUser(merged);
       setBankName(me?.bankName ?? "");
       setBankAccount(me?.bankAccount ?? "");
