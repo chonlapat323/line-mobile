@@ -13,6 +13,7 @@ import { colors, radius, shadows } from "@/lib/theme";
 import { SkeletonBox } from "@/lib/Skeleton";
 import { ImageViewer } from "@/lib/ImageViewer";
 import { AppAlert, AlertButton } from "@/lib/AppModal";
+import { OutstandingDebtCard } from "@/lib/OutstandingDebtCard";
 
 // ── Types ─────────────────────────────────────────────────────
 interface UserInfo { fullName: string; email: string; role: string; bankName?: string; bankAccount?: string; lineConnected?: boolean }
@@ -567,6 +568,9 @@ export default function ProfileScreen() {
             </Text>
           )}
         </View>
+
+        {/* Outstanding debt */}
+        <OutstandingDebtCard />
 
         {/* Bank account */}
         <View style={styles.bankSection}>

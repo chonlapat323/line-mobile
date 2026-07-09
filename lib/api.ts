@@ -88,6 +88,7 @@ export const api = {
   submitSlip: (data: object) =>
     request("/slips", { method: "POST", body: JSON.stringify(data) }),
   getSlips: () => request("/slips"),
+  getMyOutstandingDebt: () => request("/commission-adjustments/me/outstanding"),
 };
 
 export async function saveToken(token: string, user: object) {

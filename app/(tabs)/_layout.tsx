@@ -1,11 +1,12 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, Text } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/lib/theme";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   return (
     <Tabs
       screenOptions={{
@@ -36,7 +37,7 @@ export default function TabsLayout() {
           headerTitle: () => (
             <View style={{ gap: 1 }}>
               <Text style={{ fontSize: 17, fontWeight: "700", color: colors.textPrimary }}>
-                บันทึกการเยี่ยมร้าน
+                ระบบบันทึกการทำงาน
               </Text>
               <Text style={{ fontSize: 11, color: colors.textDisabled }}>
                 กรอกข้อมูลให้ครบก่อนส่ง
@@ -83,6 +84,11 @@ export default function TabsLayout() {
         options={{
           title: "เชื่อมต่อ LINE",
           href: null,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+              <Ionicons name="chevron-back" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen
