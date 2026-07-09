@@ -1,23 +1,27 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 
-export function OutstandingDebtCard() {
+export function OutstandingDebtCard({ refreshKey = 0 }: { refreshKey?: number }) {
   const [debt, setDebt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      api.getMyOutstandingDebt()
-        .then((res) => setDebt(res?.outstandingDebt ?? 0))
-        .catch(() => setDebt(null))
-        .finally(() => setLoading(false));
-    }, [])
-  );
+  const fetchDebt = useCallback(() => {
+    setLoading(true);
+    api.getMyOutstandingDebt()
+      .then((res) => setDebt(res?.outstandingDebt ?? 0))
+      .catch(() => setDebt(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useFocusEffect(useCallback(() => { fetchDebt(); }, [fetchDebt]));
+
+  useEffect(() => {
+    if (refreshKey > 0) fetchDebt();
+  }, [refreshKey]);
 
   if (loading) {
     return (

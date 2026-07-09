@@ -249,6 +249,7 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [visits, setVisits] = useState<VisitRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   // Commission
   const [commMonth, setCommMonth] = useState(() => {
@@ -323,7 +324,10 @@ export default function ProfileScreen() {
       setVisits(data?.data ?? data ?? []);
     } catch {}
     finally { setRefreshing(false); }
-    if (isRefresh) loadCommission(commMonth);
+    if (isRefresh) {
+      loadCommission(commMonth);
+      setRefreshCount((c) => c + 1);
+    }
   }
 
   async function handleSaveBank() {
@@ -570,7 +574,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Outstanding debt */}
-        <OutstandingDebtCard />
+        <OutstandingDebtCard refreshKey={refreshCount} />
 
         {/* Bank account */}
         <View style={styles.bankSection}>
