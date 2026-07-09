@@ -534,7 +534,7 @@ export default function RecordScreen() {
             ) : (
               <>
                 <Ionicons name="send-outline" size={18} color="#fff" />
-                <Text style={st.submitText}>บันทึกการเยี่ยมร้าน</Text>
+                <Text style={st.submitText}>บันทึกการทำงาน</Text>
               </>
             )}
           </TouchableOpacity>
@@ -552,7 +552,7 @@ export default function RecordScreen() {
             </View>
             <Text style={st.successTitle}>บันทึกสำเร็จ!</Text>
             {!!savedShop && <Text style={st.successShop}>{savedShop}</Text>}
-            <Text style={st.successSub}>ข้อมูลการเยี่ยมร้านถูกบันทึกแล้ว</Text>
+            <Text style={st.successSub}>ข้อมูลการทำงานถูกบันทึกแล้ว</Text>
             <TouchableOpacity style={st.successBtn} onPress={() => setShowSuccess(false)} activeOpacity={0.8}>
               <Text style={st.successBtnText}>ปิด</Text>
             </TouchableOpacity>

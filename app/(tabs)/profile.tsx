@@ -447,7 +447,7 @@ export default function ProfileScreen() {
         <View style={styles.statsBar}>
           <View style={styles.statCol}>
             <Text style={styles.statN}>{stats.total}</Text>
-            <Text style={styles.statL}>เยี่ยมร้าน</Text>
+            <Text style={styles.statL}>บันทึก</Text>
           </View>
           <View style={[styles.statCol, styles.statColMid]}>
             <Text style={styles.statN}>{stats.bought}</Text>

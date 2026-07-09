@@ -335,7 +335,7 @@ export default function HistoryScreen() {
           <View style={styles.emptyWrap}>
             <Text style={styles.emptyIcon}>📋</Text>
             <Text style={styles.emptyTitle}>ยังไม่มีประวัติการเยี่ยม</Text>
-            <Text style={styles.emptyDesc}>เริ่มบันทึกการเยี่ยมร้านค้าได้เลย</Text>
+            <Text style={styles.emptyDesc}>เริ่มบันทึกการทำงานได้เลย</Text>
           </View>
         }
         renderItem={({ item }) => {
