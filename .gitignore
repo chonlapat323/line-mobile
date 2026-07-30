@@ -1,3 +1,22 @@
 node_modules
 .expo
 dist
+
+# Keystores — DO NOT COMMIT
+*.jks
+android/app/debug.keystore
+
+# Gradle properties has keystore passwords — DO NOT COMMIT
+android/gradle.properties
+
+# Android — expo prebuild generates these, track only our custom build files
+android/.gitignore
+android/app/proguard-rules.pro
+android/app/src/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/settings.gradle
+
+# Build logs
+build-log.txt

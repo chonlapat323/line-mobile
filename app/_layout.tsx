@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -106,7 +106,7 @@ const st = StyleSheet.create({
   },
   logoText: { fontSize: 34, fontWeight: "900", color: "#fff" },
   appName: { fontSize: 24, fontWeight: "900", color: colors.textPrimary, letterSpacing: -0.5 },
-  appSub: { fontSize: 13, color: colors.textDisabled, fontWeight: "500" },
+  appSub: { fontSize: 15, color: colors.textDisabled, fontWeight: "500" },
   dotsRow: { flexDirection: "row", gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary },
 });

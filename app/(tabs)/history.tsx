@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import {
   View, Text, StyleSheet, FlatList, Image,
   ActivityIndicator, RefreshControl, useWindowDimensions,
@@ -38,14 +38,14 @@ function SlipStatusBadge({ status }: { status?: string | null }) {
   if (status === "pending_approval") {
     return (
       <View style={{ backgroundColor: "#fffbeb", borderWidth: 1, borderColor: "#fde68a", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-        <Text style={{ fontSize: 10, fontWeight: "700", color: "#92400e" }}>⏳ รอยืนยัน</Text>
+        <Text style={{ fontSize: 12, fontWeight: "700", color: "#92400e" }}>⏳ รอยืนยัน</Text>
       </View>
     );
   }
   if (status === "rejected") {
     return (
       <View style={{ backgroundColor: "#fef2f2", borderWidth: 1, borderColor: "#fecaca", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-        <Text style={{ fontSize: 10, fontWeight: "700", color: "#991b1b" }}>✕ ปฏิเสธ</Text>
+        <Text style={{ fontSize: 12, fontWeight: "700", color: "#991b1b" }}>✕ ปฏิเสธ</Text>
       </View>
     );
   }
@@ -335,7 +335,7 @@ export default function HistoryScreen() {
           <View style={styles.emptyWrap}>
             <Text style={styles.emptyIcon}>📋</Text>
             <Text style={styles.emptyTitle}>ยังไม่มีประวัติการเยี่ยม</Text>
-            <Text style={styles.emptyDesc}>เริ่มบันทึกการทำงานได้เลย</Text>
+            <Text style={styles.emptyDesc}>เริ่มบันทึกการออกทริปได้เลย</Text>
           </View>
         }
         renderItem={({ item }) => {
@@ -429,8 +429,8 @@ const styles = StyleSheet.create({
 
   emptyWrap: { alignItems: "center", paddingTop: 80, gap: 8 },
   emptyIcon: { fontSize: 44, marginBottom: 4 },
-  emptyTitle: { fontSize: 15, fontWeight: "600", color: colors.textSecondary },
-  emptyDesc: { fontSize: 13, color: colors.textDisabled },
+  emptyTitle: { fontSize: 17, fontWeight: "600", color: colors.textSecondary },
+  emptyDesc: { fontSize: 15, color: colors.textDisabled },
 
   card: {
     backgroundColor: colors.surface,
@@ -451,14 +451,14 @@ const styles = StyleSheet.create({
   },
   visitThumbText: { fontSize: 20, fontWeight: "800", color: "#fff" },
   info: { flex: 1, minWidth: 0 },
-  shopName: { fontSize: 13, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
+  shopName: { fontSize: 15, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 3, marginBottom: 2 },
   tag: {
-    fontSize: 10, fontWeight: "600", color: colors.textMuted,
+    fontSize: 12, fontWeight: "600", color: colors.textMuted,
     backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight,
     paddingHorizontal: 7, paddingVertical: 1, borderRadius: radius.full,
   },
-  date: { fontSize: 10, color: colors.textDisabled },
+  date: { fontSize: 12, color: colors.textDisabled },
 
   filterBar: {
     flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 10,
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
   filterChipActive: {
     backgroundColor: colors.primary, borderColor: colors.primary,
   },
-  filterChipText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+  filterChipText: { fontSize: 15, fontWeight: "600", color: colors.textMuted },
   filterChipTextActive: { color: "#fff" },
 
   headerBadge: {
@@ -480,12 +480,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     paddingHorizontal: 10, paddingVertical: 3, marginRight: 14,
   },
-  headerBadgeText: { fontSize: 12, fontWeight: "600", color: colors.primaryDark },
+  headerBadgeText: { fontSize: 14, fontWeight: "600", color: colors.primaryDark },
 
   badgeCol: { alignItems: "flex-end", gap: 4 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
-  badgeText: { fontSize: 11, fontWeight: "600" },
-  orderAmt: { fontSize: 11, fontWeight: "700", color: "#15803d" },
+  badgeText: { fontSize: 13, fontWeight: "600" },
+  orderAmt: { fontSize: 13, fontWeight: "700", color: "#15803d" },
 });
 
 const det = StyleSheet.create({
@@ -503,8 +503,8 @@ const det = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.borderLight,
     gap: 12,
   },
-  shopName: { fontSize: 16, fontWeight: "700", color: colors.textPrimary },
-  byUser: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  shopName: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
+  byUser: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
   closeBtn: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: colors.bg,
@@ -523,7 +523,7 @@ const det = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4,
     alignItems: "center", gap: 6,
   },
-  slotLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
+  slotLabel: { fontSize: 14, color: colors.textMuted, fontWeight: "600" },
   dots: { flexDirection: "row", gap: 5 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.borderLight },
   dotActive: { backgroundColor: colors.primary, width: 14 },
@@ -532,7 +532,7 @@ const det = StyleSheet.create({
     height: 140, alignItems: "center", justifyContent: "center",
     backgroundColor: colors.primaryLight, gap: 8,
   },
-  noImgText: { fontSize: 13, color: colors.textDisabled },
+  noImgText: { fontSize: 15, color: colors.textDisabled },
 
   body: { padding: 18 },
 
@@ -542,12 +542,12 @@ const det = StyleSheet.create({
   resultBadge: {
     borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6,
   },
-  resultBadgeText: { fontSize: 13, fontWeight: "700" },
+  resultBadgeText: { fontSize: 15, fontWeight: "700" },
   orderBadge: {
     borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6,
     backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0",
   },
-  orderText: { fontSize: 13, fontWeight: "700", color: "#15803d" },
+  orderText: { fontSize: 15, fontWeight: "700", color: "#15803d" },
 
   infoRow: {
     flexDirection: "row", alignItems: "center",
@@ -555,16 +555,16 @@ const det = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
   infoIcon: { marginRight: 10 },
-  infoLabel: { fontSize: 13, color: colors.textMuted, width: 70 },
-  infoValue: { flex: 1, fontSize: 13, color: colors.textPrimary, fontWeight: "500" },
+  infoLabel: { fontSize: 15, color: colors.textMuted, width: 70 },
+  infoValue: { flex: 1, fontSize: 15, color: colors.textPrimary, fontWeight: "500" },
 
   noteBox: {
     marginTop: 16, backgroundColor: colors.surface,
     borderRadius: radius.lg, padding: 14,
     borderWidth: 1, borderColor: colors.borderLight,
   },
-  noteLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", marginBottom: 6 },
-  noteText: { fontSize: 13, color: colors.textPrimary, lineHeight: 20 },
+  noteLabel: { fontSize: 13, color: colors.textMuted, fontWeight: "600", marginBottom: 6 },
+  noteText: { fontSize: 15, color: colors.textPrimary, lineHeight: 20 },
 
   transRefBox: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -572,5 +572,5 @@ const det = StyleSheet.create({
     backgroundColor: colors.surface, borderRadius: radius.md,
     borderWidth: 1, borderColor: colors.borderLight,
   },
-  transRefText: { fontSize: 12, color: colors.textMuted, fontWeight: "500", flex: 1 },
+  transRefText: { fontSize: 14, color: colors.textMuted, fontWeight: "500", flex: 1 },
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   useWindowDimensions, Modal, FlatList, Image, RefreshControl,
@@ -567,7 +567,7 @@ export default function ProfileScreen() {
               </View>
             </View>
           ) : (
-            <Text style={{ color: colors.textDisabled, fontSize: 13, textAlign: "center", marginVertical: 12 }}>
+            <Text style={{ color: colors.textDisabled, fontSize: 15, textAlign: "center", marginVertical: 12 }}>
               ไม่มีข้อมูล
             </Text>
           )}
@@ -621,7 +621,7 @@ export default function ProfileScreen() {
               <View>
                 <Text style={styles.inputLabel}>ธนาคาร</Text>
                 <TouchableOpacity onPress={() => setBankPickerVisible(true)} style={[styles.bankInput, { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
-                  <Text style={{ fontSize: 14, color: bankName ? colors.text : colors.textDisabled }}>
+                  <Text style={{ fontSize: 16, color: bankName ? colors.text : colors.textDisabled }}>
                     {bankName || "— เลือกธนาคาร —"}
                   </Text>
                   <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
@@ -729,7 +729,7 @@ export default function ProfileScreen() {
         <TouchableOpacity style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }} activeOpacity={1} onPress={() => setBankPickerVisible(false)} />
         <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32, maxHeight: "60%", position: "absolute", bottom: 0, left: 0, right: 0 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 0.5, borderBottomColor: "#e5e7eb" }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>เลือกธนาคาร</Text>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.text }}>เลือกธนาคาร</Text>
             <TouchableOpacity onPress={() => setBankPickerVisible(false)}>
               <Ionicons name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -742,7 +742,7 @@ export default function ProfileScreen() {
                 onPress={() => { setBankName(item); setBankPickerVisible(false); }}
                 style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: "#f3f4f6" }}
               >
-                <Text style={{ fontSize: 15, color: colors.text }}>{item}</Text>
+                <Text style={{ fontSize: 17, color: colors.text }}>{item}</Text>
                 {bankName === item && <Ionicons name="checkmark" size={18} color={colors.primary} />}
               </TouchableOpacity>
             )}
@@ -779,13 +779,13 @@ const styles = StyleSheet.create({
   },
   heroAvatarText: { color: "#fff", fontSize: 28, fontWeight: "900" },
   heroName: { fontSize: 18, fontWeight: "800", color: "#fff", zIndex: 1 },
-  heroEmail: { fontSize: 12, color: "rgba(255,255,255,0.65)", zIndex: 1 },
+  heroEmail: { fontSize: 14, color: "rgba(255,255,255,0.65)", zIndex: 1 },
   heroBadge: {
     backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 14, paddingVertical: 3,
     borderRadius: radius.full, zIndex: 1,
     borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
   },
-  heroBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  heroBadgeText: { color: "#fff", fontSize: 13, fontWeight: "700" },
 
   statsBar: {
     flexDirection: "row", backgroundColor: colors.surface,
@@ -794,15 +794,15 @@ const styles = StyleSheet.create({
   statCol: { flex: 1, paddingVertical: 14, alignItems: "center" },
   statColMid: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.borderLight },
   statN: { fontSize: 22, fontWeight: "900", color: colors.textPrimary },
-  statL: { fontSize: 10, fontWeight: "600", color: colors.textDisabled, marginTop: 2 },
+  statL: { fontSize: 12, fontWeight: "600", color: colors.textDisabled, marginTop: 2 },
 
   mapSection: { marginHorizontal: 16, marginTop: 14 },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: colors.textPrimary },
-  sectionHint: { fontSize: 11, color: colors.textDisabled },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: colors.textPrimary },
+  sectionHint: { fontSize: 13, color: colors.textDisabled },
 
   emptyProvince: { alignItems: "center", paddingVertical: 24, gap: 8 },
-  emptyProvinceText: { fontSize: 13, color: colors.textDisabled },
+  emptyProvinceText: { fontSize: 15, color: colors.textDisabled },
 
   provinceList: {
     backgroundColor: colors.surface, borderRadius: radius.xl,
@@ -814,13 +814,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.bg,
   },
   provinceRowTop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
-  provinceRowName: { fontSize: 13, fontWeight: "700", color: colors.textPrimary },
-  provinceRowCount: { fontSize: 12, color: colors.textMuted },
+  provinceRowName: { fontSize: 15, fontWeight: "700", color: colors.textPrimary },
+  provinceRowCount: { fontSize: 14, color: colors.textMuted },
   provinceBar: { height: 6, backgroundColor: colors.bg, borderRadius: 3, overflow: "hidden", marginBottom: 6 },
   provinceBarFill: { height: 6, backgroundColor: colors.primary, borderRadius: 3 },
   provinceChips: { flexDirection: "row", gap: 5 },
   pChip: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
-  pChipTxt: { fontSize: 11, fontWeight: "600" },
+  pChipTxt: { fontSize: 13, fontWeight: "600" },
 
   chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
   chip: {
@@ -829,12 +829,12 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryBorder, borderRadius: radius.full,
     paddingHorizontal: 10, paddingVertical: 5,
   },
-  chipText: { fontSize: 12, color: colors.primaryDark, fontWeight: "600" },
+  chipText: { fontSize: 14, color: colors.primaryDark, fontWeight: "600" },
   chipBadge: {
     backgroundColor: colors.primary, borderRadius: radius.full,
     paddingHorizontal: 5, paddingVertical: 1, minWidth: 18, alignItems: "center",
   },
-  chipBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700" },
+  chipBadgeText: { fontSize: 12, color: "#fff", fontWeight: "700" },
 
   infoSection: {
     marginHorizontal: 16, marginTop: 12, backgroundColor: colors.surface,
@@ -848,8 +848,8 @@ const styles = StyleSheet.create({
   },
   infoRowLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
   infoIcon: { width: 32, height: 32, borderRadius: radius.sm, justifyContent: "center", alignItems: "center" },
-  infoLabel: { fontSize: 14, color: colors.textSecondary, fontWeight: "500" },
-  infoValue: { fontSize: 13, color: colors.textDisabled, maxWidth: 160 },
+  infoLabel: { fontSize: 16, color: colors.textSecondary, fontWeight: "500" },
+  infoValue: { fontSize: 15, color: colors.textDisabled, maxWidth: 160 },
 
   commSection: {
     marginHorizontal: 16, marginTop: 12, backgroundColor: colors.surface,
@@ -858,22 +858,22 @@ const styles = StyleSheet.create({
   },
   commMonthRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
   monthNavBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bg, borderWidth: 0.5, borderColor: colors.borderLight, alignItems: "center", justifyContent: "center" },
-  commMonthText: { fontSize: 14, fontWeight: "700", color: colors.textPrimary },
+  commMonthText: { fontSize: 16, fontWeight: "700", color: colors.textPrimary },
   commStatsRow: { flexDirection: "row", borderWidth: 0.5, borderColor: colors.borderLight, borderRadius: radius.lg, overflow: "hidden" },
   commStat: { flex: 1, paddingVertical: 12, alignItems: "center" },
-  commStatNum: { fontSize: 15, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
-  commStatLabel: { fontSize: 11, color: colors.textDisabled },
+  commStatNum: { fontSize: 17, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
+  commStatLabel: { fontSize: 13, color: colors.textDisabled },
   commStatusRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   commStatusChip: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
   commStatusChipPending: { backgroundColor: "#fffbeb", borderColor: "#fde68a" },
-  commStatusDot: { fontSize: 11, color: colors.primary },
-  commStatusText: { fontSize: 12, color: "#166534", fontWeight: "600" },
+  commStatusDot: { fontSize: 13, color: colors.primary },
+  commStatusText: { fontSize: 14, color: "#166534", fontWeight: "600" },
   commProgressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
-  commProgressLabel: { fontSize: 12, color: colors.textMuted },
+  commProgressLabel: { fontSize: 14, color: colors.textMuted },
   commProgressTrack: { height: 8, backgroundColor: colors.bg, borderRadius: 4, overflow: "hidden", borderWidth: 0.5, borderColor: colors.borderLight },
   commProgressFill: { height: "100%", borderRadius: 4 },
   commResult: { borderRadius: radius.lg, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  commResultLabel: { fontSize: 13, fontWeight: "600", flex: 1 },
+  commResultLabel: { fontSize: 15, fontWeight: "600", flex: 1 },
   commResultAmount: { fontSize: 18, fontWeight: "800" },
 
   bankSection: {
@@ -882,14 +882,14 @@ const styles = StyleSheet.create({
     padding: 16, ...shadows.card,
   },
   bankHeader: { flexDirection: "row", alignItems: "flex-start", marginBottom: 14 },
-  bankTitle: { fontSize: 14, fontWeight: "700", color: colors.textPrimary },
-  bankSubtitle: { fontSize: 11, color: colors.textDisabled, marginTop: 2 },
+  bankTitle: { fontSize: 16, fontWeight: "700", color: colors.textPrimary },
+  bankSubtitle: { fontSize: 13, color: colors.textDisabled, marginTop: 2 },
   editBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: colors.primaryLight, borderWidth: 1, borderColor: colors.primaryBorder,
     borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 5,
   },
-  editBtnText: { fontSize: 12, color: colors.primaryDark, fontWeight: "600" },
+  editBtnText: { fontSize: 14, color: colors.primaryDark, fontWeight: "600" },
   bankRow: {
     flexDirection: "row", alignItems: "center",
     paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight,
@@ -899,25 +899,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#eff6ff", justifyContent: "center", alignItems: "center",
     marginRight: 12, flexShrink: 0,
   },
-  bankLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600" },
-  bankValue: { fontSize: 14, color: colors.textPrimary, fontWeight: "700", marginTop: 1 },
+  bankLabel: { fontSize: 13, color: colors.textMuted, fontWeight: "600" },
+  bankValue: { fontSize: 16, color: colors.textPrimary, fontWeight: "700", marginTop: 1 },
   bankEmpty: { color: colors.textDisabled, fontWeight: "400" },
-  inputLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "600", marginBottom: 5 },
+  inputLabel: { fontSize: 14, color: colors.textMuted, fontWeight: "600", marginBottom: 5 },
   bankInput: {
     borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.lg,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 16,
     color: colors.textPrimary, backgroundColor: colors.bg,
   },
   cancelBtn: {
     flex: 1, paddingVertical: 11, borderRadius: radius.lg,
     borderWidth: 1, borderColor: colors.borderLight, alignItems: "center",
   },
-  cancelBtnText: { fontSize: 14, color: colors.textSecondary, fontWeight: "600" },
+  cancelBtnText: { fontSize: 16, color: colors.textSecondary, fontWeight: "600" },
   saveBtn: {
     flex: 2, paddingVertical: 11, borderRadius: radius.lg,
     backgroundColor: colors.primary, alignItems: "center",
   },
-  saveBtnText: { fontSize: 14, color: "#fff", fontWeight: "700" },
+  saveBtnText: { fontSize: 16, color: "#fff", fontWeight: "700" },
 
   heroLineBtn: {
     position: "absolute", right: 16, zIndex: 2,
@@ -927,14 +927,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     paddingHorizontal: 12, paddingVertical: 6,
   },
-  heroLineBtnText: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.9)" },
+  heroLineBtnText: { fontSize: 14, fontWeight: "600", color: "rgba(255,255,255,0.9)" },
 
   logoutButton: {
     marginHorizontal: 16, marginTop: 12, backgroundColor: colors.errorBg,
     borderWidth: 0.5, borderColor: "#fecaca", borderRadius: radius.xl,
     paddingVertical: 14, alignItems: "center", flexDirection: "row", justifyContent: "center",
   },
-  logoutText: { color: colors.error, fontWeight: "700", fontSize: 15 },
+  logoutText: { color: colors.error, fontWeight: "700", fontSize: 17 },
 
 });
 
@@ -942,8 +942,8 @@ const det = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "92%", overflow: "hidden" },
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.borderLight, gap: 12 },
-  shopName: { fontSize: 16, fontWeight: "700", color: colors.textPrimary },
-  byUser: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  shopName: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
+  byUser: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
   closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight, alignItems: "center", justifyContent: "center" },
   galleryImg: { height: 240 },
   zoomHint: {
@@ -953,31 +953,31 @@ const det = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   galleryMeta: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4, alignItems: "center", gap: 6 },
-  slotLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
+  slotLabel: { fontSize: 14, color: colors.textMuted, fontWeight: "600" },
   dots: { flexDirection: "row", gap: 5 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.borderLight },
   dotActive: { backgroundColor: colors.primary, width: 14 },
   body: { padding: 18 },
   resultBadge: { borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6, alignSelf: "flex-start", marginBottom: 16 },
-  resultBadgeText: { fontSize: 13, fontWeight: "700" },
+  resultBadgeText: { fontSize: 15, fontWeight: "700" },
   infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   infoIcon: { marginRight: 10 },
-  infoLabel: { fontSize: 13, color: colors.textMuted, width: 70 },
-  infoValue: { flex: 1, fontSize: 13, color: colors.textPrimary, fontWeight: "500" },
+  infoLabel: { fontSize: 15, color: colors.textMuted, width: 70 },
+  infoValue: { flex: 1, fontSize: 15, color: colors.textPrimary, fontWeight: "500" },
   noteBox: { marginTop: 16, backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14, borderWidth: 1, borderColor: colors.borderLight },
-  noteLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", marginBottom: 6 },
-  noteText: { fontSize: 13, color: colors.textPrimary, lineHeight: 20 },
+  noteLabel: { fontSize: 13, color: colors.textMuted, fontWeight: "600", marginBottom: 6 },
+  noteText: { fontSize: 15, color: colors.textPrimary, lineHeight: 20 },
 
   resultRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" },
   orderBadge: { borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0" },
-  orderText: { fontSize: 13, fontWeight: "700", color: "#15803d" },
+  orderText: { fontSize: 15, fontWeight: "700", color: "#15803d" },
   transRefBox: {
     flexDirection: "row", alignItems: "center", gap: 6,
     marginBottom: 12, paddingHorizontal: 12, paddingVertical: 8,
     backgroundColor: colors.surface, borderRadius: radius.md,
     borderWidth: 1, borderColor: colors.borderLight,
   },
-  transRefText: { fontSize: 12, color: colors.textMuted, fontWeight: "500", flex: 1 },
+  transRefText: { fontSize: 14, color: colors.textMuted, fontWeight: "500", flex: 1 },
 });
 
 const prov = StyleSheet.create({
@@ -992,14 +992,14 @@ const prov = StyleSheet.create({
   },
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.borderLight, gap: 8 },
   backBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 16, fontWeight: "700", color: colors.textPrimary },
-  count: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  title: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
+  count: { fontSize: 14, color: colors.textMuted, marginTop: 2 },
   closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight, alignItems: "center", justifyContent: "center" },
   card: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surface, borderRadius: radius.xl, padding: 12, marginBottom: 8, borderWidth: 0.5, borderColor: colors.borderLight, ...shadows.card },
   thumb: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.primaryLight },
   cardInfo: { flex: 1, minWidth: 0 },
-  shopName: { fontSize: 13, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
-  cardDate: { fontSize: 11, color: colors.textDisabled },
+  shopName: { fontSize: 15, fontWeight: "700", color: colors.textPrimary, marginBottom: 2 },
+  cardDate: { fontSize: 13, color: colors.textDisabled },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
-  badgeText: { fontSize: 11, fontWeight: "600" },
+  badgeText: { fontSize: 13, fontWeight: "600" },
 });

@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from "expo-router";
+﻿import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,14 +12,14 @@ export default function TabsLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textDisabled,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "600", marginTop: -2 },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "600", marginTop: -2 },
         tabBarIconStyle: { marginBottom: -2 },
         tabBarStyle: {
           borderTopColor: colors.borderLight,
           borderTopWidth: 1,
           paddingBottom: insets.bottom || 6,
           paddingTop: 6,
-          height: 58 + (insets.bottom || 0),
+          height: 62 + (insets.bottom || 0),
         },
         headerStyle: { backgroundColor: colors.surface },
         headerTitleStyle: {
@@ -37,9 +37,9 @@ export default function TabsLayout() {
           headerTitle: () => (
             <View style={{ gap: 1 }}>
               <Text style={{ fontSize: 17, fontWeight: "700", color: colors.textPrimary }}>
-                ระบบบันทึกการทำงาน
+                ระบบบันทึกการออกทริป
               </Text>
-              <Text style={{ fontSize: 11, color: colors.textDisabled }}>
+              <Text style={{ fontSize: 13, color: colors.textDisabled }}>
                 กรอกข้อมูลให้ครบก่อนส่ง
               </Text>
             </View>

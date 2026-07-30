@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   ActivityIndicator, Clipboard, Linking,
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   stepsTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
     color: colors.textPrimary,
     marginBottom: 14,
@@ -175,8 +175,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginTop: 1,
   },
-  stepNumText: { fontSize: 12, fontWeight: "700", color: colors.primaryDark },
-  stepText: { fontSize: 13, color: colors.textSecondary, lineHeight: 20, flex: 1 },
+  stepNumText: { fontSize: 14, fontWeight: "700", color: colors.primaryDark },
+  stepText: { fontSize: 15, color: colors.textSecondary, lineHeight: 20, flex: 1 },
 
   addBotButton: {
     backgroundColor: colors.lineGreen,
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  addBotText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  addBotText: { color: "#fff", fontWeight: "700", fontSize: 17 },
 
   genButton: {
     backgroundColor: colors.primary,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   genButtonDisabled: { opacity: 0.5 },
   genButtonInner: { flexDirection: "row", alignItems: "center", gap: 8 },
-  genButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  genButtonText: { color: "#fff", fontWeight: "700", fontSize: 17 },
 
   codeBox: {
     marginTop: 20,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  codeLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 2 },
+  codeLabel: { fontSize: 14, color: colors.textMuted, marginBottom: 2 },
   codeText: {
     fontSize: 42,
     fontWeight: "800",
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     width: "100%",
     textAlign: "center",
   },
-  codeExpiry: { fontSize: 11, color: colors.textDisabled },
+  codeExpiry: { fontSize: 13, color: colors.textDisabled },
   copyButton: {
     backgroundColor: colors.primary,
     borderRadius: radius.md,
@@ -231,6 +231,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  copyButtonText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  codeHint: { fontSize: 12, color: "#4b5563", textAlign: "center", lineHeight: 18 },
+  copyButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  codeHint: { fontSize: 14, color: "#4b5563", textAlign: "center", lineHeight: 18 },
 });
