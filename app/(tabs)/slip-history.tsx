@@ -1,4 +1,4 @@
-﻿import { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, RefreshControl, Image, Modal, ScrollView,
@@ -31,7 +31,7 @@ function StatusBadge({ status }: { status: string }) {
   const s = map[status] ?? { bg: "#f3f4f6", border: "#d1d5db", text: "#6b7280", label: status };
   return (
     <View style={{ backgroundColor: s.bg, borderWidth: 1, borderColor: s.border, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-      <Text style={{ fontSize: 12, fontWeight: "700", color: s.text }}>{s.label}</Text>
+      <Text style={{ fontSize: 15, fontWeight: "700", color: s.text }}>{s.label}</Text>
     </View>
   );
 }
@@ -41,13 +41,13 @@ function LineStatusBadge({ status }: { status?: string | null }) {
   if (status === "sent") return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
       <Ionicons name="checkmark-circle" size={12} color="#16a34a" />
-      <Text style={{ fontSize: 13, color: "#16a34a" }}>ส่ง LINE แล้ว</Text>
+      <Text style={{ fontSize: 16, color: "#16a34a" }}>ส่ง LINE แล้ว</Text>
     </View>
   );
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
       <Ionicons name="close-circle" size={12} color={colors.error} />
-      <Text style={{ fontSize: 13, color: colors.error }}>LINE ล้มเหลว</Text>
+      <Text style={{ fontSize: 16, color: colors.error }}>LINE ล้มเหลว</Text>
     </View>
   );
 }
@@ -152,7 +152,7 @@ const st = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   list: { padding: 12, paddingBottom: 40, gap: 8 },
   empty: { alignItems: "center", paddingTop: 80, gap: 12 },
-  emptyText: { fontSize: 16, color: colors.textDisabled },
+  emptyText: { fontSize: 19, color: colors.textDisabled },
 
   card: {
     flexDirection: "row", backgroundColor: colors.surface,
@@ -162,10 +162,10 @@ const st = StyleSheet.create({
   thumb: { width: 80, height: 80 },
   cardBody: { flex: 1, padding: 10, justifyContent: "space-between" },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  shopName: { fontSize: 16, fontWeight: "700", color: colors.textPrimary, flex: 1 },
-  amount: { fontSize: 18, fontWeight: "700", color: colors.primary, marginTop: 2 },
+  shopName: { fontSize: 19, fontWeight: "700", color: colors.textPrimary, flex: 1 },
+  amount: { fontSize: 21, fontWeight: "700", color: colors.primary, marginTop: 2 },
   cardBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
-  date: { fontSize: 13, color: colors.textDisabled },
+  date: { fontSize: 16, color: colors.textDisabled },
 });
 
 const md = StyleSheet.create({
@@ -178,10 +178,10 @@ const md = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     padding: 16, borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
-  title: { fontSize: 18, fontWeight: "700", color: colors.textPrimary, flex: 1 },
+  title: { fontSize: 21, fontWeight: "700", color: colors.textPrimary, flex: 1 },
   body: { padding: 16, gap: 12 },
   slipImg: { width: "100%", height: 220, borderRadius: radius.md, backgroundColor: colors.bgAlt, marginBottom: 4 },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  label: { fontSize: 15, color: colors.textMuted, fontWeight: "500" },
-  value: { fontSize: 15, color: colors.textPrimary, fontWeight: "600", textAlign: "right", flex: 1, marginLeft: 16 },
+  label: { fontSize: 18, color: colors.textMuted, fontWeight: "500" },
+  value: { fontSize: 18, color: colors.textPrimary, fontWeight: "600", textAlign: "right", flex: 1, marginLeft: 16 },
 });

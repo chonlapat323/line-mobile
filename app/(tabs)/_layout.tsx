@@ -1,4 +1,4 @@
-﻿import { Tabs, useRouter } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,7 +12,7 @@ export default function TabsLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textDisabled,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "600", marginTop: -2 },
+        tabBarLabelStyle: { fontSize: 15, fontWeight: "600", marginTop: -2 },
         tabBarIconStyle: { marginBottom: -2 },
         tabBarStyle: {
           borderTopColor: colors.borderLight,
@@ -25,7 +25,7 @@ export default function TabsLayout() {
         headerTitleStyle: {
           color: colors.textPrimary,
           fontWeight: "700",
-          fontSize: 17,
+          fontSize: 20,
         },
         headerShadowVisible: false,
       }}
@@ -36,10 +36,10 @@ export default function TabsLayout() {
           tabBarLabel: "บันทึก",
           headerTitle: () => (
             <View style={{ gap: 1 }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.textPrimary }}>
+              <Text style={{ fontSize: 20, fontWeight: "700", color: colors.textPrimary }}>
                 ระบบบันทึกการออกทริป
               </Text>
-              <Text style={{ fontSize: 13, color: colors.textDisabled }}>
+              <Text style={{ fontSize: 16, color: colors.textDisabled }}>
                 กรอกข้อมูลให้ครบก่อนส่ง
               </Text>
             </View>
@@ -52,7 +52,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "ประวัติบันทึก",
+          title: "ประวัติออกทริป",
           tabBarLabel: "ประวัติ",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="time-outline" size={size} color={color} />

@@ -1,3 +1,31 @@
+// ─── Font Size Scale ──────────────────────────────────────────────────────────
+// แก้ที่นี่ที่เดียว → import { fontSize } from "@/lib/theme"
+//
+// ┌─────────────┬──────┬─────────────────────────────────┐
+// │ Token       │  px  │ ใช้กับ                          │
+// ├─────────────┼──────┼─────────────────────────────────┤
+// │ caption     │  14  │ timestamp, metadata, badge       │
+// │ label       │  15  │ tab label, form label            │
+// │ body        │  16  │ เนื้อหาทั่วไป                   │
+// │ bodyLg      │  18  │ body เน้น, input text            │
+// │ subheading  │  20  │ หัวข้อรอง, card label            │
+// │ heading     │  23  │ หัวข้อ card, section             │
+// │ title       │  26  │ ชื่อ section ใหญ่                │
+// │ pageTitle   │  30  │ ชื่อหน้า                        │
+// │ display     │  38  │ stat number ใหญ่                 │
+// └─────────────┴──────┴─────────────────────────────────┘
+export const fontSize = {
+  caption:    14,
+  label:      15,
+  body:       16,
+  bodyLg:     18,
+  subheading: 20,
+  heading:    23,
+  title:      26,
+  pageTitle:  30,
+  display:    38,
+} as const;
+
 export const colors = {
   primary:       '#22c55e',
   primaryDark:   '#16a34a',

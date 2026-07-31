@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Modal, FlatList,
   ScrollView, ActivityIndicator, Image, StyleSheet, Alert,
@@ -411,18 +411,18 @@ export default function RecordScreen() {
                 ))}
               </View>
 
-              {/* ยอดสั่งซื้อ + ใบเสนอราคา — เมื่อผล = ซื้อ */}
+              {/* เปิดบิล + ใบเสนอราคา — เมื่อผล = ซื้อ */}
               {result === "buy" && (
                 <View style={{ marginTop: 14, gap: 12 }}>
                   <View>
-                    <Text style={st.fieldLabel}>ยอดสั่งซื้อ (บาท) <Text style={st.req}>*</Text></Text>
+                    <Text style={st.fieldLabel}>เปิดบิล (บาท) <Text style={st.req}>*</Text></Text>
                     <View style={st.inputRow}>
                       <Text style={st.bahtSign}>฿</Text>
                       <TextInput
                         style={st.inputText}
                         value={orderAmount}
                         onChangeText={setOrderAmount}
-                        placeholder="ระบุยอดสั่งซื้อ"
+                        placeholder="ระบุยอดเปิดบิล"
                         placeholderTextColor={colors.textDisabled}
                         keyboardType="numeric"
                       />
@@ -445,7 +445,7 @@ export default function RecordScreen() {
                     </TouchableOpacity>
                     {quotationImage && (
                       <TouchableOpacity onPress={() => setQuotationImage(null)} style={{ alignSelf: "flex-end", marginTop: 4 }}>
-                        <Text style={{ fontSize: 14, color: colors.error }}>ลบรูป</Text>
+                        <Text style={{ fontSize: 17, color: colors.error }}>ลบรูป</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -632,10 +632,10 @@ const st = StyleSheet.create({
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   gpsLabel: {
-    fontSize: 12, color: "rgba(255,255,255,0.65)", fontWeight: "600",
+    fontSize: 15, color: "rgba(255,255,255,0.65)", fontWeight: "600",
     textTransform: "uppercase", letterSpacing: 0.5,
   },
-  gpsCoords: { fontSize: 14, color: "#fff", fontWeight: "700", marginTop: 1 },
+  gpsCoords: { fontSize: 17, color: "#fff", fontWeight: "700", marginTop: 1 },
   gpsRefreshBtn: {
     width: 28, height: 28, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.15)",
@@ -653,10 +653,10 @@ const st = StyleSheet.create({
   stepCircle: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   stepCircleFilled: { backgroundColor: colors.primary },
   stepCircleGrey: { backgroundColor: colors.borderLight },
-  stepNum: { fontSize: 13, fontWeight: "800" },
+  stepNum: { fontSize: 16, fontWeight: "800" },
   stepNumFilled: { color: "#fff" },
   stepNumGrey: { color: colors.textDisabled },
-  stepLabel: { fontSize: 11, fontWeight: "700", textAlign: "center" },
+  stepLabel: { fontSize: 14, fontWeight: "700", textAlign: "center" },
   stepLabelFilled: { color: colors.primaryDark },
   stepLabelGrey: { color: colors.textDisabled },
   stepLine: { flex: 1, height: 2, borderRadius: 2, marginBottom: 14 },
@@ -681,12 +681,12 @@ const st = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
   cardIconBox: { width: 30, height: 30, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
-  cardTitle: { fontSize: 15, fontWeight: "800", color: colors.textPrimary },
+  cardTitle: { fontSize: 18, fontWeight: "800", color: colors.textPrimary },
   cardBody: { paddingHorizontal: 16, paddingVertical: 14 },
 
   // Fields
   fieldLabel: {
-    fontSize: 12, fontWeight: "700", color: colors.textDisabled,
+    fontSize: 15, fontWeight: "700", color: colors.textDisabled,
     textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 7,
   },
   req: { color: colors.error },
@@ -696,8 +696,8 @@ const st = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surface,
   },
   inputFocused: { borderColor: colors.primary },
-  inputText: { flex: 1, fontSize: 16, fontWeight: "500", color: colors.textPrimary },
-  bahtSign: { fontSize: 17, fontWeight: "800", color: colors.textMuted, marginRight: 6 },
+  inputText: { flex: 1, fontSize: 19, fontWeight: "500", color: colors.textPrimary },
+  bahtSign: { fontSize: 20, fontWeight: "800", color: colors.textMuted, marginRight: 6 },
 
   suggestionBox: {
     borderWidth: 1, borderColor: colors.border,
@@ -709,7 +709,7 @@ const st = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
-  suggestionText: { fontSize: 16, color: colors.textSecondary },
+  suggestionText: { fontSize: 19, color: colors.textSecondary },
 
   twoCol: { flexDirection: "row", gap: 10 },
   pickerBtn: {
@@ -717,19 +717,19 @@ const st = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
     paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surface,
   },
-  pickerText: { fontSize: 15, fontWeight: "600", color: colors.textPrimary, flex: 1 },
-  pickerPlaceholder: { fontSize: 15, color: colors.textDisabled, flex: 1 },
+  pickerText: { fontSize: 18, fontWeight: "600", color: colors.textPrimary, flex: 1 },
+  pickerPlaceholder: { fontSize: 18, color: colors.textDisabled, flex: 1 },
 
   // Toggle pills
   toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  toggleLabel: { fontSize: 14, fontWeight: "700", color: colors.textSecondary },
+  toggleLabel: { fontSize: 17, fontWeight: "700", color: colors.textSecondary },
   toggleGroup: { flexDirection: "row", gap: 6 },
   toggle: {
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full,
     borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.bg,
   },
   toggleOn: { backgroundColor: colors.primary, borderColor: "transparent" },
-  toggleText: { fontSize: 14, fontWeight: "700", color: colors.textMuted },
+  toggleText: { fontSize: 17, fontWeight: "700", color: colors.textMuted },
   toggleTextOn: { color: "#fff" },
 
   // Result emoji cards
@@ -739,8 +739,8 @@ const st = StyleSheet.create({
     borderRadius: radius.md, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.surface,
   },
   resultCardActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  resultEmoji: { fontSize: 18, marginBottom: 4 },
-  resultLabel: { fontSize: 14, fontWeight: "800", color: colors.textMuted },
+  resultEmoji: { fontSize: 21, marginBottom: 4 },
+  resultLabel: { fontSize: 17, fontWeight: "800", color: colors.textMuted },
   resultLabelActive: { color: colors.primaryDark },
 
   // Slip
@@ -756,13 +756,13 @@ const st = StyleSheet.create({
     backgroundColor: colors.surface, alignItems: "center", justifyContent: "center",
     ...shadows.card,
   },
-  slipUploadText: { fontSize: 15, fontWeight: "700", color: colors.primaryDark },
-  slipUploadSub: { fontSize: 13, color: colors.textMuted },
+  slipUploadText: { fontSize: 18, fontWeight: "700", color: colors.primaryDark },
+  slipUploadSub: { fontSize: 16, color: colors.textMuted },
 
   // Textarea
   textarea: {
     borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
-    padding: 12, minHeight: 78, fontSize: 16, fontWeight: "500",
+    padding: 12, minHeight: 78, fontSize: 19, fontWeight: "500",
     color: colors.textSecondary, backgroundColor: colors.bg,
   },
 
@@ -780,7 +780,7 @@ const st = StyleSheet.create({
     position: "absolute", bottom: 0, left: 0, right: 0,
     backgroundColor: "rgba(0,0,0,0.45)", paddingHorizontal: 6, paddingVertical: 3,
   },
-  imgCellOverlayText: { color: "#fff", fontSize: 11, fontWeight: "600" },
+  imgCellOverlayText: { color: "#fff", fontSize: 14, fontWeight: "600" },
   imgCheckBadge: {
     position: "absolute", top: 4, right: 4,
     width: 14, height: 14, borderRadius: 7,
@@ -797,14 +797,14 @@ const st = StyleSheet.create({
   imgCellContent: {
     flex: 1, alignItems: "center", justifyContent: "center", gap: 4,
   },
-  imgSlotLabel: { fontSize: 11, fontWeight: "700", color: colors.textDisabled, textAlign: "center", paddingHorizontal: 4, marginTop: 2 },
+  imgSlotLabel: { fontSize: 14, fontWeight: "700", color: colors.textDisabled, textAlign: "center", paddingHorizontal: 4, marginTop: 2 },
   imgCountBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full },
   imgCountOk: { backgroundColor: colors.successBg, borderWidth: 1, borderColor: colors.primaryBorder },
   imgCountWarn: { backgroundColor: colors.errorBg, borderWidth: 1, borderColor: "#fecaca" },
-  imgCountText: { fontSize: 12, fontWeight: "800" },
+  imgCountText: { fontSize: 15, fontWeight: "800" },
   imgCountTextOk: { color: colors.primaryDark },
   imgCountTextWarn: { color: colors.error },
-  imgNote: { marginTop: 10, fontSize: 12, color: colors.textDisabled, textAlign: "center", fontWeight: "500" },
+  imgNote: { marginTop: 10, fontSize: 15, color: colors.textDisabled, textAlign: "center", fontWeight: "500" },
 
   // Submit
   submitWrap: { paddingHorizontal: 14, marginTop: 14, marginBottom: 6 },
@@ -813,8 +813,8 @@ const st = StyleSheet.create({
     backgroundColor: colors.primary, borderRadius: radius["3xl"], paddingVertical: 16,
   },
   submitBtnOff: { opacity: 0.4 },
-  submitText: { color: "#fff", fontWeight: "800", fontSize: 17, letterSpacing: -0.2 },
-  submitHint: { textAlign: "center", marginTop: 8, fontSize: 13, color: colors.textDisabled, fontWeight: "500" },
+  submitText: { color: "#fff", fontWeight: "800", fontSize: 20, letterSpacing: -0.2 },
+  submitHint: { textAlign: "center", marginTop: 8, fontSize: 16, color: colors.textDisabled, fontWeight: "500" },
 
   // Success modal
   successOverlay: {
@@ -832,21 +832,21 @@ const st = StyleSheet.create({
     alignItems: "center", justifyContent: "center", marginBottom: 20,
   },
   successTitle: {
-    fontSize: 22, fontWeight: "800", color: colors.textPrimary,
+    fontSize: 25, fontWeight: "800", color: colors.textPrimary,
     marginBottom: 6, letterSpacing: -0.5,
   },
   successShop: {
-    fontSize: 17, fontWeight: "700", color: colors.primary,
+    fontSize: 20, fontWeight: "700", color: colors.primary,
     marginBottom: 6, textAlign: "center",
   },
   successSub: {
-    fontSize: 15, color: colors.textMuted, marginBottom: 24, textAlign: "center",
+    fontSize: 18, color: colors.textMuted, marginBottom: 24, textAlign: "center",
   },
   successBtn: {
     backgroundColor: colors.primary, borderRadius: 12,
     paddingVertical: 12, paddingHorizontal: 40,
   },
-  successBtnText: { color: "#fff", fontWeight: "700", fontSize: 17 },
+  successBtnText: { color: "#fff", fontWeight: "700", fontSize: 20 },
 });
 
 const modal = StyleSheet.create({
@@ -857,15 +857,15 @@ const modal = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 16,
     borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
-  title: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
+  title: { fontSize: 21, fontWeight: "700", color: colors.textPrimary },
   searchWrap: {
     flexDirection: "row", alignItems: "center",
     margin: 12, paddingHorizontal: 12, paddingVertical: 8,
     backgroundColor: colors.bg, borderRadius: radius.md,
     borderWidth: 1, borderColor: colors.border,
   },
-  searchInput: { flex: 1, fontSize: 16, color: colors.textPrimary },
+  searchInput: { flex: 1, fontSize: 19, color: colors.textPrimary },
   item: { paddingHorizontal: 20, paddingVertical: 14 },
-  itemText: { fontSize: 17, color: colors.textPrimary },
+  itemText: { fontSize: 20, color: colors.textPrimary },
   separator: { height: 1, backgroundColor: colors.borderLight },
 });

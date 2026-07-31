@@ -1,4 +1,4 @@
-﻿import { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, ActivityIndicator, Image, StyleSheet, Alert, KeyboardAvoidingView, Platform,
@@ -227,7 +227,7 @@ export default function SlipScreen() {
               <Text style={st.fieldLabel}>
                 ยอดเงิน (บาท) <Text style={st.req}>*</Text>
                 {slipStatus === "verified" && (
-                  <Text style={{ fontSize: 13, color: colors.primaryDark, fontWeight: "400" }}> (จาก QR)</Text>
+                  <Text style={{ fontSize: 16, color: colors.primaryDark, fontWeight: "400" }}> (จาก QR)</Text>
                 )}
               </Text>
               <View style={st.inputRow}>
@@ -309,7 +309,7 @@ const st = StyleSheet.create({
     width: 28, height: 28, borderRadius: radius.sm,
     alignItems: "center", justifyContent: "center",
   },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: colors.textPrimary },
+  cardTitle: { fontSize: 19, fontWeight: "700", color: colors.textPrimary },
   cardBody: { padding: 14 },
 
   req: { color: colors.error },
@@ -325,8 +325,8 @@ const st = StyleSheet.create({
     width: 44, height: 44, borderRadius: radius.full,
     backgroundColor: colors.primaryLight, alignItems: "center", justifyContent: "center",
   },
-  slipUploadText: { fontSize: 16, fontWeight: "700", color: colors.primaryDark },
-  slipUploadSub: { fontSize: 14, color: colors.textMuted },
+  slipUploadText: { fontSize: 19, fontWeight: "700", color: colors.primaryDark },
+  slipUploadSub: { fontSize: 17, color: colors.textMuted },
 
   statusRow: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -334,27 +334,27 @@ const st = StyleSheet.create({
   },
   statusVerified: { backgroundColor: colors.primaryLight },
   statusPending: { backgroundColor: "#fffbeb" },
-  statusText: { fontSize: 14, color: colors.textMuted, fontWeight: "500", flex: 1 },
+  statusText: { fontSize: 17, color: colors.textMuted, fontWeight: "500", flex: 1 },
 
   verifyBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     marginTop: 10, paddingVertical: 11, backgroundColor: colors.primaryDark, borderRadius: radius.md,
   },
-  verifyBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  verifyBtnText: { color: "#fff", fontWeight: "700", fontSize: 19 },
 
   changeBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
   },
-  changeBtnText: { fontSize: 14, color: colors.textMuted },
+  changeBtnText: { fontSize: 17, color: colors.textMuted },
 
   fieldGroup: { marginBottom: 14 },
-  fieldLabel: { fontSize: 15, fontWeight: "600", color: colors.textSecondary, marginBottom: 6 },
-  fieldNote: { fontSize: 13, color: "#d97706", marginTop: 4 },
+  fieldLabel: { fontSize: 18, fontWeight: "600", color: colors.textSecondary, marginBottom: 6 },
+  fieldNote: { fontSize: 16, color: "#d97706", marginTop: 4 },
 
   input: {
     borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
     paddingHorizontal: 12, paddingVertical: 10,
-    fontSize: 16, fontWeight: "500", color: colors.textSecondary,
+    fontSize: 19, fontWeight: "500", color: colors.textSecondary,
     backgroundColor: colors.bg,
   },
   inputRow: {
@@ -362,8 +362,8 @@ const st = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
     backgroundColor: colors.bg,
   },
-  bahtSign: { paddingLeft: 12, fontSize: 17, color: colors.textMuted, fontWeight: "600" },
-  inputText: { flex: 1, paddingHorizontal: 8, paddingVertical: 10, fontSize: 17, fontWeight: "600", color: colors.textPrimary },
+  bahtSign: { paddingLeft: 12, fontSize: 20, color: colors.textMuted, fontWeight: "600" },
+  inputText: { flex: 1, paddingHorizontal: 8, paddingVertical: 10, fontSize: 20, fontWeight: "600", color: colors.textPrimary },
   textarea: { minHeight: 80, paddingTop: 10 },
 
   submitWrap: { marginTop: 16 },
@@ -373,5 +373,5 @@ const st = StyleSheet.create({
     paddingVertical: 15, ...shadows.button,
   },
   submitBtnOff: { backgroundColor: colors.textDisabled },
-  submitText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  submitText: { color: "#fff", fontSize: 21, fontWeight: "700" },
 });

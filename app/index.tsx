@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Animated, Image, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
@@ -53,13 +53,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   title: {
-    fontSize: 28,
+    fontSize: 31,
     fontWeight: "bold",
     color: "#16a34a",
     letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 19,
     color: "#6b7280",
     marginTop: 6,
   },

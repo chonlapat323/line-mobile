@@ -1,7 +1,10 @@
 import * as SecureStore from "expo-secure-store";
 import { router } from "expo-router";
 
-export const API_URL = "https://sales.beautyup-enterprise.com";
+// Production URL: https://sales.beautyup-enterprise.com
+// Local dev: ใช้ EXPO_PUBLIC_API_URL ใน .env (ต้องเป็น IP เครื่อง ไม่ใช่ localhost)
+// ตัวอย่าง .env → EXPO_PUBLIC_API_URL=http://192.168.1.10:3002
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://sales.beautyup-enterprise.com";
 
 const TIMEOUT_MS = 10000; // 10 วินาที
 
@@ -75,12 +78,16 @@ export const api = {
   verifySlip: (formData: FormData) =>
     request("/visits/verify-slip", { method: "POST", body: formData }),
 
-  getVisits: (params?: { dateFrom?: string; dateTo?: string }) => {
-    const q = new URLSearchParams({ limit: "100" });
+  getVisits: (params?: { dateFrom?: string; dateTo?: string; filterUserId?: string }) => {
+    const q = new URLSearchParams({ limit: "200" });
     if (params?.dateFrom) q.set("dateFrom", params.dateFrom);
     if (params?.dateTo) q.set("dateTo", params.dateTo);
+    if (params?.filterUserId) q.set("filterUserId", params.filterUserId);
     return request(`/visits?${q.toString()}`);
   },
+  deleteVisit: (id: string) => request(`/visits/${id}`, { method: "DELETE" }),
+  updateVisit: (id: string, data: { shopName?: string; result?: string; orderAmount?: number | null; details?: string }) =>
+    request(`/visits/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   updateMe: (data: { bankName?: string; bankAccount?: string }) =>
     request("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
   getMyCommission: (month: string) => request(`/visits/my-commission?month=${month}`),
