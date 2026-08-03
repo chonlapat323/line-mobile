@@ -18,5 +18,10 @@ android/gradlew
 android/gradlew.bat
 android/settings.gradle
 
+# Local env (contains IP address) — DO NOT COMMIT
+.env
+.env.local
+.env.*
+
 # Build logs
 build-log.txt
