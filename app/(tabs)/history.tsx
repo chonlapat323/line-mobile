@@ -11,6 +11,7 @@ import { api, getStoredUser } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 import { SkeletonBox } from "@/lib/Skeleton";
 import { ImageViewer } from "@/lib/ImageViewer";
+import { TRIP_LABEL, MISSION_LABEL, RESULT_LABEL, CUSTOMER_TYPE_LABEL } from "@/lib/labels";
 
 interface VisitRecord {
   id: string;
@@ -33,9 +34,6 @@ interface VisitRecord {
   user?: { fullName: string; email: string };
 }
 
-const TRIP_LABEL: Record<string, string> = { plan: "ตามแผน", off_plan: "นอกแผน" };
-const MISSION_LABEL: Record<string, string> = { tak: "เยี่ยมเยียน", dem: "เดม", tel: "โทร / LINE" };
-const RESULT_LABEL: Record<string, string> = { buy: "ซื้อ", no_buy: "ไม่ซื้อ", not_found: "ไม่พบ" };
 const SLOT_LABELS = ["หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ Line", "X-ray"];
 const AVATAR_COLORS = ["#16a34a", "#d97706", "#4f46e5", "#db2777", "#0f766e", "#0369a1", "#9333ea", "#dc2626"];
 
@@ -142,7 +140,7 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
     { icon: "calendar-outline", label: "วันที่ทำภารกิจ", value: new Date(record.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) },
     { icon: "location-outline", label: "สถานที่", value: locationLabel },
     { icon: "swap-horizontal-outline", label: "ทริป", value: TRIP_LABEL[record.tripType || ""] || "-" },
-    { icon: "people-outline", label: "ลูกค้า", value: record.customerType === "new" ? "ลูกค้าใหม่" : "ลูกค้าเก่า" },
+    { icon: "people-outline", label: "ลูกค้า", value: CUSTOMER_TYPE_LABEL[record.customerType] ?? record.customerType },
     { icon: "checkmark-circle-outline", label: "ภารกิจ", value: MISSION_LABEL[record.visitType || ""] || "-" },
     ...(record.latitude && record.longitude
       ? [{ icon: "navigate-outline" as const, label: "พิกัด GPS", value: `${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)}` }]
@@ -626,7 +624,7 @@ export default function HistoryScreen() {
           const resLabel = RESULT_LABEL[resKey] || "";
           const rs = getResultStyle(resKey);
           const tags: string[] = [
-            item.customerType === "new" ? "ลูกค้าใหม่" : "ลูกค้าเก่า",
+            CUSTOMER_TYPE_LABEL[item.customerType] ?? item.customerType,
             item.visitType ? MISSION_LABEL[item.visitType] : "",
             item.tripType ? TRIP_LABEL[item.tripType] : "",
             item.province ? item.province.replace("กรุงเทพมหานคร", "กรุงเทพฯ") : "",

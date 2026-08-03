@@ -10,6 +10,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { clearToken, getStoredUser, api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
+import { RESULT_LABEL, CUSTOMER_TYPE_LABEL } from "@/lib/labels";
 import { SkeletonBox } from "@/lib/Skeleton";
 import { ImageViewer } from "@/lib/ImageViewer";
 import { AppAlert, AlertButton } from "@/lib/AppModal";
@@ -44,7 +45,6 @@ interface VisitRecord {
   user?: { fullName: string; email: string };
 }
 // ── Helpers ───────────────────────────────────────────────────
-const RESULT_LABEL: Record<string, string> = { buy: "ซื้อ", no_buy: "ไม่ซื้อ", not_found: "ไม่พบ" };
 const SLOT_LABELS = ["หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ Line", "X-ray"];
 
 function getResultStyle(key: string) {
@@ -148,7 +148,7 @@ function VisitDetailModal({ record, onClose }: { record: VisitRecord; onClose: (
               {[
                 { icon: "location-outline" as const, label: "สถานที่", value: locationLabel },
                 { icon: "swap-horizontal-outline" as const, label: "ทริป", value: record.tripType === "plan" ? "ตามแผน" : record.tripType === "off_plan" ? "นอกแผน" : "-" },
-                { icon: "people-outline" as const, label: "ลูกค้า", value: record.customerType === "new" ? "ลูกค้าใหม่" : "ลูกค้าเก่า" },
+                { icon: "people-outline" as const, label: "ลูกค้า", value: CUSTOMER_TYPE_LABEL[record.customerType] ?? record.customerType },
                 { icon: "checkmark-circle-outline" as const, label: "ภารกิจ", value: record.visitType === "tak" ? "ทัก" : record.visitType === "dem" ? "เดม" : record.visitType === "tel" ? "โทร" : "-" },
                 { icon: "calendar-outline" as const, label: "วันที่", value: new Date(record.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) },
                 ...(record.latitude && record.longitude
