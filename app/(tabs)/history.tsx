@@ -34,7 +34,7 @@ interface VisitRecord {
 }
 
 const TRIP_LABEL: Record<string, string> = { plan: "ตามแผน", off_plan: "นอกแผน" };
-const MISSION_LABEL: Record<string, string> = { tak: "ทัก", dem: "เดม", tel: "โทร" };
+const MISSION_LABEL: Record<string, string> = { tak: "เยี่ยมเยียน", dem: "เดม", tel: "โทร / LINE" };
 const RESULT_LABEL: Record<string, string> = { buy: "ซื้อ", no_buy: "ไม่ซื้อ", not_found: "ไม่พบ" };
 const SLOT_LABELS = ["หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ Line", "X-ray"];
 const AVATAR_COLORS = ["#16a34a", "#d97706", "#4f46e5", "#db2777", "#0f766e", "#0369a1", "#9333ea", "#dc2626"];
@@ -128,7 +128,10 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
     setImgIndex(idx);
   };
 
-  const locationLabel = record.district ? `${record.province} · ${record.district}` : record.province;
+  const isBkk = record.province === "กรุงเทพมหานคร" || record.province === "กทม" || record.province === "กรุงเทพฯ";
+  const locationLabel = record.district
+    ? (isBkk ? `${record.district} กทม.` : `${record.province} · ${record.district}`)
+    : record.province;
   const resKey = record.result || "";
   const rs = getResultStyle(resKey);
 
@@ -136,11 +139,11 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
   const allLabels = [...SLOT_LABELS, "สลิปการชำระเงิน"];
 
   const infoRows: { icon: React.ComponentProps<typeof Ionicons>["name"]; label: string; value: string }[] = [
+    { icon: "calendar-outline", label: "วันที่ทำภารกิจ", value: new Date(record.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) },
     { icon: "location-outline", label: "สถานที่", value: locationLabel },
     { icon: "swap-horizontal-outline", label: "ทริป", value: TRIP_LABEL[record.tripType || ""] || "-" },
     { icon: "people-outline", label: "ลูกค้า", value: record.customerType === "new" ? "ลูกค้าใหม่" : "ลูกค้าเก่า" },
     { icon: "checkmark-circle-outline", label: "ภารกิจ", value: MISSION_LABEL[record.visitType || ""] || "-" },
-    { icon: "calendar-outline", label: "วันที่", value: new Date(record.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) },
     ...(record.latitude && record.longitude
       ? [{ icon: "navigate-outline" as const, label: "พิกัด GPS", value: `${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)}` }]
       : []),
@@ -194,16 +197,21 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={det.body}>
-              {resKey ? (
+              {(resKey || record.details) ? (
                 <View style={det.resultRow}>
-                  <View style={[det.resultBadge, { backgroundColor: rs.bg }]}>
-                    <Text style={[det.resultBadgeText, { color: rs.text }]}>ผลตอบรับ: {RESULT_LABEL[resKey]}</Text>
-                  </View>
+                  {resKey ? (
+                    <View style={[det.resultBadge, { backgroundColor: rs.bg }]}>
+                      <Text style={[det.resultBadgeText, { color: rs.text }]}>ผลตอบรับ: {RESULT_LABEL[resKey]}</Text>
+                    </View>
+                  ) : null}
                   {resKey === "buy" && record.orderAmount != null && (
                     <View style={det.orderBadge}>
                       <Text style={det.orderText}>เปิดบิล ฿{record.orderAmount.toLocaleString("th-TH")}</Text>
                     </View>
                   )}
+                  {record.details ? (
+                    <Text style={det.noteInline} numberOfLines={2}>{record.details}</Text>
+                  ) : null}
                 </View>
               ) : null}
 
@@ -214,13 +222,6 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
                   <Text style={det.infoValue}>{row.value}</Text>
                 </View>
               ))}
-
-              {record.details ? (
-                <View style={det.noteBox}>
-                  <Text style={det.noteLabel}>สรุปผล</Text>
-                  <Text style={det.noteText}>{record.details}</Text>
-                </View>
-              ) : null}
 
               {/* Edit / Delete buttons */}
               <View style={det.actionRow}>
@@ -786,6 +787,7 @@ const det = StyleSheet.create({
   resultBadgeText: { fontSize: 18, fontWeight: "700" },
   orderBadge: { borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0" },
   orderText: { fontSize: 18, fontWeight: "700", color: "#15803d" },
+  noteInline: { flex: 1, fontSize: 16, color: colors.textSecondary, textAlign: "right", marginLeft: 8 },
   infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   infoIcon: { marginRight: 10 },
   infoLabel: { fontSize: 18, color: colors.textMuted, width: 70 },

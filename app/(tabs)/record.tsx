@@ -370,7 +370,7 @@ export default function RecordScreen() {
               <View style={[st.toggleRow, { marginTop: 14 }]}>
                 <Text style={st.toggleLabel}>ภารกิจ</Text>
                 <View style={st.toggleGroup}>
-                  {([ { key: "tak", label: "ทัก" }, { key: "dem", label: "เดม" }, { key: "tel", label: "โทร" } ] as { key: VisitType; label: string }[]).map(({ key, label }) => (
+                  {([ { key: "tak", label: "เยี่ยมเยียน" }, { key: "dem", label: "เดม" }, { key: "tel", label: "โทร / LINE" } ] as { key: VisitType; label: string }[]).map(({ key, label }) => (
                     <TouchableOpacity key={key} style={[st.toggle, visitType === key && st.toggleOn]} onPress={() => setVisitType(key)}>
                       <Text style={[st.toggleText, visitType === key && st.toggleTextOn]}>{label}</Text>
                     </TouchableOpacity>
