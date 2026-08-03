@@ -317,7 +317,7 @@ const st = StyleSheet.create({
   slipBox: {
     borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
     borderStyle: "dashed", overflow: "hidden", minHeight: 160,
-    backgroundColor: colors.bgAlt,
+    backgroundColor: colors.bg,
   },
   slipPreview: { width: "100%", height: 220 },
   slipPlaceholder: { alignItems: "center", justifyContent: "center", gap: 6, padding: 24 },
@@ -370,7 +370,7 @@ const st = StyleSheet.create({
   submitBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: colors.primary, borderRadius: radius.lg,
-    paddingVertical: 15, ...shadows.button,
+    paddingVertical: 15, ...shadows.card,
   },
   submitBtnOff: { backgroundColor: colors.textDisabled },
   submitText: { color: "#fff", fontSize: 21, fontWeight: "700" },

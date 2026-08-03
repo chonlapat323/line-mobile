@@ -180,7 +180,7 @@ const md = StyleSheet.create({
   },
   title: { fontSize: 21, fontWeight: "700", color: colors.textPrimary, flex: 1 },
   body: { padding: 16, gap: 12 },
-  slipImg: { width: "100%", height: 220, borderRadius: radius.md, backgroundColor: colors.bgAlt, marginBottom: 4 },
+  slipImg: { width: "100%", height: 220, borderRadius: radius.md, backgroundColor: colors.bg, marginBottom: 4 },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   label: { fontSize: 18, color: colors.textMuted, fontWeight: "500" },
   value: { fontSize: 18, color: colors.textPrimary, fontWeight: "600", textAlign: "right", flex: 1, marginLeft: 16 },

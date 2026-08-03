@@ -77,10 +77,12 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       {!ready && <AppLoadingScreen />}
-      <Stack screenOptions={{ headerShown: false }} style={!ready ? { opacity: 0 } : undefined}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-      </Stack>
+      <View style={!ready ? { opacity: 0, flex: 1 } : { flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+        </Stack>
+      </View>
     </SafeAreaProvider>
   );
 }

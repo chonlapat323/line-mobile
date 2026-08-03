@@ -652,7 +652,7 @@ export default function ProfileScreen() {
               <View>
                 <Text style={styles.inputLabel}>ธนาคาร</Text>
                 <TouchableOpacity onPress={() => setBankPickerVisible(true)} style={[styles.bankInput, { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
-                  <Text style={{ fontSize: 19, color: bankName ? colors.text : colors.textDisabled }}>
+                  <Text style={{ fontSize: 19, color: bankName ? colors.textPrimary : colors.textDisabled }}>
                     {bankName || "— เลือกธนาคาร —"}
                   </Text>
                   <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
@@ -760,7 +760,7 @@ export default function ProfileScreen() {
         <TouchableOpacity style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }} activeOpacity={1} onPress={() => setBankPickerVisible(false)} />
         <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32, maxHeight: "60%", position: "absolute", bottom: 0, left: 0, right: 0 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 0.5, borderBottomColor: "#e5e7eb" }}>
-            <Text style={{ fontSize: 21, fontWeight: "700", color: colors.text }}>เลือกธนาคาร</Text>
+            <Text style={{ fontSize: 21, fontWeight: "700", color: colors.textPrimary }}>เลือกธนาคาร</Text>
             <TouchableOpacity onPress={() => setBankPickerVisible(false)}>
               <Ionicons name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -773,7 +773,7 @@ export default function ProfileScreen() {
                 onPress={() => { setBankName(item); setBankPickerVisible(false); }}
                 style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: "#f3f4f6" }}
               >
-                <Text style={{ fontSize: 20, color: colors.text }}>{item}</Text>
+                <Text style={{ fontSize: 20, color: colors.textPrimary }}>{item}</Text>
                 {bankName === item && <Ionicons name="checkmark" size={18} color={colors.primary} />}
               </TouchableOpacity>
             )}
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
   commResultLabel: { fontSize: 18, fontWeight: "600", flex: 1 },
   commResultAmount: { fontSize: 21, fontWeight: "800" },
   commBreakdownBox: {
-    backgroundColor: colors.bgAlt ?? "#f8fafc",
+    backgroundColor: colors.bg,
     borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderLight,
     paddingHorizontal: 14, paddingVertical: 10, gap: 4,
   },
