@@ -25,3 +25,6 @@ android/settings.gradle
 
 # Build logs
 build-log.txt
+
+# Backup/original assets
+assets/adaptive-icon-original.png

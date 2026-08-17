@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { router } from "expo-router";
+import { useAuthStore } from "./useAuthStore";
 
 // Production URL: https://sales.beautyup-enterprise.com
 // Local dev: ใช้ EXPO_PUBLIC_API_URL ใน .env (ต้องเป็น IP เครื่อง ไม่ใช่ localhost)
@@ -8,8 +9,8 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://sales.beautyu
 
 const TIMEOUT_MS = 10000; // 10 วินาที
 
-async function getToken() {
-  return await SecureStore.getItemAsync("token");
+function getToken() {
+  return useAuthStore.getState().token;
 }
 
 async function request(path: string, options: RequestInit = {}) {
@@ -35,8 +36,7 @@ async function request(path: string, options: RequestInit = {}) {
 
     if (res.status === 401) {
       if (path !== "/auth/login") {
-        await SecureStore.deleteItemAsync("token");
-        await SecureStore.deleteItemAsync("user");
+        useAuthStore.getState().signOut();
         router.replace("/login");
       }
       const errBody = await res.json().catch(() => ({}));
@@ -106,6 +106,23 @@ export async function saveToken(token: string, user: object) {
 export async function clearToken() {
   await SecureStore.deleteItemAsync("token");
   await SecureStore.deleteItemAsync("user");
+}
+
+export async function saveCredentials(email: string, password: string) {
+  await SecureStore.setItemAsync("cred_email", email);
+  await SecureStore.setItemAsync("cred_password", password);
+}
+
+export async function getStoredCredentials() {
+  const email = await SecureStore.getItemAsync("cred_email");
+  const password = await SecureStore.getItemAsync("cred_password");
+  if (email && password) return { email, password };
+  return null;
+}
+
+export async function clearCredentials() {
+  await SecureStore.deleteItemAsync("cred_email");
+  await SecureStore.deleteItemAsync("cred_password");
 }
 
 export async function getStoredUser() {

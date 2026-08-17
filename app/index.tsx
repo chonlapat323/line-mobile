@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Animated, Image, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
+import { useAuthStore } from "@/lib/useAuthStore";
 
 export default function Index() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -14,7 +15,8 @@ export default function Index() {
 
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, { toValue: 0, duration: 350, useNativeDriver: true }).start(() => {
-        router.replace("/login");
+        const { isAuthenticated } = useAuthStore.getState();
+        router.replace(isAuthenticated ? "/(tabs)/record" : "/login");
       });
     }, 2500);
 

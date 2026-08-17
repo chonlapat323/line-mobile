@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Animated } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { getStoredUser } from "@/lib/api";
+import { useAuthStore } from "@/lib/useAuthStore";
 import { colors } from "@/lib/theme";
 
 function AppLoadingScreen() {
@@ -56,22 +56,21 @@ function PulsingDot({ delay }: { delay: number }) {
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const router = useRouter();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const _hasHydrated = useAuthStore((s) => (s as any)._hasHydrated);
 
   useEffect(() => {
-    async function init() {
-      try {
-        const user = await getStoredUser();
-        if (!user) {
-          router.replace("/login");
-        }
-      } catch {
-        router.replace("/login");
-      } finally {
-        setReady(true);
-      }
-    }
-    init();
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setReady(true);
+    });
+    if (useAuthStore.persist.hasHydrated()) setReady(true);
+    return unsub;
   }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (!isAuthenticated) router.replace("/login");
+  }, [ready, isAuthenticated]);
 
   return (
     <SafeAreaProvider>

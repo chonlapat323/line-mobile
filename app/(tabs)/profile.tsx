@@ -8,7 +8,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { clearToken, getStoredUser, api } from "@/lib/api";
+import { getStoredUser, api } from "@/lib/api";
+import { useAuthStore } from "@/lib/useAuthStore";
 import { colors, radius, shadows } from "@/lib/theme";
 import { RESULT_LABEL, CUSTOMER_TYPE_LABEL } from "@/lib/labels";
 import { SkeletonBox } from "@/lib/Skeleton";
@@ -241,6 +242,7 @@ const INFO_ROWS: {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const signOut = useAuthStore((s) => s.signOut);
   const { fontScale } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const fs = (base: number) => base / fontScale;
@@ -310,6 +312,24 @@ export default function ProfileScreen() {
     Object.entries(provinceCounts).sort((a, b) => b[1] - a[1]).slice(0, 3),
     [provinceCounts]);
 
+  const tierInfo = useMemo(() => {
+    if (!commData) return null;
+    const tiers: { min: number; max: number | null; rate: number }[] = commData.settings?.tiers ?? [];
+    if (tiers.length === 0) return null;
+    const total = commData.totalAmount;
+    let currentIdx = 0;
+    for (let i = 0; i < tiers.length; i++) {
+      if (total >= tiers[i].min) currentIdx = i;
+    }
+    const current = tiers[currentIdx];
+    const next = tiers[currentIdx + 1] ?? null;
+    const progressMax = next ? next.min : (current.max ?? total + 1);
+    const progress = progressMax > current.min
+      ? Math.min((total - current.min) / (progressMax - current.min), 1)
+      : 1;
+    return { current, next, isMax: !next, progress, amountToNext: next ? Math.round(Math.max(next.min - total, 0)) : 0 };
+  }, [commData]);
+
   // ── Province navigation ──────────────────────────────────────
   function openProvince(name: string) {
     if (!provinceCounts[name]) return;
@@ -322,7 +342,16 @@ export default function ProfileScreen() {
     if (isRefresh) setRefreshing(true);
     try {
       const [u, me, data] = await Promise.all([getStoredUser(), api.getMe(), api.getVisits()]);
-      const merged = { ...u, bankName: me?.bankName ?? "", bankAccount: me?.bankAccount ?? "", lineConnected: me?.lineConnected ?? false };
+      const base = u ?? useAuthStore.getState().user ?? {};
+      const merged = {
+        ...base,
+        fullName: me?.fullName ?? (base as any).fullName ?? "",
+        email: me?.email ?? (base as any).email ?? "",
+        role: me?.role ?? (base as any).role ?? "",
+        bankName: me?.bankName ?? "",
+        bankAccount: me?.bankAccount ?? "",
+        lineConnected: me?.lineConnected ?? false,
+      };
       setUser(merged);
       setBankName(me?.bankName ?? "");
       setBankAccount(me?.bankAccount ?? "");
@@ -374,7 +403,7 @@ export default function ProfileScreen() {
   function handleLogout() {
     showAlert("confirm", "ออกจากระบบ", "ต้องการออกจากระบบใช่ไหม?", [
       { text: "ยกเลิก", style: "cancel", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) },
-      { text: "ออกจากระบบ", style: "destructive", onPress: async () => { setAppAlert((p) => ({ ...p, visible: false })); await clearToken(); router.replace("/login"); } },
+      { text: "ออกจากระบบ", style: "destructive", onPress: async () => { setAppAlert((p) => ({ ...p, visible: false })); signOut(); router.replace("/login"); } },
     ]);
   }
 
@@ -439,7 +468,7 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
           <View style={styles.heroAvatar}>
-            <Text style={styles.heroAvatarText}>{user.fullName.charAt(0).toUpperCase()}</Text>
+            <Text style={styles.heroAvatarText}>{user.fullName?.charAt(0)?.toUpperCase() ?? "?"}</Text>
           </View>
           <Text style={styles.heroName}>{user.fullName}</Text>
           <Text style={styles.heroEmail}>{user.email}</Text>
@@ -448,20 +477,33 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Stats bar */}
-        <View style={styles.statsBar}>
-          <View style={styles.statCol}>
-            <Text style={styles.statN}>{stats.total}</Text>
-            <Text style={styles.statL}>บันทึก</Text>
-          </View>
-          <View style={[styles.statCol, styles.statColMid]}>
-            <Text style={styles.statN}>{stats.bought}</Text>
-            <Text style={styles.statL}>ซื้อสินค้า</Text>
-          </View>
-          <View style={styles.statCol}>
-            <Text style={styles.statN}>{stats.provinces}</Text>
-            <Text style={styles.statL}>จังหวัด</Text>
-          </View>
+        {/* Commission tier progress */}
+        <View style={styles.tierBar}>
+          {commLoading || !commData ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 6 }} />
+          ) : tierInfo ? (
+            <>
+              <Text style={styles.tierLabel}>ค่าคอมเดือนนี้</Text>
+              <Text style={styles.tierAmount}>฿{commData.commission.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</Text>
+              <View style={styles.tierTrackRow}>
+                <Text style={styles.tierRateCurrent}>{tierInfo.current.rate}%</Text>
+                <View style={styles.tierTrack}>
+                  <View style={[styles.tierFill, { width: `${Math.round(tierInfo.progress * 100)}%` as any }]} />
+                </View>
+                {tierInfo.next && <Text style={styles.tierRateNext}>{tierInfo.next.rate}%</Text>}
+              </View>
+              <Text style={styles.tierCaption}>
+                {tierInfo.isMax
+                  ? "ถึงอัตราสูงสุดแล้ว"
+                  : `อีก ฿${tierInfo.amountToNext.toLocaleString("th-TH")} ถึงได้ ${tierInfo.next!.rate}%`}
+              </Text>
+            </>
+          ) : (
+            <View style={styles.tierHeader}>
+              <Text style={styles.tierLabel}>อัตราค่าคอม {commData.settings.rate}%</Text>
+              <Text style={styles.tierAmount}>฿{commData.totalAmount.toLocaleString("th-TH")}</Text>
+            </View>
+          )}
         </View>
 
         {/* Commission */}
@@ -818,14 +860,19 @@ const styles = StyleSheet.create({
   },
   heroBadgeText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 
-  statsBar: {
-    flexDirection: "row", backgroundColor: colors.surface,
+  tierBar: {
+    backgroundColor: colors.surface,
     borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+    paddingHorizontal: 16, paddingVertical: 12,
   },
-  statCol: { flex: 1, paddingVertical: 14, alignItems: "center" },
-  statColMid: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.borderLight },
-  statN: { fontSize: 25, fontWeight: "900", color: colors.textPrimary },
-  statL: { fontSize: 15, fontWeight: "600", color: colors.textDisabled, marginTop: 2 },
+  tierLabel: { fontSize: 24, color: colors.textMuted, fontWeight: "600", textAlign: "center", marginBottom: 4 },
+  tierAmount: { fontSize: 44, fontWeight: "900", color: colors.primary, textAlign: "center", marginBottom: 12 },
+  tierTrackRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
+  tierRateCurrent: { fontSize: 18, fontWeight: "800", color: colors.primary, width: 40 },
+  tierRateNext: { fontSize: 18, fontWeight: "700", color: colors.textDisabled, width: 40, textAlign: "right" },
+  tierTrack: { flex: 1, height: 10, backgroundColor: colors.bg, borderRadius: 5, overflow: "hidden", borderWidth: 0.5, borderColor: colors.borderLight },
+  tierFill: { height: 10, backgroundColor: colors.primary, borderRadius: 5 },
+  tierCaption: { fontSize: 15, color: colors.textMuted, textAlign: "center" },
 
   mapSection: { marginHorizontal: 16, marginTop: 14 },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },

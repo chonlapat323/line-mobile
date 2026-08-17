@@ -2,7 +2,7 @@
   "expo": {
     "name": "BeautyUp Sales",
     "slug": "line-sender-mobile",
-    "version": "2.1.5",
+    "version": "2.1.8",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "linesender",
@@ -25,14 +25,22 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.beautyup.linesender",
-      "versionCode": 11,
+      "versionCode": 14,
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow BeautyUp Sales to access your location to record visit coordinates."
+        }
+      ],
       [
         "expo-image-picker",
         {
