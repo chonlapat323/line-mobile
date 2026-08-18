@@ -29,7 +29,10 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [
@@ -44,7 +47,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow BeautyUp Sales to access your photos."
+          "photosPermission": "Allow BeautyUp Sales to access your photos.",
+          "cameraPermission": "Allow BeautyUp Sales to use the camera to take photos."
         }
       ]
     ],

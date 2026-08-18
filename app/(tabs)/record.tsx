@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Modal, FlatList,
-  ScrollView, ActivityIndicator, Image, StyleSheet, Alert,
+  ScrollView, ActivityIndicator, Image, StyleSheet,
   KeyboardAvoidingView, Platform, RefreshControl, Linking, Keyboard,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -9,7 +9,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
-import { AppAlert, AlertButton } from "@/lib/AppModal";
+import { AppAlert, AlertButton, ImagePickerSheet } from "@/lib/AppModal";
 import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-places";
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
 import { colors, radius, shadows } from "@/lib/theme";
@@ -68,6 +68,7 @@ export default function RecordScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [savedShop, setSavedShop] = useState("");
   const [appAlert, setAppAlert] = useState<{ visible: boolean; type: "error" | "confirm" | "info"; title: string; message: string; buttons: AlertButton[] }>({ visible: false, type: "error", title: "", message: "", buttons: [] });
+  const [imgSheet, setImgSheet] = useState<{ visible: boolean; slotKey: SlotKey | null; isQuotation: boolean }>({ visible: false, slotKey: null, isQuotation: false });
 
   function showAlert(type: "error" | "confirm" | "info", title: string, message = "", buttons?: AlertButton[]) {
     setAppAlert({ visible: true, type, title, message, buttons: buttons ?? [{ text: "ตกลง", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) }] });
@@ -117,11 +118,7 @@ export default function RecordScreen() {
   }
 
   function pickForSlot(slotKey: SlotKey) {
-    Alert.alert("เพิ่มรูป", "", [
-      { text: "ถ่ายรูป",          onPress: () => openCameraForSlot(slotKey) },
-      { text: "เลือกจาก Gallery", onPress: () => openGalleryForSlot(slotKey) },
-      { text: "ยกเลิก", style: "cancel" },
-    ]);
+    setImgSheet({ visible: true, slotKey, isQuotation: false });
   }
 
   async function openCameraForSlot(slotKey: SlotKey) {
@@ -147,21 +144,33 @@ export default function RecordScreen() {
   }
 
   function pickQuotation() {
-    Alert.alert("แนบใบเสนอราคา", "", [
-      { text: "ถ่ายรูป", onPress: async () => {
-        const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-        if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
-        const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
-        if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
-      }},
-      { text: "เลือกจาก Gallery", onPress: async () => {
-        const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
-        const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8 });
-        if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
-      }},
-      { text: "ยกเลิก", style: "cancel" },
-    ]);
+    setImgSheet({ visible: true, slotKey: null, isQuotation: true });
+  }
+
+  async function handleImgSheetCamera() {
+    const { slotKey, isQuotation } = imgSheet;
+    setImgSheet((p) => ({ ...p, visible: false }));
+    if (isQuotation) {
+      const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+      if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
+      const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
+      if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
+    } else if (slotKey) {
+      await openCameraForSlot(slotKey);
+    }
+  }
+
+  async function handleImgSheetGallery() {
+    const { slotKey, isQuotation } = imgSheet;
+    setImgSheet((p) => ({ ...p, visible: false }));
+    if (isQuotation) {
+      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8 });
+      if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
+    } else if (slotKey) {
+      await openGalleryForSlot(slotKey);
+    }
   }
 
   async function handleSubmit() {
@@ -564,6 +573,14 @@ export default function RecordScreen() {
 
       <AppAlert {...appAlert} />
 
+      <ImagePickerSheet
+        visible={imgSheet.visible}
+        title={imgSheet.isQuotation ? "แนบใบเสนอราคา" : "เพิ่มรูป"}
+        onCamera={handleImgSheetCamera}
+        onGallery={handleImgSheetGallery}
+        onClose={() => setImgSheet((p) => ({ ...p, visible: false }))}
+      />
+
       <SearchPickerModal
         visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}
         search={pickerSearch} onSearch={setPickerSearch}
@@ -599,7 +616,7 @@ function SearchPickerModal({ visible, title, items, search, onSearch, onSelect, 
             <View style={modal.searchWrap}>
               <Ionicons name="search" size={16} color={colors.textDisabled} style={{ marginRight: 8 }} />
               <TextInput style={modal.searchInput} value={search} onChangeText={onSearch}
-                placeholder="ค้นหา..." placeholderTextColor={colors.textDisabled} autoFocus />
+                placeholder="ค้นหา..." placeholderTextColor={colors.textDisabled} />
             </View>
             <FlatList
               data={items} keyExtractor={(item) => item}

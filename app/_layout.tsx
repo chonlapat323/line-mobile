@@ -63,7 +63,13 @@ export default function RootLayout() {
     const unsub = useAuthStore.persist.onFinishHydration(() => {
       setReady(true);
     });
-    if (useAuthStore.persist.hasHydrated()) setReady(true);
+    if (useAuthStore.persist.hasHydrated()) {
+      setReady(true);
+    } else {
+      // fallback: iOS บางกรณี onFinishHydration ไม่ถูก fire
+      const t = setTimeout(() => setReady(true), 3000);
+      return () => { unsub(); clearTimeout(t); };
+    }
     return unsub;
   }, []);
 
