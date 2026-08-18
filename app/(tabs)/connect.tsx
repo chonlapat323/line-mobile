@@ -4,7 +4,8 @@ import {
   ActivityIndicator, Clipboard, Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { api, getStoredUser } from "@/lib/api";
+import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/useAuthStore";
 import { colors, radius } from "@/lib/theme";
 import { AppAlert, AlertButton } from "@/lib/AppModal";
 import { SkeletonBox } from "@/lib/Skeleton";
@@ -16,7 +17,7 @@ const STEPS = [
 ];
 
 export default function ConnectScreen() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const [code, setCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [lineBotId, setLineBotId] = useState<string | null>(null);
@@ -28,16 +29,13 @@ export default function ConnectScreen() {
   }
 
   useEffect(() => {
-    Promise.all([
-      getStoredUser().then((u) => { if (u) setUserId(u.id); }),
-      api.getSettings().then((s: { lineBotId: string | null }) => {
-        if (s.lineBotId) setLineBotId(s.lineBotId);
-      }).catch(console.error),
-    ]).finally(() => setInitializing(false));
+    api.getSettings().then((s: { lineBotId: string | null }) => {
+      if (s.lineBotId) setLineBotId(s.lineBotId);
+    }).catch(console.error).finally(() => setInitializing(false));
   }, []);
 
   async function generateCode() {
-    if (!userId) return;
+    if (!userId) { showAlert("error", "ผิดพลาด", "ไม่พบข้อมูลผู้ใช้ กรุณา login ใหม่"); return; }
     setLoading(true);
     setCode(null);
     try {
