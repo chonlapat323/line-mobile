@@ -24,6 +24,8 @@ export default function SlipScreen() {
   const [shopName, setShopName] = useState("");
   const [amount, setAmount] = useState("");
   const [details, setDetails] = useState("");
+  const [province, setProvince] = useState("");
+  const [district, setDistrict] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function parseAsset(uri: string): Promise<PickedImage> {
@@ -101,6 +103,8 @@ export default function SlipScreen() {
     setAmount("");
     setShopName("");
     setDetails("");
+    setProvince("");
+    setDistrict("");
   }
 
   async function handleSubmit() {
@@ -114,6 +118,8 @@ export default function SlipScreen() {
         slipUrl,
         slipStatus,
         transRef,
+        province: province.trim(),
+        district: district.trim(),
       });
       resetForm();
       Alert.alert(
@@ -221,6 +227,29 @@ export default function SlipScreen() {
                 placeholder="ระบุชื่อร้าน"
                 placeholderTextColor={colors.textDisabled}
               />
+            </View>
+
+            <View style={st.fieldRow}>
+              <View style={[st.fieldGroup, { flex: 1 }]}>
+                <Text style={st.fieldLabel}>จังหวัด</Text>
+                <TextInput
+                  style={st.input}
+                  value={province}
+                  onChangeText={setProvince}
+                  placeholder="ระบุจังหวัด"
+                  placeholderTextColor={colors.textDisabled}
+                />
+              </View>
+              <View style={[st.fieldGroup, { flex: 1 }]}>
+                <Text style={st.fieldLabel}>เขต / อำเภอ</Text>
+                <TextInput
+                  style={st.input}
+                  value={district}
+                  onChangeText={setDistrict}
+                  placeholder="ระบุเขต/อำเภอ"
+                  placeholderTextColor={colors.textDisabled}
+                />
+              </View>
             </View>
 
             <View style={st.fieldGroup}>
@@ -348,6 +377,7 @@ const st = StyleSheet.create({
   changeBtnText: { fontSize: 17, color: colors.textMuted },
 
   fieldGroup: { marginBottom: 14 },
+  fieldRow: { flexDirection: "row", gap: 10 },
   fieldLabel: { fontSize: 18, fontWeight: "600", color: colors.textSecondary, marginBottom: 6 },
   fieldNote: { fontSize: 16, color: "#d97706", marginTop: 4 },
 
