@@ -46,7 +46,7 @@ interface VisitRecord {
   user?: { fullName: string; email: string };
 }
 // ── Helpers ───────────────────────────────────────────────────
-const SLOT_LABELS = ["หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ Line", "X-ray"];
+const SLOT_LABELS = ["ลีคชีต", "หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ LINE"];
 
 function getResultStyle(key: string) {
   if (key === "buy") return { bg: colors.successBg, text: colors.primaryDark };

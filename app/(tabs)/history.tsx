@@ -34,7 +34,7 @@ interface VisitRecord {
   user?: { fullName: string; email: string };
 }
 
-const SLOT_LABELS = ["หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ Line", "X-ray"];
+const SLOT_LABELS = ["ลีคชีต", "หน้าร้าน 1", "หน้าร้าน 2", "ภายในร้าน 1", "ภายในร้าน 2", "หน้าจอ LINE"];
 const AVATAR_COLORS = ["#16a34a", "#d97706", "#4f46e5", "#db2777", "#0f766e", "#0369a1", "#9333ea", "#dc2626"];
 
 function getAvatarColor(name: string): string {

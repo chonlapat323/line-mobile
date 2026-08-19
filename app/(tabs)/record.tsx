@@ -24,17 +24,17 @@ type VisitType = "tak" | "dem" | "tel";
 type ResultType = "buy" | "no_buy" | "not_found";
 
 const IMAGE_SLOTS = [
+  { key: "xray",    label: "ลีคชีต" },
   { key: "front1",  label: "หน้าร้าน 1" },
   { key: "front2",  label: "หน้าร้าน 2" },
   { key: "inside1", label: "ภายในร้าน 1" },
   { key: "inside2", label: "ภายในร้าน 2" },
   { key: "line",    label: "หน้าจอ LINE" },
-  { key: "xray",    label: "X-ray" },
 ] as const;
 
 type SlotKey = typeof IMAGE_SLOTS[number]["key"];
 type SlotImages = Record<SlotKey, PickedImage | null>;
-const EMPTY_SLOTS: SlotImages = { front1: null, front2: null, inside1: null, inside2: null, line: null, xray: null };
+const EMPTY_SLOTS: SlotImages = { xray: null, front1: null, front2: null, inside1: null, inside2: null, line: null };
 
 const RESULT_OPTIONS: { key: ResultType; emoji: string; label: string }[] = [
   { key: "buy",       emoji: "🛍️", label: "ซื้อ" },
@@ -448,7 +448,6 @@ export default function RecordScreen() {
                             <Ionicons name="document-outline" size={20} color={colors.primary} />
                           </View>
                           <Text style={st.slipUploadText}>แนบใบเสนอราคา</Text>
-                          <Text style={st.slipUploadSub}>ถ่ายรูปหรือเลือกจาก Gallery</Text>
                         </View>
                       )}
                     </TouchableOpacity>
