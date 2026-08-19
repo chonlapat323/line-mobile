@@ -37,8 +37,8 @@ type SlotImages = Record<SlotKey, PickedImage | null>;
 const EMPTY_SLOTS: SlotImages = { xray: null, front1: null, front2: null, inside1: null, inside2: null, line: null };
 
 const RESULT_OPTIONS: { key: ResultType; emoji: string; label: string }[] = [
-  { key: "buy",       emoji: "🛍️", label: "ซื้อ" },
-  { key: "no_buy",    emoji: "🙅", label: "ไม่ซื้อ" },
+  { key: "buy",       emoji: "🛍️", label: "ออเดอร์" },
+  { key: "no_buy",    emoji: "🙅", label: "ไม่ออเดอร์" },
   { key: "not_found", emoji: "🔍", label: "ไม่พบ" },
 ];
 
@@ -424,21 +424,21 @@ export default function RecordScreen() {
               {result === "buy" && (
                 <View style={{ marginTop: 14, gap: 12 }}>
                   <View>
-                    <Text style={st.fieldLabel}>เปิดบิล (บาท) <Text style={st.req}>*</Text></Text>
+                    <Text style={st.fieldLabel}>ประมาณการออเดอร์ (บาท) <Text style={st.req}>*</Text></Text>
                     <View style={st.inputRow}>
                       <Text style={st.bahtSign}>฿</Text>
                       <TextInput
                         style={st.inputText}
                         value={orderAmount}
                         onChangeText={setOrderAmount}
-                        placeholder="ระบุยอดเปิดบิล"
+                        placeholder="ระบุยอดประมาณการ"
                         placeholderTextColor={colors.textDisabled}
                         keyboardType="numeric"
                       />
                     </View>
                   </View>
                   <View>
-                    <Text style={st.fieldLabel}>ใบเสนอราคา <Text style={{ color: colors.textDisabled, fontWeight: "400" }}>(ถ้ามี)</Text></Text>
+                    <Text style={st.fieldLabel}>แนบหลักฐาน <Text style={{ color: colors.textDisabled, fontWeight: "400" }}>(ถ้ามี)</Text></Text>
                     <TouchableOpacity onPress={pickQuotation} style={st.slipBox} activeOpacity={0.8}>
                       {quotationImage ? (
                         <Image source={{ uri: quotationImage.uri }} style={st.slipPreview} resizeMode="contain" />
@@ -447,7 +447,7 @@ export default function RecordScreen() {
                           <View style={st.slipIconWrap}>
                             <Ionicons name="document-outline" size={20} color={colors.primary} />
                           </View>
-                          <Text style={st.slipUploadText}>แนบใบเสนอราคา</Text>
+                          <Text style={st.slipUploadText}>แนบหลักฐาน</Text>
                         </View>
                       )}
                     </TouchableOpacity>
@@ -574,7 +574,7 @@ export default function RecordScreen() {
 
       <ImagePickerSheet
         visible={imgSheet.visible}
-        title={imgSheet.isQuotation ? "แนบใบเสนอราคา" : "เพิ่มรูป"}
+        title={imgSheet.isQuotation ? "แนบหลักฐาน" : "เพิ่มรูป"}
         onCamera={handleImgSheetCamera}
         onGallery={handleImgSheetGallery}
         onClose={() => setImgSheet((p) => ({ ...p, visible: false }))}

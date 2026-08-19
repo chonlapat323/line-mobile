@@ -204,7 +204,7 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
                   ) : null}
                   {resKey === "buy" && record.orderAmount != null && (
                     <View style={det.orderBadge}>
-                      <Text style={det.orderText}>เปิดบิล ฿{record.orderAmount.toLocaleString("th-TH")}</Text>
+                      <Text style={det.orderText}>ประมาณการออเดอร์ ฿{record.orderAmount.toLocaleString("th-TH")}</Text>
                     </View>
                   )}
                   {record.details ? (
@@ -255,8 +255,8 @@ function EditModal({ record, onClose, onDone }: {
   const [loading, setLoading] = useState(false);
 
   const resultOpts = [
-    { value: "buy", label: "ซื้อ" },
-    { value: "no_buy", label: "ไม่ซื้อ" },
+    { value: "buy", label: "ออเดอร์" },
+    { value: "no_buy", label: "ไม่ออเดอร์" },
     { value: "not_found", label: "ไม่พบ" },
   ];
 
@@ -312,7 +312,7 @@ function EditModal({ record, onClose, onDone }: {
 
               {result === "buy" && (
                 <>
-                  <Text style={ed.label}>เปิดบิล (บาท)</Text>
+                  <Text style={ed.label}>ประมาณการออเดอร์ (บาท)</Text>
                   <TextInput
                     style={ed.input}
                     value={orderAmount}

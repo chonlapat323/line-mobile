@@ -762,8 +762,8 @@ export default function ProfileScreen() {
                           <View style={[styles.provinceBarFill, { width: barWidth }]} />
                         </View>
                         <View style={styles.provinceChips}>
-                          {buy > 0 && <Text style={[styles.pChipTxt, { color: "#16a34a" }]}>ซื้อ {buy}</Text>}
-                          {noBuy > 0 && <Text style={[styles.pChipTxt, { color: "#dc2626" }]}>ไม่ซื้อ {noBuy}</Text>}
+                          {buy > 0 && <Text style={[styles.pChipTxt, { color: "#16a34a" }]}>ออเดอร์ {buy}</Text>}
+                          {noBuy > 0 && <Text style={[styles.pChipTxt, { color: "#dc2626" }]}>ไม่ออเดอร์ {noBuy}</Text>}
                           {notFound > 0 && <Text style={[styles.pChipTxt, { color: "#2563eb" }]}>ไม่พบ {notFound}</Text>}
                         </View>
                       </View>

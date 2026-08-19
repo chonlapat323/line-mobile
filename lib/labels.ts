@@ -10,8 +10,8 @@ export const MISSION_LABEL: Record<string, string> = {
 };
 
 export const RESULT_LABEL: Record<string, string> = {
-  buy: "ซื้อ",
-  no_buy: "ไม่ซื้อ",
+  buy: "ออเดอร์",
+  no_buy: "ไม่ออเดอร์",
   not_found: "ไม่พบ",
 };
 
