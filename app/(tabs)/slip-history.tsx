@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Image, Modal, ScrollView,
+  ActivityIndicator, RefreshControl, Image, Modal, ScrollView, TextInput,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,9 +17,18 @@ interface SlipSubmission {
   slipStatus: string;
   transRef?: string | null;
   lineStatus?: string | null;
+  isProxy?: boolean;
   createdAt: string;
   user?: { fullName: string; email: string };
 }
+
+const STATUS_OPTS = [
+  { key: "", label: "ทั้งหมด" },
+  { key: "pending_approval", label: "รอยืนยัน" },
+  { key: "verified", label: "QR ผ่าน" },
+  { key: "approved", label: "อนุมัติแล้ว" },
+  { key: "rejected", label: "ปฏิเสธ" },
+];
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; border: string; text: string; label: string }> = {
@@ -70,6 +79,14 @@ function DetailModal({ item, onClose }: { item: SlipSubmission; onClose: () => v
             <View style={md.row}><Text style={md.label}>ยอดเงิน</Text><Text style={md.value}>{item.amount ? `฿${item.amount.toLocaleString("th-TH")}` : "-"}</Text></View>
             {item.transRef ? <View style={md.row}><Text style={md.label}>อ้างอิง</Text><Text style={md.value}>{item.transRef}</Text></View> : null}
             {item.details ? <View style={md.row}><Text style={md.label}>รายละเอียด</Text><Text style={md.value}>{item.details}</Text></View> : null}
+            {item.isProxy ? (
+              <View style={md.row}>
+                <Text style={md.label}>เก็บแทน</Text>
+                <View style={{ backgroundColor: "#eff6ff", borderWidth: 1, borderColor: "#93c5fd", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <Text style={{ fontSize: 15, fontWeight: "700", color: "#1d4ed8" }}>เก็บแทน</Text>
+                </View>
+              </View>
+            ) : null}
             <View style={md.row}><Text style={md.label}>LINE</Text><LineStatusBadge status={item.lineStatus} /></View>
             <View style={md.row}><Text style={md.label}>วันที่</Text><Text style={md.value}>{dt}</Text></View>
           </ScrollView>
@@ -85,9 +102,14 @@ export default function SlipHistoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<SlipSubmission | null>(null);
 
-  async function loadData() {
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showDateFilter, setShowDateFilter] = useState(false);
+
+  async function loadData(params?: { status?: string; dateFrom?: string; dateTo?: string }) {
     try {
-      const res = await api.getSlips();
+      const res = await api.getSlips(params);
       setData(res?.data ?? []);
     } catch {
       // silent
@@ -99,7 +121,26 @@ export default function SlipHistoryScreen() {
 
   useFocusEffect(useCallback(() => { loadData(); }, []));
 
-  function onRefresh() { setRefreshing(true); loadData(); }
+  function onRefresh() {
+    setRefreshing(true);
+    loadData({ status: statusFilter || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
+  }
+
+  function applyFilter() {
+    setLoading(true);
+    loadData({ status: statusFilter || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
+  }
+
+  function clearFilter() {
+    setStatusFilter("");
+    setDateFrom("");
+    setDateTo("");
+    setShowDateFilter(false);
+    setLoading(true);
+    loadData();
+  }
+
+  const hasActiveFilter = !!statusFilter || !!dateFrom || !!dateTo;
 
   if (loading) {
     return <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={colors.primary} /></View>;
@@ -107,6 +148,77 @@ export default function SlipHistoryScreen() {
 
   return (
     <View style={st.screen}>
+      {/* ── Filter bar ── */}
+      <View style={st.filterBar}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.chips}>
+          {STATUS_OPTS.map((opt) => {
+            const active = statusFilter === opt.key;
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                style={[st.chip, active && st.chipActive]}
+                onPress={() => {
+                  const next = active ? "" : opt.key;
+                  setStatusFilter(next);
+                  setLoading(true);
+                  loadData({ status: next || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
+                }}
+                activeOpacity={0.75}
+              >
+                <Text style={[st.chipText, active && st.chipTextActive]}>{opt.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+          <TouchableOpacity
+            style={[st.chip, (showDateFilter || dateFrom || dateTo) && st.chipActive]}
+            onPress={() => setShowDateFilter((v) => !v)}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="calendar-outline" size={14} color={(showDateFilter || dateFrom || dateTo) ? "#fff" : colors.textMuted} />
+            <Text style={[st.chipText, (showDateFilter || dateFrom || dateTo) && st.chipTextActive]}>ช่วงวันที่</Text>
+          </TouchableOpacity>
+          {hasActiveFilter && (
+            <TouchableOpacity style={[st.chip, st.chipClear]} onPress={clearFilter} activeOpacity={0.75}>
+              <Ionicons name="close" size={14} color={colors.error} />
+              <Text style={[st.chipText, { color: colors.error }]}>ล้าง</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+
+        {showDateFilter && (
+          <View style={st.dateRow}>
+            <View style={st.dateField}>
+              <Text style={st.dateLabel}>จาก</Text>
+              <TextInput
+                style={st.dateInput}
+                value={dateFrom}
+                onChangeText={setDateFrom}
+                placeholder="ปปปป-ดด-วว"
+                placeholderTextColor={colors.textDisabled}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+              />
+            </View>
+            <Text style={st.dateSep}>—</Text>
+            <View style={st.dateField}>
+              <Text style={st.dateLabel}>ถึง</Text>
+              <TextInput
+                style={st.dateInput}
+                value={dateTo}
+                onChangeText={setDateTo}
+                placeholder="ปปปป-ดด-วว"
+                placeholderTextColor={colors.textDisabled}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+              />
+            </View>
+            <TouchableOpacity style={st.applyBtn} onPress={applyFilter} activeOpacity={0.85}>
+              <Text style={st.applyBtnText}>กรอง</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       <FlatList
         data={data}
         keyExtractor={(i) => i.id}
@@ -115,7 +227,7 @@ export default function SlipHistoryScreen() {
         ListEmptyComponent={
           <View style={st.empty}>
             <Ionicons name="receipt-outline" size={44} color={colors.textDisabled} />
-            <Text style={st.emptyText}>ยังไม่มีประวัติส่งสลิป</Text>
+            <Text style={st.emptyText}>ไม่พบรายการ</Text>
           </View>
         }
         renderItem={({ item }) => {
@@ -129,7 +241,14 @@ export default function SlipHistoryScreen() {
               <View style={st.cardBody}>
                 <View style={st.cardTop}>
                   <Text style={st.shopName} numberOfLines={1}>{item.shopName}</Text>
-                  <StatusBadge status={item.slipStatus} />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                    {item.isProxy && (
+                      <View style={st.proxyBadge}>
+                        <Text style={st.proxyBadgeText}>เก็บแทน</Text>
+                      </View>
+                    )}
+                    <StatusBadge status={item.slipStatus} />
+                  </View>
                 </View>
                 <Text style={st.amount}>
                   {item.amount ? `฿${item.amount.toLocaleString("th-TH")}` : "ยังไม่ระบุยอด"}
@@ -154,6 +273,41 @@ const st = StyleSheet.create({
   empty: { alignItems: "center", paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 19, color: colors.textDisabled },
 
+  filterBar: {
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+    paddingVertical: 8,
+  },
+  chips: { paddingHorizontal: 12, gap: 6, alignItems: "center" },
+  chip: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 20, borderWidth: 1, borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipClear: { borderColor: colors.error, backgroundColor: "#fef2f2" },
+  chipText: { fontSize: 16, color: colors.textMuted, fontWeight: "600" },
+  chipTextActive: { color: "#fff" },
+
+  dateRow: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 12, paddingTop: 8,
+  },
+  dateField: { flex: 1, gap: 2 },
+  dateLabel: { fontSize: 13, color: colors.textMuted, fontWeight: "600" },
+  dateInput: {
+    borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
+    paddingHorizontal: 10, paddingVertical: 7,
+    fontSize: 17, color: colors.textPrimary, backgroundColor: colors.bg,
+  },
+  dateSep: { fontSize: 18, color: colors.textDisabled, marginTop: 16 },
+  applyBtn: {
+    backgroundColor: colors.primary, borderRadius: radius.md,
+    paddingHorizontal: 14, paddingVertical: 9, marginTop: 16,
+  },
+  applyBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+
   card: {
     flexDirection: "row", backgroundColor: colors.surface,
     borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderLight,
@@ -166,6 +320,12 @@ const st = StyleSheet.create({
   amount: { fontSize: 21, fontWeight: "700", color: colors.primary, marginTop: 2 },
   cardBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
   date: { fontSize: 16, color: colors.textDisabled },
+
+  proxyBadge: {
+    backgroundColor: "#eff6ff", borderWidth: 1, borderColor: "#93c5fd",
+    borderRadius: 20, paddingHorizontal: 6, paddingVertical: 2,
+  },
+  proxyBadgeText: { fontSize: 13, fontWeight: "700", color: "#1d4ed8" },
 });
 
 const md = StyleSheet.create({

@@ -94,7 +94,14 @@ export const api = {
 
   submitSlip: (data: object) =>
     request("/slips", { method: "POST", body: JSON.stringify(data) }),
-  getSlips: () => request("/slips"),
+  getSlips: (params?: { dateFrom?: string; dateTo?: string; status?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.dateFrom) q.set("dateFrom", params.dateFrom);
+    if (params?.dateTo) q.set("dateTo", params.dateTo);
+    if (params?.status) q.set("status", params.status);
+    const qs = q.toString();
+    return request(qs ? `/slips?${qs}` : "/slips");
+  },
   getMyOutstandingDebt: () => request("/commission-adjustments/me/outstanding"),
 };
 

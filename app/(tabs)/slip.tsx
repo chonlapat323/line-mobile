@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TextInput, TouchableOpacity, Switch,
   ScrollView, ActivityIndicator, Image, StyleSheet, Alert, KeyboardAvoidingView, Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -26,6 +26,7 @@ export default function SlipScreen() {
   const [details, setDetails] = useState("");
   const [province, setProvince] = useState("");
   const [district, setDistrict] = useState("");
+  const [isProxy, setIsProxy] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function parseAsset(uri: string): Promise<PickedImage> {
@@ -105,6 +106,7 @@ export default function SlipScreen() {
     setDetails("");
     setProvince("");
     setDistrict("");
+    setIsProxy(false);
   }
 
   async function handleSubmit() {
@@ -120,6 +122,7 @@ export default function SlipScreen() {
         transRef,
         province: province.trim(),
         district: district.trim(),
+        isProxy,
       });
       resetForm();
       Alert.alert(
@@ -291,6 +294,18 @@ export default function SlipScreen() {
                 textAlignVertical="top"
               />
             </View>
+            <View style={st.switchRow}>
+              <View style={st.switchLabel}>
+                <Text style={st.fieldLabel}>เก็บแทน</Text>
+                <Text style={st.switchSub}>เก็บเงินแทนเซล์คนอื่น</Text>
+              </View>
+              <Switch
+                value={isProxy}
+                onValueChange={setIsProxy}
+                trackColor={{ false: colors.borderLight, true: colors.primaryLight }}
+                thumbColor={isProxy ? colors.primary : colors.textDisabled}
+              />
+            </View>
           </View>
         </View>
 
@@ -378,6 +393,12 @@ const st = StyleSheet.create({
 
   fieldGroup: { marginBottom: 14 },
   fieldRow: { flexDirection: "row", gap: 10 },
+  switchRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingVertical: 6, marginBottom: 4,
+  },
+  switchLabel: { gap: 2 },
+  switchSub: { fontSize: 15, color: colors.textDisabled },
   fieldLabel: { fontSize: 18, fontWeight: "600", color: colors.textSecondary, marginBottom: 6 },
   fieldNote: { fontSize: 16, color: "#d97706", marginTop: 4 },
 
