@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   useWindowDimensions, Modal, FlatList, Image, RefreshControl,
   NativeSyntheticEvent, NativeScrollEvent, TextInput, ActivityIndicator,
+  KeyboardAvoidingView, Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -281,6 +282,18 @@ export default function ProfileScreen() {
   const [provinceView, setProvinceView] = useState<"info" | "list" | null>(null);
   const [selectedVisit, setSelectedVisit] = useState<VisitRecord | null>(null);
 
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [pwErrors, setPwErrors] = useState<{ current: string; new: string; confirm: string }>({ current: "", new: "", confirm: "" });
+  const newPwRef = useRef<TextInput>(null);
+  const confirmPwRef = useRef<TextInput>(null);
+
   const scrollRef = useRef<ScrollView>(null);
   const [appAlert, setAppAlert] = useState<{ visible: boolean; type: "error" | "confirm" | "info"; title: string; message: string; buttons: AlertButton[] }>({ visible: false, type: "error", title: "", message: "", buttons: [] });
 
@@ -356,8 +369,15 @@ export default function ProfileScreen() {
       setBankName(me?.bankName ?? "");
       setBankAccount(me?.bankAccount ?? "");
       setVisits(data?.data ?? data ?? []);
-    } catch {}
-    finally { setRefreshing(false); }
+    } catch (err: any) {
+      // ถ้า error ไม่ใช่ network/timeout ให้ logout ออก (เช่น token หมดอายุ)
+      const isNetworkErr = err?.message?.includes("เชื่อมต่อ") || err?.message?.includes("หมดเวลา");
+      if (!isNetworkErr) {
+        signOut();
+        router.replace("/login");
+        return;
+      }
+    } finally { setRefreshing(false); }
     if (isRefresh) {
       loadCommission(commMonth);
       setRefreshCount((c) => c + 1);
@@ -398,6 +418,29 @@ export default function ProfileScreen() {
     const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     if (`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` > nowKey) return;
     setCommMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+
+  function closePwModal() {
+    setShowChangePassword(false);
+    setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+    setShowCurrentPw(false); setShowNewPw(false); setShowConfirmPw(false);
+    setPwErrors({ current: "", new: "", confirm: "" });
+  }
+
+  async function handleChangePassword() {
+    const errs = { current: "", new: "", confirm: "" };
+    if (!currentPassword) errs.current = "กรุณากรอกรหัสผ่านเดิม";
+    if (newPassword.length < 6) errs.new = "ต้องมีอย่างน้อย 6 ตัวอักษร";
+    if (newPassword && confirmPassword && newPassword !== confirmPassword) errs.confirm = "รหัสผ่านไม่ตรงกัน";
+    if (errs.current || errs.new || errs.confirm) { setPwErrors(errs); return; }
+    setPasswordSaving(true);
+    try {
+      await api.changePassword(currentPassword, newPassword);
+      closePwModal();
+      showAlert("info", "เปลี่ยนรหัสผ่านสำเร็จ", "รหัสผ่านของคุณถูกเปลี่ยนเรียบร้อยแล้ว");
+    } catch (err: any) {
+      setPwErrors((p) => ({ ...p, current: err?.message || "ไม่สามารถเปลี่ยนรหัสผ่านได้" }));
+    } finally { setPasswordSaving(false); }
   }
 
   function handleLogout() {
@@ -775,6 +818,12 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {/* Change password */}
+        <TouchableOpacity style={styles.changePwBtn} onPress={() => setShowChangePassword(true)} activeOpacity={0.85}>
+          <Ionicons name="lock-closed-outline" size={18} color="#3b82f6" style={{ marginRight: 8 }} />
+          <Text style={styles.changePwBtnText}>เปลี่ยนรหัสผ่าน</Text>
+        </TouchableOpacity>
+
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
           <Ionicons name="log-out-outline" size={18} color={colors.error} style={{ marginRight: 8 }} />
@@ -822,6 +871,149 @@ export default function ProfileScreen() {
           />
         </View>
       </Modal>
+      {/* Change password modal */}
+      <Modal visible={showChangePassword} transparent animationType="slide" onRequestClose={closePwModal}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+          <TouchableOpacity style={pw.overlay} activeOpacity={1} onPress={closePwModal}>
+            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+              <View style={pw.sheet}>
+                {/* Drag handle */}
+                <View style={pw.dragHandle} />
+
+                {/* Header */}
+                <View style={pw.header}>
+                  <View style={pw.headerLeft}>
+                    <View style={pw.lockIcon}>
+                      <Ionicons name="lock-closed" size={16} color={colors.primary} />
+                    </View>
+                    <View>
+                      <Text style={pw.title}>เปลี่ยนรหัสผ่าน</Text>
+                      <Text style={pw.subtitle}>ตั้งรหัสผ่านใหม่ที่คาดเดายาก</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity onPress={closePwModal} style={pw.closeBtn} hitSlop={8}>
+                    <Ionicons name="close" size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView contentContainerStyle={pw.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                  {/* รหัสผ่านเดิม */}
+                  <Text style={pw.label}>รหัสผ่านเดิม</Text>
+                  <View style={[pw.inputRow, !!pwErrors.current && pw.inputRowError]}>
+                    <Ionicons name="key-outline" size={17} color={pwErrors.current ? "#ef4444" : colors.textDisabled} style={{ marginRight: 8 }} />
+                    <TextInput
+                      style={pw.input}
+                      value={currentPassword}
+                      onChangeText={(v) => { setCurrentPassword(v); setPwErrors((p) => ({ ...p, current: "" })); }}
+                      placeholder="กรอกรหัสผ่านเดิม"
+                      placeholderTextColor={colors.textDisabled}
+                      secureTextEntry={!showCurrentPw}
+                      autoCapitalize="none"
+                      returnKeyType="next"
+                      onSubmitEditing={() => newPwRef.current?.focus()}
+                      blurOnSubmit={false}
+                      autoFocus
+                    />
+                    <TouchableOpacity onPress={() => setShowCurrentPw((v) => !v)} style={pw.eyeBtn} hitSlop={8}>
+                      <Ionicons name={showCurrentPw ? "eye-off-outline" : "eye-outline"} size={18} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                  {!!pwErrors.current && <Text style={pw.errorText}>{pwErrors.current}</Text>}
+
+                  {/* รหัสผ่านใหม่ */}
+                  <Text style={[pw.label, pw.labelGap]}>รหัสผ่านใหม่</Text>
+                  <View style={[pw.inputRow, !!pwErrors.new && pw.inputRowError]}>
+                    <Ionicons name="shield-outline" size={17} color={pwErrors.new ? "#ef4444" : colors.textDisabled} style={{ marginRight: 8 }} />
+                    <TextInput
+                      ref={newPwRef}
+                      style={pw.input}
+                      value={newPassword}
+                      onChangeText={(v) => { setNewPassword(v); setPwErrors((p) => ({ ...p, new: "" })); }}
+                      placeholder="อย่างน้อย 6 ตัวอักษร"
+                      placeholderTextColor={colors.textDisabled}
+                      secureTextEntry={!showNewPw}
+                      autoCapitalize="none"
+                      returnKeyType="next"
+                      onSubmitEditing={() => confirmPwRef.current?.focus()}
+                      blurOnSubmit={false}
+                    />
+                    <TouchableOpacity onPress={() => setShowNewPw((v) => !v)} style={pw.eyeBtn} hitSlop={8}>
+                      <Ionicons name={showNewPw ? "eye-off-outline" : "eye-outline"} size={18} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                  {!!pwErrors.new && <Text style={pw.errorText}>{pwErrors.new}</Text>}
+                  {/* Strength bar */}
+                  {newPassword.length > 0 && (() => {
+                    const len = newPassword.length;
+                    const hasNum = /\d/.test(newPassword);
+                    const hasUpper = /[A-Z]/.test(newPassword);
+                    const hasSpecial = /[^A-Za-z0-9]/.test(newPassword);
+                    const score = (len >= 8 ? 1 : 0) + (hasNum ? 1 : 0) + (hasUpper ? 1 : 0) + (hasSpecial ? 1 : 0);
+                    const levels = [
+                      { label: "อ่อน", color: "#ef4444" },
+                      { label: "พอใช้", color: "#f97316" },
+                      { label: "ดี", color: "#eab308" },
+                      { label: "แข็งแกร่ง", color: "#22c55e" },
+                    ];
+                    const lv = levels[Math.min(score, 3)];
+                    return (
+                      <View style={pw.strengthWrap}>
+                        <View style={pw.strengthBars}>
+                          {[0,1,2,3].map((i) => (
+                            <View key={i} style={[pw.strengthBar, i <= score && { backgroundColor: lv.color }]} />
+                          ))}
+                        </View>
+                        <Text style={[pw.strengthLabel, { color: lv.color }]}>{lv.label}</Text>
+                      </View>
+                    );
+                  })()}
+
+                  {/* ยืนยันรหัสผ่านใหม่ */}
+                  <Text style={[pw.label, pw.labelGap]}>ยืนยันรหัสผ่านใหม่</Text>
+                  <View style={[pw.inputRow, !!pwErrors.confirm && pw.inputRowError]}>
+                    <Ionicons name="checkmark-circle-outline" size={17}
+                      color={confirmPassword && confirmPassword === newPassword ? "#22c55e" : pwErrors.confirm ? "#ef4444" : colors.textDisabled}
+                      style={{ marginRight: 8 }}
+                    />
+                    <TextInput
+                      ref={confirmPwRef}
+                      style={pw.input}
+                      value={confirmPassword}
+                      onChangeText={(v) => { setConfirmPassword(v); setPwErrors((p) => ({ ...p, confirm: "" })); }}
+                      placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
+                      placeholderTextColor={colors.textDisabled}
+                      secureTextEntry={!showConfirmPw}
+                      autoCapitalize="none"
+                      returnKeyType="done"
+                      onSubmitEditing={handleChangePassword}
+                    />
+                    <TouchableOpacity onPress={() => setShowConfirmPw((v) => !v)} style={pw.eyeBtn} hitSlop={8}>
+                      <Ionicons name={showConfirmPw ? "eye-off-outline" : "eye-outline"} size={18} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                  {!!pwErrors.confirm && <Text style={pw.errorText}>{pwErrors.confirm}</Text>}
+
+                  {/* Buttons */}
+                  <TouchableOpacity
+                    style={[pw.saveBtn, (passwordSaving || !currentPassword || newPassword.length < 6 || !confirmPassword) && pw.saveBtnDisabled]}
+                    onPress={handleChangePassword}
+                    disabled={passwordSaving || !currentPassword || newPassword.length < 6 || !confirmPassword}
+                    activeOpacity={0.85}
+                  >
+                    {passwordSaving
+                      ? <ActivityIndicator size="small" color="#fff" />
+                      : <Text style={pw.saveText}>บันทึกรหัสผ่าน</Text>}
+                  </TouchableOpacity>
+                  <TouchableOpacity style={pw.cancelBtn} onPress={closePwModal}>
+                    <Text style={pw.cancelText}>ยกเลิก</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </Modal>
+
       <AppAlert {...appAlert} />
     </>
   );
@@ -1016,11 +1208,18 @@ const styles = StyleSheet.create({
   heroLineBtnText: { fontSize: 17, fontWeight: "600", color: "rgba(255,255,255,0.9)" },
 
   logoutButton: {
-    marginHorizontal: 16, marginTop: 12, backgroundColor: colors.errorBg,
+    marginHorizontal: 16, marginTop: 8, backgroundColor: colors.errorBg,
     borderWidth: 0.5, borderColor: "#fecaca", borderRadius: radius.xl,
     paddingVertical: 14, alignItems: "center", flexDirection: "row", justifyContent: "center",
   },
   logoutText: { color: colors.error, fontWeight: "700", fontSize: 20 },
+
+  changePwBtn: {
+    marginHorizontal: 16, marginTop: 12, backgroundColor: "#eff6ff",
+    borderWidth: 0.5, borderColor: "#bfdbfe", borderRadius: radius.xl,
+    paddingVertical: 14, alignItems: "center", flexDirection: "row", justifyContent: "center",
+  },
+  changePwBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 20 },
 
 });
 
@@ -1088,4 +1287,64 @@ const prov = StyleSheet.create({
   cardDate: { fontSize: 16, color: colors.textDisabled },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
   badgeText: { fontSize: 16, fontWeight: "600" },
+});
+
+const pw = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: colors.bg,
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    shadowColor: "#000", shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.18, shadowRadius: 24, elevation: 28,
+  },
+  dragHandle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: colors.borderLight,
+    alignSelf: "center", marginTop: 10, marginBottom: 4,
+  },
+  header: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  lockIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center", justifyContent: "center",
+  },
+  title: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
+  subtitle: { fontSize: 13, color: colors.textMuted, marginTop: 1 },
+  closeBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight,
+    alignItems: "center", justifyContent: "center",
+  },
+  body: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 36 },
+  label: { fontSize: 14, fontWeight: "600", color: colors.textMuted, marginBottom: 8 },
+  labelGap: { marginTop: 18 },
+  inputRow: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: colors.surface, borderRadius: radius.lg,
+    borderWidth: 1.5, borderColor: colors.borderLight, paddingHorizontal: 12,
+    height: 52,
+  },
+  inputRowError: { borderColor: "#ef4444", backgroundColor: "#fff5f5" },
+  input: { flex: 1, height: 52, fontSize: 16, color: colors.textPrimary },
+  eyeBtn: { paddingHorizontal: 4, paddingVertical: 8 },
+  errorText: { fontSize: 13, color: "#ef4444", marginTop: 5, marginLeft: 2 },
+  strengthWrap: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+  strengthBars: { flexDirection: "row", gap: 4, flex: 1 },
+  strengthBar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.borderLight },
+  strengthLabel: { fontSize: 12, fontWeight: "600", width: 60, textAlign: "right" },
+  saveBtn: {
+    height: 52, borderRadius: radius.lg,
+    backgroundColor: colors.primary,
+    alignItems: "center", justifyContent: "center",
+    marginTop: 28,
+  },
+  saveBtnDisabled: { opacity: 0.45 },
+  saveText: { fontSize: 17, fontWeight: "700", color: "#fff", letterSpacing: 0.3 },
+  cancelBtn: { alignItems: "center", paddingVertical: 14 },
+  cancelText: { fontSize: 16, color: colors.textMuted, fontWeight: "500" },
 });

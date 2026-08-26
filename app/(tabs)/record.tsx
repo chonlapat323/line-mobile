@@ -2,19 +2,19 @@ import { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Modal, FlatList,
   ScrollView, ActivityIndicator, Image, StyleSheet,
-  KeyboardAvoidingView, Platform, RefreshControl, Linking, Keyboard,
+  KeyboardAvoidingView, Platform, RefreshControl, Linking, Keyboard, Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
-import { AppAlert, AlertButton, ImagePickerSheet } from "@/lib/AppModal";
-import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE } from "@/lib/thai-places";
+import { AppAlert, AlertButton } from "@/lib/AppModal";
+import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE, PROVINCE_AMPHOES } from "@/lib/thai-places";
 import { getShopHistory, saveShopToHistory } from "@/lib/shop-history";
 import { colors, radius, shadows } from "@/lib/theme";
 
-const MIN_IMAGES = 1;
+const MIN_IMAGES = 3;
 
 interface PickedImage { uri: string; name: string; type: string; }
 
@@ -52,8 +52,10 @@ export default function RecordScreen() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [province, setProvince] = useState("กรุงเทพมหานคร");
   const [district, setDistrict] = useState("ลาดพร้าว");
+  const [shopNote, setShopNote] = useState("");
   const [showProvincePicker, setShowProvincePicker] = useState(false);
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
+  const [showAmphoePicker, setShowAmphoePicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
   const [tripType, setTripType] = useState<TripType | null>("plan");
   const [customerType, setCustomerType] = useState<CustomerType | null>("existing");
@@ -68,7 +70,6 @@ export default function RecordScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [savedShop, setSavedShop] = useState("");
   const [appAlert, setAppAlert] = useState<{ visible: boolean; type: "error" | "confirm" | "info"; title: string; message: string; buttons: AlertButton[] }>({ visible: false, type: "error", title: "", message: "", buttons: [] });
-  const [imgSheet, setImgSheet] = useState<{ visible: boolean; slotKey: SlotKey | null; isQuotation: boolean }>({ visible: false, slotKey: null, isQuotation: false });
 
   function showAlert(type: "error" | "confirm" | "info", title: string, message = "", buttons?: AlertButton[]) {
     setAppAlert({ visible: true, type, title, message, buttons: buttons ?? [{ text: "ตกลง", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) }] });
@@ -118,59 +119,47 @@ export default function RecordScreen() {
   }
 
   function pickForSlot(slotKey: SlotKey) {
-    setImgSheet({ visible: true, slotKey, isQuotation: false });
-  }
-
-  async function openCameraForSlot(slotKey: SlotKey) {
-    const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-    if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
-    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
-    if (!res.canceled && res.assets[0]) {
-      const img = await parseAsset(res.assets[0].uri);
-      setSlotImages((prev) => ({ ...prev, [slotKey]: img }));
-    }
-  }
-
-  async function openGalleryForSlot(slotKey: SlotKey) {
-    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8, allowsEditing: false,
-    });
-    if (!res.canceled && res.assets[0]) {
-      const img = await parseAsset(res.assets[0].uri);
-      setSlotImages((prev) => ({ ...prev, [slotKey]: img }));
-    }
+    Alert.alert("เพิ่มรูป", "", [
+      {
+        text: "ถ่ายรูป", onPress: async () => {
+          const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+          if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
+          const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] as any, quality: 0.8, allowsEditing: false });
+          if (!res.canceled && res.assets[0]) { const img = await parseAsset(res.assets[0].uri); setSlotImages((prev) => ({ ...prev, [slotKey]: img })); }
+        },
+      },
+      {
+        text: "เลือกจาก Gallery", onPress: async () => {
+          const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
+          const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] as any, allowsMultipleSelection: false, quality: 0.8, allowsEditing: false });
+          if (!res.canceled && res.assets[0]) { const img = await parseAsset(res.assets[0].uri); setSlotImages((prev) => ({ ...prev, [slotKey]: img })); }
+        },
+      },
+      { text: "ยกเลิก", style: "cancel" },
+    ]);
   }
 
   function pickQuotation() {
-    setImgSheet({ visible: true, slotKey: null, isQuotation: true });
-  }
-
-  async function handleImgSheetCamera() {
-    const { slotKey, isQuotation } = imgSheet;
-    setImgSheet((p) => ({ ...p, visible: false }));
-    if (isQuotation) {
-      const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-      if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
-      const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8, allowsEditing: false });
-      if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
-    } else if (slotKey) {
-      await openCameraForSlot(slotKey);
-    }
-  }
-
-  async function handleImgSheetGallery() {
-    const { slotKey, isQuotation } = imgSheet;
-    setImgSheet((p) => ({ ...p, visible: false }));
-    if (isQuotation) {
-      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
-      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsMultipleSelection: false, quality: 0.8 });
-      if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
-    } else if (slotKey) {
-      await openGalleryForSlot(slotKey);
-    }
+    Alert.alert("แนบหลักฐาน", "", [
+      {
+        text: "ถ่ายรูป", onPress: async () => {
+          const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+          if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์กล้องในการตั้งค่า"); return; }
+          const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] as any, quality: 0.8, allowsEditing: false });
+          if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
+        },
+      },
+      {
+        text: "เลือกจาก Gallery", onPress: async () => {
+          const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
+          const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] as any, allowsMultipleSelection: false, quality: 0.8 });
+          if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
+        },
+      },
+      { text: "ยกเลิก", style: "cancel" },
+    ]);
   }
 
   async function handleSubmit() {
@@ -185,6 +174,7 @@ export default function RecordScreen() {
       fd.append("shopName", shopName.trim());
       fd.append("province", province);
       fd.append("district", district);
+      fd.append("shopNote", shopNote);
       fd.append("latitude", String(latitude ?? 0));
       fd.append("longitude", String(longitude ?? 0));
       fd.append("tripType", tripType!);
@@ -201,7 +191,7 @@ export default function RecordScreen() {
       setSavedShop(shopName.trim());
       setShowSuccess(true);
       setShopName("");
-      setResult(null); setDetails(""); setOrderAmount("");
+      setResult(null); setDetails(""); setOrderAmount(""); setShopNote("");
       setSlotImages({ ...EMPTY_SLOTS });
       setQuotationImage(null);
       captureLocation();
@@ -230,6 +220,7 @@ export default function RecordScreen() {
 
   const filteredProvinces = PROVINCES.filter((p) => p.toLowerCase().includes(pickerSearch.toLowerCase()));
   const filteredDistricts = BANGKOK_DISTRICTS.filter((d) => d.toLowerCase().includes(pickerSearch.toLowerCase()));
+  const filteredAmphoes = (PROVINCE_AMPHOES[province] ?? []).filter((a) => a.toLowerCase().includes(pickerSearch.toLowerCase()));
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -326,19 +317,32 @@ export default function RecordScreen() {
                   </TouchableOpacity>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[st.fieldLabel, { marginTop: 12 }]}>เขต{isBangkok && <Text style={st.req}> *</Text>}</Text>
+                  <Text style={[st.fieldLabel, { marginTop: 12 }]}>
+                    {isBangkok ? "เขต" : "อำเภอ"}
+                    {isBangkok && <Text style={st.req}> *</Text>}
+                  </Text>
                   <TouchableOpacity
-                    style={[st.pickerBtn, !isBangkok && { opacity: 0.4 }]}
-                    onPress={() => { if (!isBangkok) return; setPickerSearch(""); setShowDistrictPicker(true); }}
-                    disabled={!isBangkok}
+                    style={st.pickerBtn}
+                    onPress={() => { setPickerSearch(""); isBangkok ? setShowDistrictPicker(true) : setShowAmphoePicker(true); }}
                   >
-                    <Text style={district && isBangkok ? st.pickerText : st.pickerPlaceholder} numberOfLines={1}>
-                      {isBangkok ? (district || "เลือกเขต") : "—"}
+                    <Text style={district ? st.pickerText : st.pickerPlaceholder} numberOfLines={1}>
+                      {district || (isBangkok ? "เลือกเขต" : "เลือกอำเภอ")}
                     </Text>
-                    {isBangkok && <Ionicons name="chevron-down" size={12} color={colors.textDisabled} />}
+                    <Ionicons name="chevron-down" size={12} color={colors.textDisabled} />
                   </TouchableOpacity>
                 </View>
               </View>
+              {/* Shop note */}
+              <Text style={[st.fieldLabel, { marginTop: 12 }]}>รายละเอียดเพิ่มเติม</Text>
+              <TextInput
+                style={[st.textarea, { minHeight: 72 }]}
+                value={shopNote}
+                onChangeText={setShopNote}
+                placeholder="ที่อยู่, จุดสังเกต, หมายเหตุร้าน..."
+                placeholderTextColor={colors.textDisabled}
+                multiline
+                textAlignVertical="top"
+              />
             </View>
           </View>
         </View>
@@ -495,8 +499,8 @@ export default function RecordScreen() {
               </View>
               <Text style={st.cardTitle}>รูปภาพ <Text style={st.req}>*</Text></Text>
               <View style={{ flex: 1, alignItems: "flex-end" }}>
-                <View style={[st.imgCountBadge, filledCount > 0 ? st.imgCountOk : st.imgCountWarn]}>
-                  <Text style={[st.imgCountText, filledCount > 0 ? st.imgCountTextOk : st.imgCountTextWarn]}>
+                <View style={[st.imgCountBadge, filledCount >= MIN_IMAGES ? st.imgCountOk : st.imgCountWarn]}>
+                  <Text style={[st.imgCountText, filledCount >= MIN_IMAGES ? st.imgCountTextOk : st.imgCountTextWarn]}>
                     {filledCount} / 6
                   </Text>
                 </View>
@@ -572,14 +576,6 @@ export default function RecordScreen() {
 
       <AppAlert {...appAlert} />
 
-      <ImagePickerSheet
-        visible={imgSheet.visible}
-        title={imgSheet.isQuotation ? "แนบหลักฐาน" : "เพิ่มรูป"}
-        onCamera={handleImgSheetCamera}
-        onGallery={handleImgSheetGallery}
-        onClose={() => setImgSheet((p) => ({ ...p, visible: false }))}
-      />
-
       <SearchPickerModal
         visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}
         search={pickerSearch} onSearch={setPickerSearch}
@@ -591,6 +587,12 @@ export default function RecordScreen() {
         search={pickerSearch} onSearch={setPickerSearch}
         onSelect={(d) => { setDistrict(d); setShowDistrictPicker(false); }}
         onClose={() => setShowDistrictPicker(false)}
+      />
+      <SearchPickerModal
+        visible={showAmphoePicker} title="เลือกอำเภอ" items={filteredAmphoes}
+        search={pickerSearch} onSearch={setPickerSearch}
+        onSelect={(a) => { setDistrict(a); setShowAmphoePicker(false); }}
+        onClose={() => setShowAmphoePicker(false)}
       />
     </KeyboardAvoidingView>
   );

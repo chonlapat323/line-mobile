@@ -103,6 +103,8 @@ export const api = {
     return request(qs ? `/slips?${qs}` : "/slips");
   },
   getMyOutstandingDebt: () => request("/commission-adjustments/me/outstanding"),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request("/users/me/password", { method: "PATCH", body: JSON.stringify({ currentPassword, newPassword }) }),
 };
 
 export async function saveToken(token: string, user: object) {
