@@ -2,11 +2,13 @@ import { useState, useRef } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Switch,
   ScrollView, ActivityIndicator, Image, StyleSheet, Alert, KeyboardAvoidingView, Platform,
+  Modal, FlatList,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/lib/api";
+import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE, PROVINCE_AMPHOES } from "@/lib/thai-places";
 import { colors, radius, shadows } from "@/lib/theme";
 
 interface PickedImage { uri: string; name: string; type: string; }
@@ -26,6 +28,10 @@ export default function SlipScreen() {
   const [details, setDetails] = useState("");
   const [province, setProvince] = useState("");
   const [district, setDistrict] = useState("");
+  const [showProvincePicker, setShowProvincePicker] = useState(false);
+  const [showDistrictPicker, setShowDistrictPicker] = useState(false);
+  const [showAmphoePicker, setShowAmphoePicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
   const [isProxy, setIsProxy] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -138,6 +144,11 @@ export default function SlipScreen() {
     }
   }
 
+  const isBangkok = province === BANGKOK_PROVINCE;
+  const filteredProvinces = PROVINCES.filter((p) => p.toLowerCase().includes(pickerSearch.toLowerCase()));
+  const filteredDistricts = BANGKOK_DISTRICTS.filter((d) => d.toLowerCase().includes(pickerSearch.toLowerCase()));
+  const filteredAmphoes = (PROVINCE_AMPHOES[province] ?? []).filter((a) => a.toLowerCase().includes(pickerSearch.toLowerCase()));
+
   const canSubmit = !!slipUrl && !verifying && !!shopName.trim() && !!amount.trim() && !loading;
 
   return (
@@ -235,23 +246,27 @@ export default function SlipScreen() {
             <View style={st.fieldRow}>
               <View style={[st.fieldGroup, { flex: 1 }]}>
                 <Text style={st.fieldLabel}>จังหวัด</Text>
-                <TextInput
-                  style={st.input}
-                  value={province}
-                  onChangeText={setProvince}
-                  placeholder="ระบุจังหวัด"
-                  placeholderTextColor={colors.textDisabled}
-                />
+                <TouchableOpacity style={st.pickerBtn} onPress={() => { setPickerSearch(""); setShowProvincePicker(true); }}>
+                  <Text style={province ? st.pickerText : st.pickerPlaceholder} numberOfLines={1}>{province || "เลือกจังหวัด"}</Text>
+                  <Ionicons name="chevron-down" size={12} color={colors.textDisabled} />
+                </TouchableOpacity>
               </View>
               <View style={[st.fieldGroup, { flex: 1 }]}>
-                <Text style={st.fieldLabel}>เขต / อำเภอ</Text>
-                <TextInput
-                  style={st.input}
-                  value={district}
-                  onChangeText={setDistrict}
-                  placeholder="ระบุเขต/อำเภอ"
-                  placeholderTextColor={colors.textDisabled}
-                />
+                <Text style={st.fieldLabel}>{isBangkok ? "เขต" : "อำเภอ"}</Text>
+                <TouchableOpacity
+                  style={[st.pickerBtn, !province && { opacity: 0.4 }]}
+                  onPress={() => {
+                    if (!province) return;
+                    setPickerSearch("");
+                    isBangkok ? setShowDistrictPicker(true) : setShowAmphoePicker(true);
+                  }}
+                  disabled={!province}
+                >
+                  <Text style={district ? st.pickerText : st.pickerPlaceholder} numberOfLines={1}>
+                    {district || (isBangkok ? "เลือกเขต" : "เลือกอำเภอ")}
+                  </Text>
+                  <Ionicons name="chevron-down" size={12} color={colors.textDisabled} />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -329,7 +344,64 @@ export default function SlipScreen() {
         </View>
 
       </ScrollView>
+
+      <SearchPickerModal
+        visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}
+        search={pickerSearch} onSearch={setPickerSearch}
+        onSelect={(p) => { setProvince(p); setDistrict(""); setShowProvincePicker(false); }}
+        onClose={() => setShowProvincePicker(false)}
+      />
+      <SearchPickerModal
+        visible={showDistrictPicker} title="เลือกเขต (กรุงเทพฯ)" items={filteredDistricts}
+        search={pickerSearch} onSearch={setPickerSearch}
+        onSelect={(d) => { setDistrict(d); setShowDistrictPicker(false); }}
+        onClose={() => setShowDistrictPicker(false)}
+      />
+      <SearchPickerModal
+        visible={showAmphoePicker} title="เลือกอำเภอ" items={filteredAmphoes}
+        search={pickerSearch} onSearch={setPickerSearch}
+        onSelect={(a) => { setDistrict(a); setShowAmphoePicker(false); }}
+        onClose={() => setShowAmphoePicker(false)}
+      />
     </KeyboardAvoidingView>
+  );
+}
+
+function SearchPickerModal({ visible, title, items, search, onSearch, onSelect, onClose }: {
+  visible: boolean; title: string; items: string[];
+  search: string; onSearch: (s: string) => void;
+  onSelect: (item: string) => void; onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <View style={modal.overlay}>
+          <View style={modal.sheet}>
+            <View style={modal.header}>
+              <Text style={modal.title}>{title}</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Ionicons name="close" size={22} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <View style={modal.searchWrap}>
+              <Ionicons name="search" size={16} color={colors.textDisabled} style={{ marginRight: 8 }} />
+              <TextInput style={modal.searchInput} value={search} onChangeText={onSearch}
+                placeholder="ค้นหา..." placeholderTextColor={colors.textDisabled} />
+            </View>
+            <FlatList
+              data={items} keyExtractor={(item) => item}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <TouchableOpacity style={modal.item} onPress={() => onSelect(item)}>
+                  <Text style={modal.itemText}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={modal.separator} />}
+            />
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -417,6 +489,14 @@ const st = StyleSheet.create({
   inputText: { flex: 1, paddingHorizontal: 8, paddingVertical: 10, fontSize: 20, fontWeight: "600", color: colors.textPrimary },
   textarea: { minHeight: 80, paddingTop: 10 },
 
+  pickerBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
+    paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.bg,
+  },
+  pickerText: { fontSize: 19, fontWeight: "500", color: colors.textSecondary, flex: 1 },
+  pickerPlaceholder: { fontSize: 19, color: colors.textDisabled, flex: 1 },
+
   submitWrap: { marginTop: 16 },
   submitBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
@@ -425,4 +505,25 @@ const st = StyleSheet.create({
   },
   submitBtnOff: { backgroundColor: colors.textDisabled },
   submitText: { color: "#fff", fontSize: 21, fontWeight: "700" },
+});
+
+const modal = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
+  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "80%" },
+  header: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+  },
+  title: { fontSize: 21, fontWeight: "700", color: colors.textPrimary },
+  searchWrap: {
+    flexDirection: "row", alignItems: "center",
+    margin: 12, paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: colors.bg, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  searchInput: { flex: 1, fontSize: 19, color: colors.textPrimary },
+  item: { paddingHorizontal: 20, paddingVertical: 14 },
+  itemText: { fontSize: 20, color: colors.textPrimary },
+  separator: { height: 1, backgroundColor: colors.borderLight },
 });

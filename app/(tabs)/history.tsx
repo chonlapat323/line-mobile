@@ -148,7 +148,7 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
   ];
 
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible animationType="slide" transparent statusBarTranslucent onRequestClose={onClose}>
       <View style={det.overlay}>
         <View style={det.sheet}>
           <View style={det.header}>
@@ -162,7 +162,7 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
           </View>
 
           {allImages.length > 0 ? (
-            <View>
+            <View style={det.galleryClip}>
               <FlatList
                 data={allImages}
                 keyExtractor={(_, i) => String(i)}
@@ -193,7 +193,7 @@ function DetailModal({ record, onClose, onEdit, onDelete, deleting }: {
             <ImageViewer images={allImages} labels={allLabels} initialIndex={viewerIdx} onClose={() => setViewerIdx(null)} />
           )}
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
             <View style={det.body}>
               {(resKey || record.details) ? (
                 <View style={det.resultRow}>
@@ -765,7 +765,8 @@ const styles = StyleSheet.create({
 
 const det = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "92%", overflow: "hidden" },
+  sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "92%" },
+  galleryClip: { overflow: "hidden", borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.borderLight, gap: 12 },
   shopName: { fontSize: 21, fontWeight: "700", color: colors.textPrimary },
   byUser: { fontSize: 16, color: colors.textMuted, marginTop: 2 },
@@ -779,7 +780,7 @@ const det = StyleSheet.create({
   dotActive: { backgroundColor: colors.primary, width: 14 },
   noImg: { height: 140, alignItems: "center", justifyContent: "center", backgroundColor: colors.primaryLight, gap: 8 },
   noImgText: { fontSize: 18, color: colors.textDisabled },
-  body: { padding: 18 },
+  body: { padding: 18, paddingBottom: 32 },
   resultRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" },
   resultBadge: { borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6 },
   resultBadgeText: { fontSize: 18, fontWeight: "700" },
