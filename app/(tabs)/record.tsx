@@ -163,7 +163,6 @@ export default function RecordScreen() {
   }
 
   async function handleSubmit() {
-    if (!userId) { showAlert("error", "ข้อผิดพลาด", "ไม่พบข้อมูลผู้ใช้ กรุณา login ใหม่"); return; }
     setLoading(true);
     try {
       const fd = new FormData();
