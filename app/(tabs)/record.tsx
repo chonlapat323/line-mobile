@@ -53,6 +53,7 @@ export default function RecordScreen() {
   const [province, setProvince] = useState("กรุงเทพมหานคร");
   const [district, setDistrict] = useState("ลาดพร้าว");
   const [shopNote, setShopNote] = useState("");
+  const [shopPhone, setShopPhone] = useState("");
   const [showProvincePicker, setShowProvincePicker] = useState(false);
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
   const [showAmphoePicker, setShowAmphoePicker] = useState(false);
@@ -106,6 +107,17 @@ export default function RecordScreen() {
     } finally {
       setLocationLoading(false);
     }
+  }
+
+  async function prefillFromLastVisit(name: string) {
+    try {
+      const last = await api.getLastVisitByShop(name);
+      if (!last) return;
+      if (last.province) setProvince(last.province);
+      if (last.district !== undefined) setDistrict(last.district ?? "");
+      if (last.shopNote !== undefined) setShopNote(last.shopNote ?? "");
+      if (last.shopPhone !== undefined) setShopPhone(last.shopPhone ?? "");
+    } catch { /* silent — pre-fill is best-effort */ }
   }
 
   async function parseAsset(uri: string): Promise<PickedImage> {
@@ -174,6 +186,7 @@ export default function RecordScreen() {
       fd.append("province", province);
       fd.append("district", district);
       fd.append("shopNote", shopNote);
+      fd.append("shopPhone", shopPhone);
       fd.append("latitude", String(latitude ?? 0));
       fd.append("longitude", String(longitude ?? 0));
       fd.append("tripType", tripType!);
@@ -190,7 +203,7 @@ export default function RecordScreen() {
       setSavedShop(shopName.trim());
       setShowSuccess(true);
       setShopName("");
-      setResult(null); setDetails(""); setOrderAmount(""); setShopNote("");
+      setResult(null); setDetails(""); setOrderAmount(""); setShopNote(""); setShopPhone("");
       setSlotImages({ ...EMPTY_SLOTS });
       setQuotationImage(null);
       captureLocation();
@@ -299,7 +312,7 @@ export default function RecordScreen() {
               {showSuggestions && shopSuggestions.length > 0 && (
                 <View style={st.suggestionBox}>
                   {shopSuggestions.map((s) => (
-                    <TouchableOpacity key={s} style={st.suggestionRow} onPress={() => { setShopName(s); setShowSuggestions(false); }}>
+                    <TouchableOpacity key={s} style={st.suggestionRow} onPress={() => { setShopName(s); setShowSuggestions(false); prefillFromLastVisit(s); }}>
                       <Ionicons name="time-outline" size={14} color={colors.textDisabled} style={{ marginRight: 6 }} />
                       <Text style={st.suggestionText}>{s}</Text>
                     </TouchableOpacity>
@@ -331,6 +344,16 @@ export default function RecordScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
+              {/* Shop phone */}
+              <Text style={[st.fieldLabel, { marginTop: 12 }]}>เบอร์โทรร้าน</Text>
+              <TextInput
+                style={st.inputField}
+                value={shopPhone}
+                onChangeText={setShopPhone}
+                placeholder="กรอกเบอร์โทร (ไม่บังคับ)"
+                placeholderTextColor={colors.textDisabled}
+                keyboardType="phone-pad"
+              />
               {/* Shop note */}
               <Text style={[st.fieldLabel, { marginTop: 12 }]}>รายละเอียดเพิ่มเติม</Text>
               <TextInput
@@ -775,6 +798,12 @@ const st = StyleSheet.create({
   },
   slipUploadText: { fontSize: 18, fontWeight: "700", color: colors.primaryDark },
   slipUploadSub: { fontSize: 16, color: colors.textMuted },
+
+  inputField: {
+    borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 19, fontWeight: "500",
+    color: colors.textPrimary, backgroundColor: colors.surface,
+  },
 
   // Textarea
   textarea: {

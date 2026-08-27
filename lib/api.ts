@@ -105,6 +105,10 @@ export const api = {
   getMyOutstandingDebt: () => request("/commission-adjustments/me/outstanding"),
   changePassword: (currentPassword: string, newPassword: string) =>
     request("/users/me/password", { method: "PATCH", body: JSON.stringify({ currentPassword, newPassword }) }),
+  forceChangePassword: (newPassword: string) =>
+    request("/users/me/force-change-password", { method: "PATCH", body: JSON.stringify({ newPassword }) }),
+  getLastVisitByShop: (shopName: string) =>
+    request(`/visits/last-by-shop?shopName=${encodeURIComponent(shopName)}`),
 };
 
 export async function saveToken(token: string, user: object) {

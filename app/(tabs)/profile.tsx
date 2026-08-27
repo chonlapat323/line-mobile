@@ -390,8 +390,8 @@ export default function ProfileScreen() {
       await api.updateMe({ bankName: bankName.trim(), bankAccount: bankAccount.trim() });
       setUser((u) => u ? { ...u, bankName: bankName.trim(), bankAccount: bankAccount.trim() } : u);
       setEditingBank(false);
-    } catch {
-      showAlert("error", "เกิดข้อผิดพลาด", "ไม่สามารถบันทึกได้ กรุณาลองใหม่");
+    } catch (err: any) {
+      showAlert("error", "เกิดข้อผิดพลาด", err?.message ?? "ไม่สามารถบันทึกได้ กรุณาลองใหม่");
     } finally { setBankSaving(false); }
   }
 
@@ -817,12 +817,6 @@ export default function ProfileScreen() {
             </View>
           )}
         </View>
-
-        {/* Change password */}
-        <TouchableOpacity style={styles.changePwBtn} onPress={() => setShowChangePassword(true)} activeOpacity={0.85}>
-          <Ionicons name="lock-closed-outline" size={18} color="#3b82f6" style={{ marginRight: 8 }} />
-          <Text style={styles.changePwBtnText}>เปลี่ยนรหัสผ่าน</Text>
-        </TouchableOpacity>
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>

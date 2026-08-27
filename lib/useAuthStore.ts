@@ -15,6 +15,7 @@ type UserInfo = {
   role: string;
   roleId: string | null;
   roleLabel: string;
+  mustChangePassword?: boolean;
   permissions: Array<{
     menu: string;
     label: string;
@@ -30,6 +31,7 @@ type AuthStore = {
   isAuthenticated: boolean;
   signIn: (token: string, user: UserInfo) => void;
   signOut: () => void;
+  updateUser: (patch: Partial<UserInfo>) => void;
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -40,6 +42,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       signIn: (token, user) => set({ token, user, isAuthenticated: true }),
       signOut: () => set({ token: null, user: null, isAuthenticated: false }),
+      updateUser: (patch) => set((s) => ({ user: s.user ? { ...s.user, ...patch } : s.user })),
     }),
     {
       name: "line-auth",
