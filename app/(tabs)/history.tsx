@@ -651,17 +651,35 @@ export default function HistoryScreen() {
                   {new Date(item.createdAt).toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" })}
                 </Text>
               </View>
-              {resLabel ? (
-                <View style={styles.badgeCol}>
-                  <View style={[styles.badge, { backgroundColor: rs.bg }]}>
-                    <Text style={[styles.badgeText, { color: rs.text }]}>{resLabel}</Text>
-                  </View>
-                  {resKey === "buy" && item.orderAmount != null && (
-                    <Text style={styles.orderAmt}>฿{item.orderAmount.toLocaleString("th-TH")}</Text>
-                  )}
-                  {resKey === "buy" && <SlipStatusBadge status={item.slipStatus} />}
+              <View style={styles.rightCol}>
+                <View style={styles.iconRow}>
+                  <TouchableOpacity
+                    style={styles.iconBtn}
+                    onPress={() => { setEditRecord(item); }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}
+                  >
+                    <Ionicons name="pencil-outline" size={15} color={colors.textMuted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.iconBtn, { borderColor: "#fecaca" }]}
+                    onPress={() => handleDeletePress(item.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+                  >
+                    <Ionicons name="trash-outline" size={15} color="#dc2626" />
+                  </TouchableOpacity>
                 </View>
-              ) : null}
+                {resLabel ? (
+                  <View style={styles.badgeCol}>
+                    <View style={[styles.badge, { backgroundColor: rs.bg }]}>
+                      <Text style={[styles.badgeText, { color: rs.text }]}>{resLabel}</Text>
+                    </View>
+                    {resKey === "buy" && item.orderAmount != null && (
+                      <Text style={styles.orderAmt}>฿{item.orderAmount.toLocaleString("th-TH")}</Text>
+                    )}
+                    {resKey === "buy" && <SlipStatusBadge status={item.slipStatus} />}
+                  </View>
+                ) : null}
+              </View>
             </TouchableOpacity>
           );
         }}
@@ -754,6 +772,9 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 2, marginBottom: 2 },
   tag: { fontSize: 15, fontWeight: "600", color: colors.textMuted, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight, paddingHorizontal: 7, paddingVertical: 1, borderRadius: radius.full },
   date: { fontSize: 15, color: colors.textDisabled },
+  rightCol: { alignItems: "flex-end", gap: 6 },
+  iconRow: { flexDirection: "row", gap: 4 },
+  iconBtn: { width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
   badgeCol: { alignItems: "flex-end", gap: 4 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
   badgeText: { fontSize: 16, fontWeight: "600" },
