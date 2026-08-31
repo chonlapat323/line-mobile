@@ -530,7 +530,7 @@ export default function ProfileScreen() {
           ) : tierInfo ? (
             <>
               <Text style={styles.tierLabel}>ค่าคอมเดือนนี้</Text>
-              <Text style={styles.tierAmount}>฿{commData.commission.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</Text>
+              <Text style={styles.tierAmount}>฿{(commData.commission + (commData.proxyCommission ?? 0)).toLocaleString("th-TH", { minimumFractionDigits: 2 })}</Text>
               <View style={styles.tierTrackRow}>
                 <Text style={styles.tierRateCurrent}>{tierInfo.current.rate}%</Text>
                 <View style={styles.tierTrack}>
@@ -546,8 +546,8 @@ export default function ProfileScreen() {
             </>
           ) : (
             <View style={styles.tierHeader}>
-              <Text style={styles.tierLabel}>อัตราค่าคอม {commData.settings.rate}%</Text>
-              <Text style={styles.tierAmount}>฿{commData.totalAmount.toLocaleString("th-TH")}</Text>
+              <Text style={styles.tierLabel}>ค่าคอมเดือนนี้</Text>
+              <Text style={styles.tierAmount}>฿{(commData.commission + (commData.proxyCommission ?? 0)).toLocaleString("th-TH", { minimumFractionDigits: 2 })}</Text>
             </View>
           )}
         </View>
