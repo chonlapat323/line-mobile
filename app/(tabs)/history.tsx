@@ -435,14 +435,17 @@ export default function HistoryScreen() {
 
   const uniqueShops = useMemo(() => [...new Set(records.map(r => r.shopName))].sort(), [records]);
 
+  const hasActiveFilter = search.trim().length > 0 || !!shopFilter || !!userFilter;
+
   const displayedRecords = useMemo(() => {
+    if (!hasActiveFilter) return [];
     const q = search.toLowerCase().trim();
     return records.filter(r => {
       if (shopFilter && r.shopName !== shopFilter) return false;
       if (q && !r.shopName.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [records, search, shopFilter]);
+  }, [records, search, shopFilter, hasActiveFilter]);
 
   useEffect(() => {
     if (loading) return;
@@ -611,10 +614,12 @@ export default function HistoryScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={styles.emptyTitle}>ไม่พบรายการ</Text>
+            <Text style={styles.emptyIcon}>{hasActiveFilter ? "📋" : "🔍"}</Text>
+            <Text style={styles.emptyTitle}>
+              {hasActiveFilter ? "ไม่พบรายการ" : "ค้นหาชื่อร้าน"}
+            </Text>
             <Text style={styles.emptyDesc}>
-              {search || shopFilter || userFilter ? "ลองเปลี่ยนตัวกรอง" : "เริ่มบันทึกการออกทริปได้เลย"}
+              {hasActiveFilter ? "ลองเปลี่ยนคำค้นหา" : "พิมพ์ชื่อร้านเพื่อดูประวัติออกทริป"}
             </Text>
           </View>
         }
