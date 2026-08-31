@@ -214,7 +214,7 @@ export default function RecordScreen() {
 
   const shopSuggestions = shopName.trim()
     ? shopHistory.filter((s) => s.toLowerCase().includes(shopName.toLowerCase()) && s !== shopName)
-    : shopHistory.slice(0, 5);
+    : [];
 
   const isBangkok = province === BANGKOK_PROVINCE;
   const filledCount = IMAGE_SLOTS.filter((s) => slotImages[s.key] !== null).length;
