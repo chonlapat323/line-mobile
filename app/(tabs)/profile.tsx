@@ -261,14 +261,17 @@ export default function ProfileScreen() {
   });
   const [commData, setCommData] = useState<{
     visitCount: number;
-    slipAmount: number;       // ยอดสลิปสุทธิ
-    adjustThisMonth: number;  // ยอดเติมเดือนนี้
-    adjustCarryover: number;  // ยอดเติมยกมา
-    totalAmount: number;      // ยอดคำนวณ
+    slipAmount: number;
+    proxySlipAmount: number;
+    adjustThisMonth: number;
+    adjustCarryover: number;
+    totalAmount: number;
     pendingAmount: number;
     confirmedCount: number; pendingCount: number;
     reachedThreshold: boolean;
-    commission: number; remaining: number; settings: { rate: number; threshold: number };
+    commission: number; remaining: number;
+    proxyCommission: number; proxyRate: number;
+    settings: { rate: number; threshold: number };
   } | null>(null);
   const [commLoading, setCommLoading] = useState(false);
 
@@ -663,7 +666,7 @@ export default function ProfileScreen() {
               }]}>
                 {commData.reachedThreshold ? (
                   <>
-                    <Text style={[styles.commResultLabel, { color: colors.primaryDark }]}>ค่าคอมที่ได้รับ ({commData.settings.rate}%)</Text>
+                    <Text style={[styles.commResultLabel, { color: colors.primaryDark }]}>ค่าคอมปกติ ({commData.settings.rate}%)</Text>
                     <Text style={[styles.commResultAmount, { color: colors.primary }]}>
                       ฿{commData.commission.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
                     </Text>
@@ -681,6 +684,33 @@ export default function ProfileScreen() {
                   </>
                 )}
               </View>
+
+              {/* Proxy commission */}
+              {commData.proxyRate > 0 && commData.proxySlipAmount > 0 && (
+                <View style={[styles.commResult, { backgroundColor: "#eff6ff", borderColor: "#bfdbfe" }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.commResultLabel, { color: "#1d4ed8" }]}>
+                      ค่าคอมเก็บแทน ({commData.proxyRate}%)
+                    </Text>
+                    <Text style={{ fontSize: 13, color: "#3b82f6", marginTop: 2 }}>
+                      ยอดสลิปเก็บแทน ฿{commData.proxySlipAmount.toLocaleString("th-TH")}
+                    </Text>
+                  </View>
+                  <Text style={[styles.commResultAmount, { color: "#1d4ed8" }]}>
+                    ฿{commData.proxyCommission.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              )}
+
+              {/* Grand total (รวมทั้ง 2 ประเภท) */}
+              {commData.proxyRate > 0 && commData.proxySlipAmount > 0 && commData.reachedThreshold && (
+                <View style={[styles.commResult, { backgroundColor: "#f0fdf4", borderColor: "#86efac" }]}>
+                  <Text style={[styles.commResultLabel, { color: "#166534", fontWeight: "700" }]}>รวมค่าคอมทั้งหมด</Text>
+                  <Text style={[styles.commResultAmount, { color: "#16a34a" }]}>
+                    ฿{(commData.commission + commData.proxyCommission).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              )}
             </View>
           ) : (
             <Text style={{ color: colors.textDisabled, fontSize: 18, textAlign: "center", marginVertical: 12 }}>
