@@ -5,7 +5,6 @@ import {
   useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent,
   KeyboardAvoidingView, Platform,
 } from "react-native";
-import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useNavigation, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
@@ -65,6 +64,100 @@ function SlipStatusBadge({ status }: { status?: string | null }) {
     );
   }
   return null;
+}
+
+// ── Calendar Picker ───────────────────────────────────────────
+const MONTH_TH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const DAY_TH = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+
+function CalendarPicker({ visible, initialValue, onConfirm, onClose }: {
+  visible: boolean;
+  initialValue: string;
+  onConfirm: (date: string) => void;
+  onClose: () => void;
+}) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const getInit = (v: string) => {
+    const d = v ? new Date(v) : new Date();
+    return { y: d.getFullYear(), m: d.getMonth() };
+  };
+  const [viewYear, setViewYear] = useState(() => getInit(initialValue).y);
+  const [viewMonth, setViewMonth] = useState(() => getInit(initialValue).m);
+  const [selected, setSelected] = useState(initialValue || todayStr);
+
+  useEffect(() => {
+    if (visible) {
+      const { y, m } = getInit(initialValue);
+      setViewYear(y); setViewMonth(m);
+      setSelected(initialValue || todayStr);
+    }
+  }, [visible]);
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDow = new Date(viewYear, viewMonth, 1).getDay();
+
+  const rows: (number | null)[][] = [];
+  let row: (number | null)[] = Array(firstDow).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    row.push(d);
+    if (row.length === 7) { rows.push(row); row = []; }
+  }
+  if (row.length > 0) { while (row.length < 7) row.push(null); rows.push(row); }
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={cal.overlay}>
+        <View style={cal.sheet}>
+          <View style={cal.navRow}>
+            <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={cal.monthLabel}>{MONTH_TH[viewMonth]} {viewYear + 543}</Text>
+            <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-forward" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          <View style={cal.dowRow}>
+            {DAY_TH.map(d => <Text key={d} style={cal.dowText}>{d}</Text>)}
+          </View>
+          {rows.map((r, ri) => (
+            <View key={ri} style={{ flexDirection: "row" }}>
+              {r.map((day, ci) => {
+                if (!day) return <View key={ci} style={cal.cell} />;
+                const ds = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                const isSel = ds === selected;
+                const isToday = ds === todayStr;
+                return (
+                  <TouchableOpacity key={ci} style={cal.cell} onPress={() => setSelected(ds)}>
+                    <View style={[cal.cellInner, isSel && cal.cellInnerSel, !isSel && isToday && cal.cellInnerToday]}>
+                      <Text style={[cal.cellText, isSel && cal.cellTextSel, !isSel && isToday && cal.cellTextToday]}>{day}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+          <View style={cal.btnRow}>
+            <TouchableOpacity style={cal.cancelBtn} onPress={onClose}>
+              <Text style={cal.cancelText}>ยกเลิก</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={cal.confirmBtn} onPress={() => { onConfirm(selected); onClose(); }}>
+              <Text style={cal.confirmText}>ตกลง</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 // ── Picker Modal ──────────────────────────────────────────────
@@ -392,7 +485,6 @@ export default function HistoryScreen() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [showDatePicker, setShowDatePicker] = useState<"from" | "to" | null>(null);
-  const datePickerOpen = useRef(false);
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState("");
   const [shopFilter, setShopFilter] = useState("");
@@ -546,97 +638,31 @@ export default function HistoryScreen() {
         {/* Custom date inputs */}
         {dateFilter === "custom" && (
           <View style={styles.customDateRow}>
-            <TouchableOpacity
-              style={styles.dateInput}
-              onPress={() => {
-                if (Platform.OS === "android") {
-                  if (datePickerOpen.current) return;
-                  datePickerOpen.current = true;
-                  DateTimePickerAndroid.open({
-                    value: customFrom ? new Date(customFrom) : new Date(),
-                    mode: "date",
-                    display: "spinner",
-                    locale: "th-TH",
-                    onChange: (event, d) => {
-                      if (event.type === "dismissed" || event.type === "set") {
-                        datePickerOpen.current = false;
-                      }
-                      if (event.type === "set" && d) {
-                        setCustomFrom(d.toISOString().slice(0, 10));
-                      }
-                    },
-                  });
-                } else {
-                  setShowDatePicker("from");
-                }
-              }}
-            >
+            <TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker("from")}>
               <Text style={customFrom ? styles.dateInputText : styles.dateInputPlaceholder}>
                 {customFrom ? customFrom.split("-").reverse().join("/") : "วันที่เริ่ม"}
               </Text>
             </TouchableOpacity>
             <Text style={styles.dateSep}>—</Text>
-            <TouchableOpacity
-              style={styles.dateInput}
-              onPress={() => {
-                if (Platform.OS === "android") {
-                  if (datePickerOpen.current) return;
-                  datePickerOpen.current = true;
-                  DateTimePickerAndroid.open({
-                    value: customTo ? new Date(customTo) : new Date(),
-                    mode: "date",
-                    display: "spinner",
-                    locale: "th-TH",
-                    onChange: (event, d) => {
-                      if (event.type === "dismissed" || event.type === "set") {
-                        datePickerOpen.current = false;
-                      }
-                      if (event.type === "set" && d) {
-                        setCustomTo(d.toISOString().slice(0, 10));
-                      }
-                    },
-                  });
-                } else {
-                  setShowDatePicker("to");
-                }
-              }}
-            >
+            <TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker("to")}>
               <Text style={customTo ? styles.dateInputText : styles.dateInputPlaceholder}>
                 {customTo ? customTo.split("-").reverse().join("/") : "วันที่สิ้นสุด"}
               </Text>
             </TouchableOpacity>
           </View>
         )}
-        {/* iOS Date Picker Modal */}
-        {showDatePicker !== null && Platform.OS === "ios" && (
-          <Modal transparent animationType="slide">
-            <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" }}>
-              <View style={{ backgroundColor: "#fff", paddingBottom: 20 }}>
-                <View style={{ flexDirection: "row", justifyContent: "flex-end", padding: 12 }}>
-                  <TouchableOpacity onPress={() => setShowDatePicker(null)}>
-                    <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 16 }}>เสร็จสิ้น</Text>
-                  </TouchableOpacity>
-                </View>
-                <DateTimePicker
-                  value={
-                    showDatePicker === "from"
-                      ? (customFrom ? new Date(customFrom) : new Date())
-                      : (customTo ? new Date(customTo) : new Date())
-                  }
-                  mode="date"
-                  display="spinner"
-                  locale="th-TH"
-                  onChange={(_, d) => {
-                    if (!d) return;
-                    const val = d.toISOString().slice(0, 10);
-                    if (showDatePicker === "from") setCustomFrom(val);
-                    else setCustomTo(val);
-                  }}
-                />
-              </View>
-            </View>
-          </Modal>
-        )}
+        <CalendarPicker
+          visible={showDatePicker === "from"}
+          initialValue={customFrom}
+          onConfirm={setCustomFrom}
+          onClose={() => setShowDatePicker(null)}
+        />
+        <CalendarPicker
+          visible={showDatePicker === "to"}
+          initialValue={customTo}
+          onConfirm={setCustomTo}
+          onClose={() => setShowDatePicker(null)}
+        />
 
         {/* Search by shop name */}
         <View style={styles.searchRow}>
@@ -931,6 +957,27 @@ const ed = StyleSheet.create({
   cancelText: { fontSize: 16, fontWeight: "600", color: colors.textSecondary },
   saveBtn: { flex: 1, paddingVertical: 13, borderRadius: radius.xl, backgroundColor: colors.primary, alignItems: "center" },
   saveText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+});
+
+const cal = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
+  sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 16, paddingBottom: 32 },
+  navRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
+  monthLabel: { fontSize: 17, fontWeight: "700", color: colors.textPrimary },
+  dowRow: { flexDirection: "row", marginBottom: 4 },
+  dowText: { flex: 1, textAlign: "center", fontSize: 13, fontWeight: "600", color: colors.textMuted, paddingVertical: 6 },
+  cell: { flex: 1, height: 44, alignItems: "center", justifyContent: "center" },
+  cellInner: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  cellInnerSel: { backgroundColor: colors.primary },
+  cellInnerToday: { borderWidth: 1.5, borderColor: colors.primary },
+  cellText: { fontSize: 15, color: colors.textPrimary },
+  cellTextSel: { color: "#fff", fontWeight: "700" },
+  cellTextToday: { color: colors.primary, fontWeight: "600" },
+  btnRow: { flexDirection: "row", gap: 12, marginTop: 16 },
+  cancelBtn: { flex: 1, paddingVertical: 13, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.borderLight, alignItems: "center" },
+  cancelText: { fontSize: 16, fontWeight: "600", color: colors.textSecondary },
+  confirmBtn: { flex: 1, paddingVertical: 13, borderRadius: radius.xl, backgroundColor: colors.primary, alignItems: "center" },
+  confirmText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 });
 
 const pm = StyleSheet.create({
