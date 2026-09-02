@@ -555,6 +555,7 @@ export default function HistoryScreen() {
                   DateTimePickerAndroid.open({
                     value: customFrom ? new Date(customFrom) : new Date(),
                     mode: "date",
+                    display: "spinner",
                     locale: "th-TH",
                     onChange: (event, d) => {
                       if (event.type === "dismissed" || event.type === "set") {
@@ -584,6 +585,7 @@ export default function HistoryScreen() {
                   DateTimePickerAndroid.open({
                     value: customTo ? new Date(customTo) : new Date(),
                     mode: "date",
+                    display: "spinner",
                     locale: "th-TH",
                     onChange: (event, d) => {
                       if (event.type === "dismissed" || event.type === "set") {
