@@ -437,7 +437,12 @@ export default function HistoryScreen() {
 
   const uniqueShops = useMemo(() => [...new Set(records.map(r => r.shopName))].sort(), [records]);
 
-  const hasActiveFilter = search.trim().length > 0 || !!shopFilter || !!userFilter || dateFilter !== "all";
+  const hasActiveFilter =
+    search.trim().length > 0 ||
+    !!shopFilter ||
+    !!userFilter ||
+    (dateFilter !== "all" && dateFilter !== "custom") ||
+    (dateFilter === "custom" && !!customFrom && !!customTo);
 
   const displayedRecords = useMemo(() => {
     if (!hasActiveFilter) return [];
@@ -547,6 +552,7 @@ export default function HistoryScreen() {
                   DateTimePickerAndroid.open({
                     value: customFrom ? new Date(customFrom) : new Date(),
                     mode: "date",
+                    locale: "th-TH",
                     onChange: (_, d) => {
                       if (d) setCustomFrom(d.toISOString().slice(0, 10));
                     },
@@ -568,6 +574,7 @@ export default function HistoryScreen() {
                   DateTimePickerAndroid.open({
                     value: customTo ? new Date(customTo) : new Date(),
                     mode: "date",
+                    locale: "th-TH",
                     onChange: (_, d) => {
                       if (d) setCustomTo(d.toISOString().slice(0, 10));
                     },
@@ -601,6 +608,7 @@ export default function HistoryScreen() {
                   }
                   mode="date"
                   display="spinner"
+                  locale="th-TH"
                   onChange={(_, d) => {
                     if (!d) return;
                     const val = d.toISOString().slice(0, 10);
