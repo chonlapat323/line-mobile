@@ -392,6 +392,7 @@ export default function HistoryScreen() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [showDatePicker, setShowDatePicker] = useState<"from" | "to" | null>(null);
+  const datePickerOpen = useRef(false);
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState("");
   const [shopFilter, setShopFilter] = useState("");
@@ -549,11 +550,14 @@ export default function HistoryScreen() {
               style={styles.dateInput}
               onPress={() => {
                 if (Platform.OS === "android") {
+                  if (datePickerOpen.current) return;
+                  datePickerOpen.current = true;
                   DateTimePickerAndroid.open({
                     value: customFrom ? new Date(customFrom) : new Date(),
                     mode: "date",
                     locale: "th-TH",
                     onChange: (_, d) => {
+                      datePickerOpen.current = false;
                       if (d) setCustomFrom(d.toISOString().slice(0, 10));
                     },
                   });
@@ -571,11 +575,14 @@ export default function HistoryScreen() {
               style={styles.dateInput}
               onPress={() => {
                 if (Platform.OS === "android") {
+                  if (datePickerOpen.current) return;
+                  datePickerOpen.current = true;
                   DateTimePickerAndroid.open({
                     value: customTo ? new Date(customTo) : new Date(),
                     mode: "date",
                     locale: "th-TH",
                     onChange: (_, d) => {
+                      datePickerOpen.current = false;
                       if (d) setCustomTo(d.toISOString().slice(0, 10));
                     },
                   });
