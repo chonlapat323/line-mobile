@@ -556,9 +556,13 @@ export default function HistoryScreen() {
                     value: customFrom ? new Date(customFrom) : new Date(),
                     mode: "date",
                     locale: "th-TH",
-                    onChange: (_, d) => {
-                      datePickerOpen.current = false;
-                      if (d) setCustomFrom(d.toISOString().slice(0, 10));
+                    onChange: (event, d) => {
+                      if (event.type === "dismissed" || event.type === "set") {
+                        datePickerOpen.current = false;
+                      }
+                      if (event.type === "set" && d) {
+                        setCustomFrom(d.toISOString().slice(0, 10));
+                      }
                     },
                   });
                 } else {
@@ -581,9 +585,13 @@ export default function HistoryScreen() {
                     value: customTo ? new Date(customTo) : new Date(),
                     mode: "date",
                     locale: "th-TH",
-                    onChange: (_, d) => {
-                      datePickerOpen.current = false;
-                      if (d) setCustomTo(d.toISOString().slice(0, 10));
+                    onChange: (event, d) => {
+                      if (event.type === "dismissed" || event.type === "set") {
+                        datePickerOpen.current = false;
+                      }
+                      if (event.type === "set" && d) {
+                        setCustomTo(d.toISOString().slice(0, 10));
+                      }
                     },
                   });
                 } else {
