@@ -50,7 +50,8 @@
           "photosPermission": "Allow BeautyUp Sales to access your photos.",
           "cameraPermission": "Allow BeautyUp Sales to use the camera to take photos."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "router": {},
