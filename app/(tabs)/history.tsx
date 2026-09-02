@@ -5,6 +5,7 @@ import {
   useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent,
   KeyboardAvoidingView, Platform,
 } from "react-native";
+import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useNavigation, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
@@ -390,6 +391,7 @@ export default function HistoryScreen() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState<"from" | "to" | null>(null);
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState("");
   const [shopFilter, setShopFilter] = useState("");
@@ -538,24 +540,77 @@ export default function HistoryScreen() {
         {/* Custom date inputs */}
         {dateFilter === "custom" && (
           <View style={styles.customDateRow}>
-            <TextInput
+            <TouchableOpacity
               style={styles.dateInput}
-              placeholder="จาก YYYY-MM-DD"
-              value={customFrom}
-              onChangeText={setCustomFrom}
-              placeholderTextColor={colors.textDisabled}
-              keyboardType="numbers-and-punctuation"
-            />
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  DateTimePickerAndroid.open({
+                    value: customFrom ? new Date(customFrom) : new Date(),
+                    mode: "date",
+                    onChange: (_, d) => {
+                      if (d) setCustomFrom(d.toISOString().slice(0, 10));
+                    },
+                  });
+                } else {
+                  setShowDatePicker("from");
+                }
+              }}
+            >
+              <Text style={customFrom ? styles.dateInputText : styles.dateInputPlaceholder}>
+                {customFrom ? customFrom.split("-").reverse().join("/") : "วันที่เริ่ม"}
+              </Text>
+            </TouchableOpacity>
             <Text style={styles.dateSep}>—</Text>
-            <TextInput
+            <TouchableOpacity
               style={styles.dateInput}
-              placeholder="ถึง YYYY-MM-DD"
-              value={customTo}
-              onChangeText={setCustomTo}
-              placeholderTextColor={colors.textDisabled}
-              keyboardType="numbers-and-punctuation"
-            />
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  DateTimePickerAndroid.open({
+                    value: customTo ? new Date(customTo) : new Date(),
+                    mode: "date",
+                    onChange: (_, d) => {
+                      if (d) setCustomTo(d.toISOString().slice(0, 10));
+                    },
+                  });
+                } else {
+                  setShowDatePicker("to");
+                }
+              }}
+            >
+              <Text style={customTo ? styles.dateInputText : styles.dateInputPlaceholder}>
+                {customTo ? customTo.split("-").reverse().join("/") : "วันที่สิ้นสุด"}
+              </Text>
+            </TouchableOpacity>
           </View>
+        )}
+        {/* iOS Date Picker Modal */}
+        {showDatePicker !== null && Platform.OS === "ios" && (
+          <Modal transparent animationType="slide">
+            <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" }}>
+              <View style={{ backgroundColor: "#fff", paddingBottom: 20 }}>
+                <View style={{ flexDirection: "row", justifyContent: "flex-end", padding: 12 }}>
+                  <TouchableOpacity onPress={() => setShowDatePicker(null)}>
+                    <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 16 }}>เสร็จสิ้น</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={
+                    showDatePicker === "from"
+                      ? (customFrom ? new Date(customFrom) : new Date())
+                      : (customTo ? new Date(customTo) : new Date())
+                  }
+                  mode="date"
+                  display="spinner"
+                  onChange={(_, d) => {
+                    if (!d) return;
+                    const val = d.toISOString().slice(0, 10);
+                    if (showDatePicker === "from") setCustomFrom(val);
+                    else setCustomTo(val);
+                  }}
+                />
+              </View>
+            </View>
+          </Modal>
         )}
 
         {/* Search by shop name */}
@@ -749,7 +804,9 @@ const styles = StyleSheet.create({
   filterChipTextActive: { color: "#fff" },
 
   customDateRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingTop: 8, gap: 8 },
-  dateInput: { flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.md, paddingHorizontal: 10, paddingVertical: 7, fontSize: 15, color: colors.textPrimary },
+  dateInput: { flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.md, paddingHorizontal: 10, paddingVertical: 9, justifyContent: "center" },
+  dateInputText: { fontSize: 14, color: colors.textPrimary },
+  dateInputPlaceholder: { fontSize: 14, color: colors.textDisabled },
   dateSep: { fontSize: 16, color: colors.textDisabled },
 
   searchRow: { flexDirection: "row", alignItems: "center", marginHorizontal: 14, marginTop: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.xl },
