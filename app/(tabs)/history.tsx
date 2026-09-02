@@ -435,7 +435,7 @@ export default function HistoryScreen() {
 
   const uniqueShops = useMemo(() => [...new Set(records.map(r => r.shopName))].sort(), [records]);
 
-  const hasActiveFilter = search.trim().length > 0 || !!shopFilter || !!userFilter;
+  const hasActiveFilter = search.trim().length > 0 || !!shopFilter || !!userFilter || dateFilter !== "all";
 
   const displayedRecords = useMemo(() => {
     if (!hasActiveFilter) return [];
