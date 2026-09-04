@@ -51,7 +51,9 @@
           "cameraPermission": "Allow BeautyUp Sales to use the camera to take photos."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-splash-screen",
+      "expo-status-bar"
     ],
     "extra": {
       "router": {},
