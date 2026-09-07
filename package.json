@@ -37,6 +37,7 @@
     "@react-native-community/datetimepicker": "9.1.0",
     "expo": "^57",
     "expo-dev-client": "~57.0.18",
+    "expo-file-system": "~57.0.6",
     "expo-image-manipulator": "~57.0.15",
     "expo-image-picker": "~57.0.15",
     "expo-linking": "~57.0.9",

@@ -23,9 +23,9 @@ interface SlipSubmission {
 }
 
 const STATUS_OPTS = [
+  { key: "verified", label: "QR ผ่าน" },
   { key: "", label: "ทั้งหมด" },
   { key: "pending_approval", label: "รอยืนยัน" },
-  { key: "verified", label: "QR ผ่าน" },
   { key: "approved", label: "อนุมัติแล้ว" },
   { key: "rejected", label: "ปฏิเสธ" },
 ];

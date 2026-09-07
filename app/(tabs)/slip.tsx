@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Switch,
   ScrollView, ActivityIndicator, Image, StyleSheet, Alert, KeyboardAvoidingView, Platform,
@@ -13,7 +13,7 @@ import { colors, radius, shadows } from "@/lib/theme";
 
 interface PickedImage { uri: string; name: string; type: string; }
 
-type SlipStatus = "verified" | "pending_approval" | "blocked" | null;
+type SlipStatus = "verified" | "pending_approval" | null;
 
 export default function SlipScreen() {
   const [slipImage, setSlipImage] = useState<PickedImage | null>(null);
@@ -21,10 +21,11 @@ export default function SlipScreen() {
   const [slipUrl, setSlipUrl] = useState<string | null>(null);
   const [slipStatus, setSlipStatus] = useState<SlipStatus>(null);
   const [transRef, setTransRef] = useState("");
-  const [receiverBankId, setReceiverBankId] = useState("");
-  const [receiverAccountMasked, setReceiverAccountMasked] = useState("");
-  const [receiverMatch, setReceiverMatch] = useState(true);
   const [verifying, setVerifying] = useState(false);
+  const [verifyBlockedUntil, setVerifyBlockedUntil] = useState<number | null>(null);
+  const [blockRemaining, setBlockRemaining] = useState(0);
+  const [isDuplicateSlip, setIsDuplicateSlip] = useState(false);
+  const blockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [shopName, setShopName] = useState("");
   const [amount, setAmount] = useState("");
@@ -37,7 +38,23 @@ export default function SlipScreen() {
   const [pickerSearch, setPickerSearch] = useState("");
   const [isProxy, setIsProxy] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const lastVerifyRef = useRef(0);
+
+  useEffect(() => {
+    if (!verifyBlockedUntil) return;
+    function tick() {
+      const rem = Math.max(0, Math.ceil((verifyBlockedUntil! - Date.now()) / 1000));
+      setBlockRemaining(rem);
+      if (rem <= 0) {
+        setVerifyBlockedUntil(null);
+        if (blockTimerRef.current) clearInterval(blockTimerRef.current);
+      }
+    }
+    tick();
+    blockTimerRef.current = setInterval(tick, 1000);
+    return () => { if (blockTimerRef.current) clearInterval(blockTimerRef.current); };
+  }, [verifyBlockedUntil]);
 
   async function parseAsset(uri: string): Promise<PickedImage> {
     const compressed = await ImageManipulator.manipulateAsync(
@@ -50,32 +67,36 @@ export default function SlipScreen() {
   }
 
   async function verifySlip(picked: PickedImage) {
-    const now = Date.now();
-    if (verifying || now - lastVerifyRef.current < 60000) return;
-    lastVerifyRef.current = now;
+    if (verifying || (verifyBlockedUntil && Date.now() < verifyBlockedUntil)) return;
     setVerifying(true);
     setSlipStatus(null);
     setTransRef("");
     setAmount("");
     setSlipUrl(null);
-    setReceiverMatch(true);
-    setReceiverBankId("");
-    setReceiverAccountMasked("");
+    setIsDuplicateSlip(false);
     try {
       const res = await api.verifySlip(picked.uri, picked.name);
+
+      // User is currently blocked (pre-existing or just blocked)
+      if (res.blocked && res.blockedUntil) {
+        setVerifyBlockedUntil(new Date(res.blockedUntil).getTime());
+        return;
+      }
+
+      // Slip already used
+      if (res.duplicate) {
+        setIsDuplicateSlip(true);
+        return;
+      }
+
       setSlipUrl(res.slipUrl ?? null);
       setTransRef(res.transRef ?? "");
-      setReceiverBankId(res.receiverBankId ?? "");
-      setReceiverAccountMasked(res.receiverAccountMasked ?? "");
-      const matched = res.receiverMatch !== false;
-      setReceiverMatch(matched);
-      if (!matched) {
-        setSlipStatus("blocked");
-        setAmount(res.amount ? String(res.amount) : "");
-      } else if (res.success && res.amount) {
+
+      if (res.success && res.amount) {
         setSlipStatus("verified");
         setAmount(String(res.amount));
       } else {
+        // QR อ่านไม่ได้ → pending_approval (admin approve)
         setSlipStatus("pending_approval");
       }
     } catch (err: unknown) {
@@ -96,7 +117,7 @@ export default function SlipScreen() {
             const picked = await parseAsset(originalUri);
             setSlipOriginalUri(originalUri);
             setSlipImage(picked);
-            setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount("");
+            setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount(""); setIsDuplicateSlip(false);
           }
         },
       },
@@ -108,7 +129,7 @@ export default function SlipScreen() {
             const picked = await parseAsset(originalUri);
             setSlipOriginalUri(originalUri);
             setSlipImage(picked);
-            setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount("");
+            setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount(""); setIsDuplicateSlip(false);
           }
         },
       },
@@ -128,36 +149,34 @@ export default function SlipScreen() {
     setProvince("");
     setDistrict("");
     setIsProxy(false);
-    setReceiverMatch(true);
-    setReceiverBankId("");
-    setReceiverAccountMasked("");
+    setVerifyBlockedUntil(null);
+    setBlockRemaining(0);
+    setIsDuplicateSlip(false);
   }
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (!slipUrl || !shopName.trim() || !amount.trim()) return;
+    setShowConfirm(true);
+  }
+
+  async function doSubmit() {
     setLoading(true);
     try {
-      const isBlocked = !receiverMatch;
       await api.submitSlip({
         shopName: shopName.trim(),
         amount: amount.trim(),
         details: details.trim(),
         slipUrl,
-        slipStatus: isBlocked ? "blocked" : slipStatus,
+        slipStatus,
         transRef,
         province: province.trim(),
         district: district.trim(),
         isProxy,
-        isReceiverBlocked: isBlocked,
-        receiverBankId: receiverBankId || undefined,
-        receiverAccountMasked: receiverAccountMasked || undefined,
       });
       resetForm();
       Alert.alert(
         "สำเร็จ",
-        isBlocked
-          ? "บันทึกสลิปแล้ว — รอ Admin ตรวจสอบบัญชีผู้รับ"
-          : slipStatus === "verified"
+        slipStatus === "verified"
           ? "ส่งสลิปแล้ว และแจ้งกลุ่ม LINE เรียบร้อย"
           : "ส่งสลิปแล้ว รอ Admin ยืนยันยอดเงิน",
       );
@@ -167,6 +186,7 @@ export default function SlipScreen() {
       setLoading(false);
     }
   }
+
 
   const isBangkok = province === BANGKOK_PROVINCE;
   const filteredProvinces = PROVINCES.filter((p) => p.toLowerCase().includes(pickerSearch.toLowerCase()));
@@ -202,8 +222,9 @@ export default function SlipScreen() {
               )}
             </TouchableOpacity>
 
-            {/* ปุ่มตรวจสอบ — แสดงเมื่อเลือกรูปแล้วแต่ยังไม่ verify */}
-            {slipImage && !slipStatus && !verifying && (
+            {/* ปุ่มตรวจสอบ — แสดงเมื่อเลือกรูปแล้ว, ยังไม่ verify, และไม่ถูก block/duplicate */}
+            {slipImage && !slipStatus && !verifying && !isDuplicateSlip &&
+              !(verifyBlockedUntil && verifyBlockedUntil > Date.now()) && (
               <TouchableOpacity onPress={() => verifySlip(slipImage)} style={st.verifyBtn}>
                 <Ionicons name="scan-outline" size={16} color="#fff" />
                 <Text style={st.verifyBtnText}>ตรวจสอบสลิป</Text>
@@ -229,10 +250,18 @@ export default function SlipScreen() {
                 <Text style={[st.statusText, { color: "#d97706" }]}>ไม่พบ QR — กรอกยอดด้วยตนเอง รอ Admin ยืนยัน</Text>
               </View>
             )}
-            {!verifying && slipStatus === "blocked" && (
+            {!verifying && verifyBlockedUntil && verifyBlockedUntil > Date.now() && (
+              <View style={[st.statusRow, st.statusBlocked]}>
+                <Ionicons name="time-outline" size={16} color="#dc2626" />
+                <Text style={[st.statusText, { color: "#dc2626" }]}>
+                  {`บัญชีผู้รับไม่ตรง — ตรวจสอบได้อีกครั้งใน ${Math.floor(blockRemaining / 60)}:${String(blockRemaining % 60).padStart(2, "0")} นาที`}
+                </Text>
+              </View>
+            )}
+            {!verifying && isDuplicateSlip && (
               <View style={[st.statusRow, st.statusBlocked]}>
                 <Ionicons name="alert-circle" size={16} color="#dc2626" />
-                <Text style={[st.statusText, { color: "#dc2626" }]}>บัญชีผู้รับไม่ตรง — Admin จะตรวจสอบก่อนดำเนินการ</Text>
+                <Text style={[st.statusText, { color: "#dc2626" }]}>สลิปนี้ถูกใช้ไปแล้ว กรุณาใช้สลิปอื่น</Text>
               </View>
             )}
 
@@ -380,6 +409,48 @@ export default function SlipScreen() {
         </View>
 
       </ScrollView>
+
+      {/* ── Confirm Submit Modal ── */}
+      <Modal visible={showConfirm} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: 24, width: "100%", maxWidth: 360 }}>
+            <Text style={{ fontSize: 20, fontWeight: "700", color: colors.textPrimary, marginBottom: 16 }}>ยืนยันการส่งสลิป</Text>
+
+            <View style={{ backgroundColor: isProxy ? "#fef9ee" : "#f0fdf4", borderRadius: radius.md, padding: 14, marginBottom: 12 }}>
+              <Text style={{ fontSize: 13, color: colors.textMuted, marginBottom: 4 }}>ประเภท</Text>
+              <Text style={{ fontSize: 22, fontWeight: "800", color: isProxy ? "#d97706" : colors.primaryDark }}>
+                {isProxy ? "เก็บแทนเซล์คนอื่น" : "เก็บเอง"}
+              </Text>
+            </View>
+
+            <View style={{ gap: 6, marginBottom: 20 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ fontSize: 15, color: colors.textMuted }}>ร้าน</Text>
+                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary, flex: 1, textAlign: "right" }} numberOfLines={1}>{shopName.trim()}</Text>
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ fontSize: 15, color: colors.textMuted }}>ยอด</Text>
+                <Text style={{ fontSize: 15, fontWeight: "700", color: colors.primaryDark }}>฿{amount.trim()}</Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => setShowConfirm(false)}
+                style={{ flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, alignItems: "center" }}
+              >
+                <Text style={{ fontSize: 17, fontWeight: "600", color: colors.textSecondary }}>ยกเลิก</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => { setShowConfirm(false); doSubmit(); }}
+                style={{ flex: 1, paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.primary, alignItems: "center" }}
+              >
+                <Text style={{ fontSize: 17, fontWeight: "700", color: "#fff" }}>ยืนยัน</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <SearchPickerModal
         visible={showProvincePicker} title="เลือกจังหวัด" items={filteredProvinces}
