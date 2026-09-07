@@ -59,6 +59,34 @@ async function request(path: string, options: RequestInit = {}) {
   }
 }
 
+function xhrMultipart(path: string, formData: FormData, timeoutMs = 30000): Promise<any> {
+  const token = getToken();
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_URL}${path}`);
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.timeout = timeoutMs;
+    xhr.onload = () => {
+      if (xhr.status === 401) {
+        useAuthStore.getState().signOut();
+        router.replace("/login");
+        reject(new Error("Session หมดอายุ กรุณา login ใหม่"));
+        return;
+      }
+      if (xhr.status < 200 || xhr.status >= 300) {
+        try { reject(new Error(JSON.parse(xhr.responseText).message || "Request failed")); }
+        catch { reject(new Error("Request failed")); }
+        return;
+      }
+      try { resolve(JSON.parse(xhr.responseText)); }
+      catch { reject(new Error("Invalid response")); }
+    };
+    xhr.onerror = () => reject(new Error("ไม่สามารถเชื่อมต่อ server ได้"));
+    xhr.ontimeout = () => reject(new Error("การเชื่อมต่อหมดเวลา กรุณาตรวจสอบ internet"));
+    xhr.send(formData);
+  });
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -69,11 +97,11 @@ export const api = {
   getHistory: () => request("/line/history"),
   getSettings: () => request("/settings"),
 
-  sendMessage: (formData: FormData) =>
-    request("/line/send", { method: "POST", body: formData }),
+  sendMessage: (formData: FormData): Promise<any> =>
+    xhrMultipart("/line/send", formData),
 
-  createVisit: (formData: FormData) =>
-    request("/visits", { method: "POST", body: formData }),
+  createVisit: (formData: FormData): Promise<any> =>
+    xhrMultipart("/visits", formData, 60000),
 
   verifySlip: (fileUri: string, fileName: string): Promise<any> => {
     const token = getToken();
