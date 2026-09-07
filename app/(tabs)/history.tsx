@@ -859,7 +859,9 @@ export default function HistoryScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const locationLabel = item.district ? `${item.province} · ${item.district}` : item.province;
+          const locationLabel = item.district
+            ? `${item.province.replace("กรุงเทพมหานคร", "กรุงเทพฯ")} · ${item.district}`
+            : item.province.replace("กรุงเทพมหานคร", "กรุงเทพฯ");
           const resKey = item.result || "";
           const resLabel = RESULT_LABEL[resKey] || "";
           const rs = getResultStyle(resKey);
@@ -867,7 +869,7 @@ export default function HistoryScreen() {
             CUSTOMER_TYPE_LABEL[item.customerType] ?? item.customerType,
             item.visitType ? MISSION_LABEL[item.visitType] : "",
             item.tripType ? TRIP_LABEL[item.tripType] : "",
-            item.province ? item.province.replace("กรุงเทพมหานคร", "กรุงเทพฯ") : "",
+            locationLabel,
           ].filter(Boolean);
 
           return (
