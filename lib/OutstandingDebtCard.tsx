@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router";
 import { api } from "@/lib/api";
 import { colors, radius, shadows } from "@/lib/theme";
 
