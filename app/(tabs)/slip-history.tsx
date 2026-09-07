@@ -38,27 +38,6 @@ const DATE_OPTS: { value: DateFilter; label: string }[] = [
   { value: "all", label: "ทั้งหมด" },
   { value: "custom", label: "กำหนดเอง" },
 ];
-function getDateBounds(f: DateFilter, customFrom: string, customTo: string): { dateFrom?: string; dateTo?: string } {
-  if (f === "today") {
-    const now = new Date();
-    const start = new Date(now); start.setHours(0, 0, 0, 0);
-    const end = new Date(now); end.setHours(23, 59, 59, 999);
-    return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
-  }
-  if (f === "month") {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-    return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
-  }
-  if (f === "custom") {
-    return {
-      dateFrom: customFrom ? `${customFrom}T00:00:00` : undefined,
-      dateTo: customTo ? `${customTo}T23:59:59` : undefined,
-    };
-  }
-  return {};
-}
 
 // ── Calendar Picker ───────────────────────────────────────────
 const MONTH_TH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
@@ -220,9 +199,25 @@ export default function SlipHistoryScreen() {
     }
   }
 
+  function toDateStr(d: Date) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
   function buildParams(df: DateFilter, cf: string, ct: string, sf: string) {
-    const bounds = getDateBounds(df, cf, ct);
-    return { status: sf || undefined, ...bounds };
+    let dateFrom: string | undefined;
+    let dateTo: string | undefined;
+    if (df === "today") {
+      const t = toDateStr(new Date());
+      dateFrom = t; dateTo = t;
+    } else if (df === "month") {
+      const now = new Date();
+      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      dateFrom = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+      dateTo = toDateStr(last);
+    } else if (df === "custom") {
+      dateFrom = cf || undefined;
+      dateTo = ct || undefined;
+    }
+    return { status: sf || undefined, dateFrom, dateTo };
   }
 
   useFocusEffect(useCallback(() => {
