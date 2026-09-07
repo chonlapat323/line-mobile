@@ -546,10 +546,19 @@ export default function HistoryScreen() {
     finally { if (mountedRef.current) { setLoading(false); setRefreshing(false); } }
   }, []);
 
+  // Reload on focus (initial + tab switch)
   useFocusEffect(useCallback(() => {
     setLoading(true);
     doLoad({ df: dateFilter, from: customFrom, to: customTo, uid: userFilter, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
-  }, [dateFilter, customFrom, customTo, userFilter, provinceFilter, districtFilter, tripTypeFilter, customerTypeFilter, visitTypeFilter, doLoad]));
+  }, []));
+
+  // Reload immediately when any filter changes (skip initial mount)
+  const filterInitRef = useRef(false);
+  useEffect(() => {
+    if (!filterInitRef.current) { filterInitRef.current = true; return; }
+    setLoading(true);
+    doLoad({ df: dateFilter, from: customFrom, to: customTo, uid: userFilter, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
+  }, [dateFilter, customFrom, customTo, userFilter, provinceFilter, districtFilter, tripTypeFilter, customerTypeFilter, visitTypeFilter]);
 
   const uniqueShops = useMemo(() => [...new Set(records.map(r => r.shopName))].sort(), [records]);
 
