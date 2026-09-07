@@ -75,14 +75,52 @@ export const api = {
   createVisit: (formData: FormData) =>
     request("/visits", { method: "POST", body: formData }),
 
-  verifySlip: (formData: FormData) =>
-    request("/visits/verify-slip", { method: "POST", body: formData }),
+  verifySlip: (fileUri: string, fileName: string): Promise<any> => {
+    const token = getToken();
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${API_URL}/visits/verify-slip`);
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.timeout = 30000;
+      xhr.onload = () => {
+        if (xhr.status === 401) {
+          useAuthStore.getState().signOut();
+          router.replace("/login");
+          reject(new Error("Session หมดอายุ กรุณา login ใหม่"));
+          return;
+        }
+        if (xhr.status < 200 || xhr.status >= 300) {
+          try { reject(new Error(JSON.parse(xhr.responseText).message || "Request failed")); }
+          catch { reject(new Error("Request failed")); }
+          return;
+        }
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch { reject(new Error("Invalid response")); }
+      };
+      xhr.onerror = () => reject(new Error("ไม่สามารถเชื่อมต่อ server ได้"));
+      xhr.ontimeout = () => reject(new Error("การเชื่อมต่อหมดเวลา กรุณาตรวจสอบ internet"));
+      const fd = new FormData();
+      fd.append("slip", { uri: fileUri, name: fileName, type: "image/jpeg" } as any);
+      xhr.send(fd);
+    });
+  },
 
-  getVisits: (params?: { dateFrom?: string; dateTo?: string; filterUserId?: string }) => {
+  getVisits: (params?: {
+    dateFrom?: string; dateTo?: string; filterUserId?: string;
+    province?: string; district?: string;
+    tripType?: string; customerType?: string; visitType?: string;
+    search?: string;
+  }) => {
     const q = new URLSearchParams({ limit: "200" });
     if (params?.dateFrom) q.set("dateFrom", params.dateFrom);
     if (params?.dateTo) q.set("dateTo", params.dateTo);
     if (params?.filterUserId) q.set("filterUserId", params.filterUserId);
+    if (params?.province) q.set("province", params.province);
+    if (params?.district) q.set("district", params.district);
+    if (params?.tripType) q.set("tripType", params.tripType);
+    if (params?.customerType) q.set("customerType", params.customerType);
+    if (params?.visitType) q.set("visitType", params.visitType);
+    if (params?.search) q.set("search", params.search);
     return request(`/visits?${q.toString()}`);
   },
   deleteVisit: (id: string) => request(`/visits/${id}`, { method: "DELETE" }),

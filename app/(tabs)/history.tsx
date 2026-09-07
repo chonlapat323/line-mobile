@@ -12,6 +12,7 @@ import { colors, radius, shadows } from "@/lib/theme";
 import { SkeletonBox } from "@/lib/Skeleton";
 import { ImageViewer } from "@/lib/ImageViewer";
 import { TRIP_LABEL, MISSION_LABEL, RESULT_LABEL, CUSTOMER_TYPE_LABEL } from "@/lib/labels";
+import { PROVINCES, BANGKOK_DISTRICTS, BANGKOK_PROVINCE, PROVINCE_AMPHOES } from "@/lib/thai-places";
 
 interface VisitRecord {
   id: string;
@@ -489,6 +490,16 @@ export default function HistoryScreen() {
   const [userFilter, setUserFilter] = useState("");
   const [shopFilter, setShopFilter] = useState("");
 
+  // New filters
+  const [provinceFilter, setProvinceFilter] = useState("");
+  const [districtFilter, setDistrictFilter] = useState("");
+  const [tripTypeFilter, setTripTypeFilter] = useState("");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("");
+  const [visitTypeFilter, setVisitTypeFilter] = useState("");
+  const [showProvincePicker, setShowProvincePicker] = useState(false);
+  const [showDistrictPicker, setShowDistrictPicker] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [users, setUsers] = useState<{ id: string; fullName: string }[]>([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
@@ -511,10 +522,22 @@ export default function HistoryScreen() {
     return () => { mountedRef.current = false; };
   }, []);
 
-  const doLoad = useCallback(async (df: DateFilter, from: string, to: string, uid: string) => {
-    const bounds = getDateBounds(df, from, to);
+  const doLoad = useCallback(async (params: {
+    df: DateFilter; from: string; to: string; uid: string;
+    province?: string; district?: string;
+    tripType?: string; customerType?: string; visitType?: string;
+  }) => {
+    const bounds = getDateBounds(params.df, params.from, params.to);
     try {
-      const res = await api.getVisits({ ...bounds, filterUserId: uid || undefined });
+      const res = await api.getVisits({
+        ...bounds,
+        filterUserId: params.uid || undefined,
+        province: params.province || undefined,
+        district: params.district || undefined,
+        tripType: params.tripType || undefined,
+        customerType: params.customerType || undefined,
+        visitType: params.visitType || undefined,
+      });
       if (mountedRef.current) {
         setRecords(res?.data ?? []);
         setShopFilter("");
@@ -525,15 +548,27 @@ export default function HistoryScreen() {
 
   useFocusEffect(useCallback(() => {
     setLoading(true);
-    doLoad(dateFilter, customFrom, customTo, userFilter);
-  }, [dateFilter, customFrom, customTo, userFilter, doLoad]));
+    doLoad({ df: dateFilter, from: customFrom, to: customTo, uid: userFilter, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
+  }, [dateFilter, customFrom, customTo, userFilter, provinceFilter, districtFilter, tripTypeFilter, customerTypeFilter, visitTypeFilter, doLoad]));
 
   const uniqueShops = useMemo(() => [...new Set(records.map(r => r.shopName))].sort(), [records]);
+
+  const districtOptions = useMemo(() => {
+    if (!provinceFilter) return [];
+    if (provinceFilter === BANGKOK_PROVINCE) return BANGKOK_DISTRICTS.map(d => ({ value: d, label: d }));
+    const amphoes = PROVINCE_AMPHOES[provinceFilter] ?? [];
+    return amphoes.map((d: string) => ({ value: d, label: d }));
+  }, [provinceFilter]);
+
+  const hasActiveTypeFilter = !!tripTypeFilter || !!customerTypeFilter || !!visitTypeFilter;
+  const hasActiveLocationFilter = !!provinceFilter || !!districtFilter;
 
   const hasActiveFilter =
     search.trim().length > 0 ||
     !!shopFilter ||
     !!userFilter ||
+    hasActiveTypeFilter ||
+    hasActiveLocationFilter ||
     (dateFilter !== "all" && dateFilter !== "custom") ||
     (dateFilter === "custom" && !!customFrom && !!customTo);
 
@@ -561,8 +596,8 @@ export default function HistoryScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    doLoad(dateFilter, customFrom, customTo, userFilter);
-  }, [dateFilter, customFrom, customTo, userFilter, doLoad]);
+    doLoad({ df: dateFilter, from: customFrom, to: customTo, uid: userFilter, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
+  }, [dateFilter, customFrom, customTo, userFilter, provinceFilter, districtFilter, tripTypeFilter, customerTypeFilter, visitTypeFilter, doLoad]);
 
   function handleDeletePress(id: string) {
     Alert.alert("ยืนยันการลบ", "ต้องการลบรายการนี้ใช่ไหม?", [
@@ -680,6 +715,100 @@ export default function HistoryScreen() {
             </TouchableOpacity>
           ) : null}
         </View>
+
+        {/* Filter toggle button */}
+        <View style={styles.filterToggleRow}>
+          <TouchableOpacity
+            style={[styles.filterToggleBtn, (hasActiveLocationFilter || hasActiveTypeFilter) && styles.filterToggleBtnActive]}
+            onPress={() => setShowFilterPanel(v => !v)}
+          >
+            <Ionicons name="options-outline" size={14} color={(hasActiveLocationFilter || hasActiveTypeFilter) ? "#fff" : colors.textMuted} />
+            <Text style={[(hasActiveLocationFilter || hasActiveTypeFilter) ? styles.filterToggleBtnTextActive : styles.filterToggleBtnText]}>
+              ตัวกรองเพิ่มเติม{(hasActiveLocationFilter || hasActiveTypeFilter) ? " ●" : ""}
+            </Text>
+            <Ionicons name={showFilterPanel ? "chevron-up" : "chevron-down"} size={12} color={(hasActiveLocationFilter || hasActiveTypeFilter) ? "#fff" : colors.textMuted} />
+          </TouchableOpacity>
+          {(hasActiveLocationFilter || hasActiveTypeFilter) && (
+            <TouchableOpacity
+              style={styles.clearAllBtn}
+              onPress={() => { setProvinceFilter(""); setDistrictFilter(""); setTripTypeFilter(""); setCustomerTypeFilter(""); setVisitTypeFilter(""); }}
+            >
+              <Text style={styles.clearAllBtnText}>ล้างทั้งหมด</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Expanded filter panel */}
+        {showFilterPanel && (
+          <View style={styles.filterPanel}>
+            {/* Province + District */}
+            <View style={styles.filterPanelRow}>
+              <TouchableOpacity
+                style={[styles.filterPickerBtn, provinceFilter && styles.filterPickerBtnActive]}
+                onPress={() => setShowProvincePicker(true)}
+              >
+                <Ionicons name="location-outline" size={13} color={provinceFilter ? colors.primary : colors.textMuted} />
+                <Text style={[styles.filterPickerText, provinceFilter && { color: colors.primary }]} numberOfLines={1}>
+                  {provinceFilter || "จังหวัด"}
+                </Text>
+                <Ionicons name="chevron-down" size={11} color={colors.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.filterPickerBtn, districtFilter && styles.filterPickerBtnActive, !provinceFilter && { opacity: 0.4 }]}
+                onPress={() => provinceFilter && setShowDistrictPicker(true)}
+                disabled={!provinceFilter}
+              >
+                <Ionicons name="map-outline" size={13} color={districtFilter ? colors.primary : colors.textMuted} />
+                <Text style={[styles.filterPickerText, districtFilter && { color: colors.primary }]} numberOfLines={1}>
+                  {districtFilter || "อำเภอ/เขต"}
+                </Text>
+                <Ionicons name="chevron-down" size={11} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {/* ทริป (tripType) */}
+            <Text style={styles.filterGroupLabel}>ทริป</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipRow}>
+              {[{ value: "", label: "ทั้งหมด" }, { value: "plan", label: "ตามแผน" }, { value: "off_plan", label: "นอกแผน" }].map(opt => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.filterChip, tripTypeFilter === opt.value && styles.filterChipActive]}
+                  onPress={() => setTripTypeFilter(opt.value)}
+                >
+                  <Text style={[styles.filterChipText, tripTypeFilter === opt.value && styles.filterChipTextActive]}>{opt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* ลูกค้า (customerType) */}
+            <Text style={styles.filterGroupLabel}>ลูกค้า</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipRow}>
+              {[{ value: "", label: "ทั้งหมด" }, { value: "new", label: "ลูกค้าใหม่" }, { value: "existing", label: "ลูกค้าเก่า" }].map(opt => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.filterChip, customerTypeFilter === opt.value && styles.filterChipActive]}
+                  onPress={() => setCustomerTypeFilter(opt.value)}
+                >
+                  <Text style={[styles.filterChipText, customerTypeFilter === opt.value && styles.filterChipTextActive]}>{opt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* ภารกิจ (visitType) */}
+            <Text style={styles.filterGroupLabel}>ภารกิจ</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipRow}>
+              {[{ value: "", label: "ทั้งหมด" }, { value: "tak", label: "เยี่ยมเยียน" }, { value: "dem", label: "เดม" }, { value: "tel", label: "โทร / LINE" }].map(opt => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.filterChip, visitTypeFilter === opt.value && styles.filterChipActive]}
+                  onPress={() => setVisitTypeFilter(opt.value)}
+                >
+                  <Text style={[styles.filterChipText, visitTypeFilter === opt.value && styles.filterChipTextActive]}>{opt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Admin: user + shop pickers */}
         {isAdmin && (
@@ -813,6 +942,22 @@ export default function HistoryScreen() {
         onSelect={setShopFilter}
         onClose={() => setShowShopPicker(false)}
       />
+      <PickerModal
+        visible={showProvincePicker}
+        title="เลือกจังหวัด"
+        options={[{ value: "", label: "ทุกจังหวัด" }, ...PROVINCES.map(p => ({ value: p, label: p }))]}
+        selected={provinceFilter}
+        onSelect={(v) => { setProvinceFilter(v); setDistrictFilter(""); }}
+        onClose={() => setShowProvincePicker(false)}
+      />
+      <PickerModal
+        visible={showDistrictPicker}
+        title="เลือกอำเภอ/เขต"
+        options={[{ value: "", label: "ทุกอำเภอ/เขต" }, ...districtOptions]}
+        selected={districtFilter}
+        onSelect={setDistrictFilter}
+        onClose={() => setShowDistrictPicker(false)}
+      />
 
       {/* ── Modals ── */}
       {selected && (
@@ -870,6 +1015,28 @@ const styles = StyleSheet.create({
   pickerValue: { flex: 1, fontSize: 14, color: colors.textPrimary, fontWeight: "600" },
   clearBtn: { paddingHorizontal: 10, paddingVertical: 7 },
   clearBtnText: { fontSize: 14, color: colors.textMuted },
+
+  // Filter toggle
+  filterToggleRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingTop: 8, gap: 8 },
+  filterToggleBtn: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.xl, paddingHorizontal: 10, paddingVertical: 6 },
+  filterToggleBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterToggleBtnText: { fontSize: 13, color: colors.textMuted, fontWeight: "600" },
+  filterToggleBtnTextActive: { fontSize: 13, color: "#fff", fontWeight: "600" },
+  clearAllBtn: { paddingHorizontal: 8, paddingVertical: 6 },
+  clearAllBtnText: { fontSize: 13, color: colors.error, fontWeight: "600" },
+
+  // Filter panel
+  filterPanel: { marginHorizontal: 14, marginTop: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: 12 },
+  filterPanelRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  filterPickerBtn: { flex: 1, flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.xl, paddingHorizontal: 10, paddingVertical: 7 },
+  filterPickerBtnActive: { borderColor: colors.primary, backgroundColor: "#f0fdf4" },
+  filterPickerText: { flex: 1, fontSize: 13, color: colors.textSecondary, fontWeight: "600" },
+  filterGroupLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "700", marginBottom: 5, marginTop: 2, letterSpacing: 0.5, textTransform: "uppercase" },
+  filterChipRow: { gap: 6, paddingBottom: 8 },
+  filterChip: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
+  filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterChipText: { fontSize: 13, color: colors.textSecondary, fontWeight: "600" },
+  filterChipTextActive: { color: "#fff" },
 
   emptyWrap: { alignItems: "center", paddingTop: 80, gap: 8 },
   emptyIcon: { fontSize: 47, marginBottom: 4 },
