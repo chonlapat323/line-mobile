@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Image, Modal, ScrollView, TextInput,
+  ActivityIndicator, RefreshControl, Image, Modal, ScrollView,
 } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,6 +29,106 @@ const STATUS_OPTS = [
   { key: "approved", label: "อนุมัติแล้ว" },
   { key: "rejected", label: "ปฏิเสธ" },
 ];
+
+// ── Date helpers ──────────────────────────────────────────────
+type DateFilter = "today" | "month" | "all" | "custom";
+const DATE_OPTS: { value: DateFilter; label: string }[] = [
+  { value: "today", label: "วันนี้" },
+  { value: "month", label: "เดือนนี้" },
+  { value: "all", label: "ทั้งหมด" },
+  { value: "custom", label: "กำหนดเอง" },
+];
+function getDateBounds(f: DateFilter, customFrom: string, customTo: string): { dateFrom?: string; dateTo?: string } {
+  if (f === "today") {
+    const now = new Date();
+    const start = new Date(now); start.setHours(0, 0, 0, 0);
+    const end = new Date(now); end.setHours(23, 59, 59, 999);
+    return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
+  }
+  if (f === "month") {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
+  }
+  if (f === "custom") {
+    return {
+      dateFrom: customFrom ? `${customFrom}T00:00:00` : undefined,
+      dateTo: customTo ? `${customTo}T23:59:59` : undefined,
+    };
+  }
+  return {};
+}
+
+// ── Calendar Picker ───────────────────────────────────────────
+const MONTH_TH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const DAY_TH = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+function CalendarPicker({ visible, initialValue, onConfirm, onClose }: {
+  visible: boolean; initialValue: string;
+  onConfirm: (date: string) => void; onClose: () => void;
+}) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const getInit = (v: string) => { const d = v ? new Date(v) : new Date(); return { y: d.getFullYear(), m: d.getMonth() }; };
+  const [viewYear, setViewYear] = useState(() => getInit(initialValue).y);
+  const [viewMonth, setViewMonth] = useState(() => getInit(initialValue).m);
+  const [selected, setSelected] = useState(initialValue || todayStr);
+  useEffect(() => {
+    if (visible) { const { y, m } = getInit(initialValue); setViewYear(y); setViewMonth(m); setSelected(initialValue || todayStr); }
+  }, [visible]);
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDow = new Date(viewYear, viewMonth, 1).getDay();
+  const rows: (number | null)[][] = [];
+  let row: (number | null)[] = Array(firstDow).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    row.push(d);
+    if (row.length === 7) { rows.push(row); row = []; }
+  }
+  if (row.length > 0) { while (row.length < 7) row.push(null); rows.push(row); }
+  function prevMonth() { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); }
+  function nextMonth() { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); }
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={cal.overlay}>
+        <View style={cal.sheet}>
+          <View style={cal.navRow}>
+            <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={cal.monthLabel}>{MONTH_TH[viewMonth]} {viewYear + 543}</Text>
+            <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-forward" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          <View style={cal.dowRow}>{DAY_TH.map(d => <Text key={d} style={cal.dowText}>{d}</Text>)}</View>
+          {rows.map((r, ri) => (
+            <View key={ri} style={{ flexDirection: "row" }}>
+              {r.map((day, ci) => {
+                if (!day) return <View key={ci} style={cal.cell} />;
+                const ds = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                const isSel = ds === selected; const isToday = ds === todayStr;
+                return (
+                  <TouchableOpacity key={ci} style={cal.cell} onPress={() => setSelected(ds)}>
+                    <View style={[cal.cellInner, isSel && cal.cellInnerSel, !isSel && isToday && cal.cellInnerToday]}>
+                      <Text style={[cal.cellText, isSel && cal.cellTextSel, !isSel && isToday && cal.cellTextToday]}>{day}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+          <View style={cal.btnRow}>
+            <TouchableOpacity style={cal.cancelBtn} onPress={onClose}>
+              <Text style={cal.cancelText}>ยกเลิก</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={cal.confirmBtn} onPress={() => { onConfirm(selected); onClose(); }}>
+              <Text style={cal.confirmText}>ตกลง</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; border: string; text: string; label: string }> = {
@@ -103,9 +203,10 @@ export default function SlipHistoryScreen() {
   const [selected, setSelected] = useState<SlipSubmission | null>(null);
 
   const [statusFilter, setStatusFilter] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [dateFilter, setDateFilter] = useState<DateFilter>("month");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState<"from" | "to" | null>(null);
 
   async function loadData(params?: { status?: string; dateFrom?: string; dateTo?: string }) {
     try {
@@ -119,28 +220,27 @@ export default function SlipHistoryScreen() {
     }
   }
 
-  useFocusEffect(useCallback(() => { loadData(); }, []));
+  function buildParams(df: DateFilter, cf: string, ct: string, sf: string) {
+    const bounds = getDateBounds(df, cf, ct);
+    return { status: sf || undefined, ...bounds };
+  }
+
+  useFocusEffect(useCallback(() => {
+    setLoading(true);
+    loadData(buildParams(dateFilter, customFrom, customTo, statusFilter));
+  }, []));
+
+  const filterInitRef = useRef(false);
+  useEffect(() => {
+    if (!filterInitRef.current) { filterInitRef.current = true; return; }
+    setLoading(true);
+    loadData(buildParams(dateFilter, customFrom, customTo, statusFilter));
+  }, [dateFilter, customFrom, customTo, statusFilter]);
 
   function onRefresh() {
     setRefreshing(true);
-    loadData({ status: statusFilter || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
+    loadData(buildParams(dateFilter, customFrom, customTo, statusFilter));
   }
-
-  function applyFilter() {
-    setLoading(true);
-    loadData({ status: statusFilter || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
-  }
-
-  function clearFilter() {
-    setStatusFilter("");
-    setDateFrom("");
-    setDateTo("");
-    setShowDateFilter(false);
-    setLoading(true);
-    loadData();
-  }
-
-  const hasActiveFilter = !!statusFilter || !!dateFrom || !!dateTo;
 
   if (loading) {
     return <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={colors.primary} /></View>;
@@ -150,73 +250,58 @@ export default function SlipHistoryScreen() {
     <View style={st.screen}>
       {/* ── Filter bar ── */}
       <View style={st.filterBar}>
+        {/* Date chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.chips}>
+          {DATE_OPTS.map(opt => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[st.chip, dateFilter === opt.value && st.chipActive]}
+              onPress={() => {
+                setDateFilter(opt.value);
+                if (opt.value !== "custom") { setCustomFrom(""); setCustomTo(""); }
+              }}
+              activeOpacity={0.75}
+            >
+              <Text style={[st.chipText, dateFilter === opt.value && st.chipTextActive]}>{opt.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Custom date inputs */}
+        {dateFilter === "custom" && (
+          <View style={st.customDateRow}>
+            <TouchableOpacity style={st.dateInput} onPress={() => setShowDatePicker("from")}>
+              <Text style={customFrom ? st.dateInputText : st.dateInputPlaceholder}>
+                {customFrom ? customFrom.split("-").reverse().join("/") : "วันที่เริ่ม"}
+              </Text>
+            </TouchableOpacity>
+            <Text style={st.dateSep}>—</Text>
+            <TouchableOpacity style={st.dateInput} onPress={() => setShowDatePicker("to")}>
+              <Text style={customTo ? st.dateInputText : st.dateInputPlaceholder}>
+                {customTo ? customTo.split("-").reverse().join("/") : "วันที่สิ้นสุด"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <CalendarPicker visible={showDatePicker === "from"} initialValue={customFrom} onConfirm={setCustomFrom} onClose={() => setShowDatePicker(null)} />
+        <CalendarPicker visible={showDatePicker === "to"} initialValue={customTo} onConfirm={setCustomTo} onClose={() => setShowDatePicker(null)} />
+
+        {/* Status chips */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[st.chips, { paddingTop: 6 }]}>
           {STATUS_OPTS.map((opt) => {
             const active = statusFilter === opt.key;
             return (
               <TouchableOpacity
                 key={opt.key}
                 style={[st.chip, active && st.chipActive]}
-                onPress={() => {
-                  const next = active ? "" : opt.key;
-                  setStatusFilter(next);
-                  setLoading(true);
-                  loadData({ status: next || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
-                }}
+                onPress={() => setStatusFilter(active ? "" : opt.key)}
                 activeOpacity={0.75}
               >
                 <Text style={[st.chipText, active && st.chipTextActive]}>{opt.label}</Text>
               </TouchableOpacity>
             );
           })}
-          <TouchableOpacity
-            style={[st.chip, (showDateFilter || dateFrom || dateTo) && st.chipActive]}
-            onPress={() => setShowDateFilter((v) => !v)}
-            activeOpacity={0.75}
-          >
-            <Ionicons name="calendar-outline" size={14} color={(showDateFilter || dateFrom || dateTo) ? "#fff" : colors.textMuted} />
-            <Text style={[st.chipText, (showDateFilter || dateFrom || dateTo) && st.chipTextActive]}>ช่วงวันที่</Text>
-          </TouchableOpacity>
-          {hasActiveFilter && (
-            <TouchableOpacity style={[st.chip, st.chipClear]} onPress={clearFilter} activeOpacity={0.75}>
-              <Ionicons name="close" size={14} color={colors.error} />
-              <Text style={[st.chipText, { color: colors.error }]}>ล้าง</Text>
-            </TouchableOpacity>
-          )}
         </ScrollView>
-
-        {showDateFilter && (
-          <View style={st.dateRow}>
-            <View style={st.dateField}>
-              <Text style={st.dateLabel}>จาก</Text>
-              <TextInput
-                style={st.dateInput}
-                value={dateFrom}
-                onChangeText={setDateFrom}
-                placeholder="ปปปป-ดด-วว"
-                placeholderTextColor={colors.textDisabled}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
-              />
-            </View>
-            <Text style={st.dateSep}>—</Text>
-            <View style={st.dateField}>
-              <Text style={st.dateLabel}>ถึง</Text>
-              <TextInput
-                style={st.dateInput}
-                value={dateTo}
-                onChangeText={setDateTo}
-                placeholder="ปปปป-ดด-วว"
-                placeholderTextColor={colors.textDisabled}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
-              />
-            </View>
-            <TouchableOpacity style={st.applyBtn} onPress={applyFilter} activeOpacity={0.85}>
-              <Text style={st.applyBtnText}>กรอง</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
       <FlatList
@@ -276,37 +361,23 @@ const st = StyleSheet.create({
   filterBar: {
     backgroundColor: colors.surface,
     borderBottomWidth: 1, borderBottomColor: colors.borderLight,
-    paddingVertical: 8,
+    paddingTop: 8, paddingBottom: 8,
   },
-  chips: { paddingHorizontal: 12, gap: 6, alignItems: "center" },
+  chips: { paddingHorizontal: 14, gap: 8, alignItems: "center" },
   chip: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1, borderColor: colors.border,
-    backgroundColor: colors.bg,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: radius.full, borderWidth: 1, borderColor: colors.borderLight,
+    backgroundColor: colors.bg, marginRight: 0,
   },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipClear: { borderColor: colors.error, backgroundColor: "#fef2f2" },
-  chipText: { fontSize: 16, color: colors.textMuted, fontWeight: "600" },
+  chipText: { fontSize: 17, fontWeight: "600", color: colors.textMuted },
   chipTextActive: { color: "#fff" },
 
-  dateRow: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingHorizontal: 12, paddingTop: 8,
-  },
-  dateField: { flex: 1, gap: 2 },
-  dateLabel: { fontSize: 13, color: colors.textMuted, fontWeight: "600" },
-  dateInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
-    paddingHorizontal: 10, paddingVertical: 7,
-    fontSize: 17, color: colors.textPrimary, backgroundColor: colors.bg,
-  },
-  dateSep: { fontSize: 18, color: colors.textDisabled, marginTop: 16 },
-  applyBtn: {
-    backgroundColor: colors.primary, borderRadius: radius.md,
-    paddingHorizontal: 14, paddingVertical: 9, marginTop: 16,
-  },
-  applyBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  customDateRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingTop: 8, gap: 8 },
+  dateInput: { flex: 1, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.md, paddingHorizontal: 10, paddingVertical: 9, justifyContent: "center" },
+  dateInputText: { fontSize: 14, color: colors.textPrimary },
+  dateInputPlaceholder: { fontSize: 14, color: colors.textDisabled },
+  dateSep: { fontSize: 16, color: colors.textDisabled },
 
   card: {
     flexDirection: "row", backgroundColor: colors.surface,
@@ -326,6 +397,27 @@ const st = StyleSheet.create({
     borderRadius: 20, paddingHorizontal: 6, paddingVertical: 2,
   },
   proxyBadgeText: { fontSize: 13, fontWeight: "700", color: "#1d4ed8" },
+});
+
+const cal = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
+  sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 16, paddingBottom: 32 },
+  navRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
+  monthLabel: { fontSize: 17, fontWeight: "700", color: colors.textPrimary },
+  dowRow: { flexDirection: "row", marginBottom: 4 },
+  dowText: { flex: 1, textAlign: "center", fontSize: 13, fontWeight: "600", color: colors.textMuted, paddingVertical: 6 },
+  cell: { flex: 1, height: 44, alignItems: "center", justifyContent: "center" },
+  cellInner: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  cellInnerSel: { backgroundColor: colors.primary },
+  cellInnerToday: { borderWidth: 1.5, borderColor: colors.primary },
+  cellText: { fontSize: 15, color: colors.textPrimary },
+  cellTextSel: { color: "#fff", fontWeight: "700" },
+  cellTextToday: { color: colors.primary, fontWeight: "600" },
+  btnRow: { flexDirection: "row", gap: 12, marginTop: 16 },
+  cancelBtn: { flex: 1, paddingVertical: 13, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.borderLight, alignItems: "center" },
+  cancelText: { fontSize: 16, fontWeight: "600", color: colors.textSecondary },
+  confirmBtn: { flex: 1, paddingVertical: 13, borderRadius: radius.xl, backgroundColor: colors.primary, alignItems: "center" },
+  confirmText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 });
 
 const md = StyleSheet.create({
