@@ -547,12 +547,6 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Change password */}
-        <TouchableOpacity style={styles.changePwBtn} onPress={() => setShowChangePassword(true)} activeOpacity={0.85}>
-          <Ionicons name="lock-closed-outline" size={18} color="#3b82f6" style={{ marginRight: 8 }} />
-          <Text style={styles.changePwBtnText}>เปลี่ยนรหัสผ่าน</Text>
-        </TouchableOpacity>
-
         {/* Logout */}
         <TouchableOpacity style={[styles.logoutButton, loggingOut && { opacity: 0.5 }]} onPress={handleLogout} disabled={loggingOut} activeOpacity={0.85}>
           <Ionicons name="log-out-outline" size={18} color={colors.error} style={{ marginRight: 8 }} />
