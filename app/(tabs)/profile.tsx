@@ -22,7 +22,7 @@ interface UserInfo { fullName: string; email: string; role: string; bankName?: s
 interface SlipSubmission {
   id: string; shopName: string; amount?: number | null;
   slipUrl: string; slipStatus: string; transRef?: string | null;
-  isProxy?: boolean; createdAt: string;
+  isProxy?: boolean; createdAt: string; province?: string | null;
 }
 
 const THAI_BANKS = [
@@ -500,52 +500,53 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* ── Slip history ───────────────────────────────────────── */}
-        <View style={styles.slipSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>ประวัติส่งสลิป</Text>
-            <Text style={styles.sectionHint}>{slips.length} รายการ</Text>
-          </View>
+        {/* ── Slip summary by province ───────────────────────────── */}
+        {(() => {
+          const provinceMap = new Map<string, { count: number; total: number }>();
+          for (const s of slips) {
+            const prov = s.province || "ไม่ระบุจังหวัด";
+            const cur = provinceMap.get(prov) ?? { count: 0, total: 0 };
+            provinceMap.set(prov, {
+              count: cur.count + 1,
+              total: cur.total + (s.amount ?? 0),
+            });
+          }
+          const rows = Array.from(provinceMap.entries())
+            .sort((a, b) => b[1].count - a[1].count);
 
-          {slips.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Ionicons name="receipt-outline" size={32} color={colors.textDisabled} />
-              <Text style={styles.emptyText}>ยังไม่มีประวัติส่งสลิป</Text>
-            </View>
-          ) : (
-            <View style={styles.slipList}>
-              {slips.slice(0, 30).map((s, i) => {
-                const st = SLIP_STATUS[s.slipStatus] ?? { label: s.slipStatus, color: colors.textMuted, bg: colors.bg };
-                return (
-                  <View key={s.id} style={[styles.slipRow, i === Math.min(slips.length, 30) - 1 && { borderBottomWidth: 0 }]}>
-                    <Image source={{ uri: s.slipUrl }} style={styles.slipThumb} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={styles.slipShop} numberOfLines={1}>{s.shopName}</Text>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 }}>
-                        <Text style={styles.slipDate}>
-                          {new Date(s.createdAt).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}
-                        </Text>
-                        {s.isProxy && (
-                          <View style={styles.proxyBadge}>
-                            <Text style={styles.proxyBadgeText}>เก็บแทน</Text>
-                          </View>
-                        )}
+          return (
+            <View style={styles.slipSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>สรุปสลิปตามจังหวัด</Text>
+                <Text style={styles.sectionHint}>{slips.length} รายการ</Text>
+              </View>
+
+              {rows.length === 0 ? (
+                <View style={styles.emptyBox}>
+                  <Ionicons name="map-outline" size={32} color={colors.textDisabled} />
+                  <Text style={styles.emptyText}>ยังไม่มีประวัติส่งสลิป</Text>
+                </View>
+              ) : (
+                <View style={styles.slipList}>
+                  {rows.map(([prov, stat], i) => (
+                    <View key={prov} style={[styles.slipRow, i === rows.length - 1 && { borderBottomWidth: 0 }]}>
+                      <View style={styles.provinceIconBox}>
+                        <Ionicons name="location-outline" size={18} color={colors.primaryDark} />
                       </View>
-                    </View>
-                    <View style={{ alignItems: "flex-end", gap: 5 }}>
-                      {s.amount != null && (
-                        <Text style={styles.slipAmount}>฿{s.amount.toLocaleString("th-TH")}</Text>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.slipShop} numberOfLines={1}>{prov}</Text>
+                        <Text style={styles.slipDate}>{stat.count} สลิป</Text>
+                      </View>
+                      {stat.total > 0 && (
+                        <Text style={styles.slipAmount}>฿{stat.total.toLocaleString("th-TH")}</Text>
                       )}
-                      <View style={[styles.slipBadge, { backgroundColor: st.bg }]}>
-                        <Text style={[styles.slipBadgeText, { color: st.color }]}>{st.label}</Text>
-                      </View>
                     </View>
-                  </View>
-                );
-              })}
+                  ))}
+                </View>
+              )}
             </View>
-          )}
-        </View>
+          );
+        })()}
 
         {/* Logout */}
         <TouchableOpacity style={[styles.logoutButton, loggingOut && { opacity: 0.5 }]} onPress={handleLogout} disabled={loggingOut} activeOpacity={0.85}>
@@ -761,6 +762,7 @@ const styles = StyleSheet.create({
   slipList: { backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 0.5, borderColor: colors.borderLight, overflow: "hidden", ...shadows.card },
   slipRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: colors.bg },
   slipThumb: { width: 46, height: 46, borderRadius: radius.md, backgroundColor: colors.primaryLight },
+  provinceIconBox: { width: 38, height: 38, borderRadius: radius.md, backgroundColor: colors.primaryLight, alignItems: "center", justifyContent: "center" },
   slipShop: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
   slipDate: { fontSize: 15, color: colors.textDisabled },
   slipAmount: { fontSize: 17, fontWeight: "700", color: colors.textPrimary },
