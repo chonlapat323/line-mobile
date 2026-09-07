@@ -13,7 +13,7 @@ import { colors, radius, shadows } from "@/lib/theme";
 
 interface PickedImage { uri: string; name: string; type: string; }
 
-type SlipStatus = "verified" | "pending_approval" | null;
+type SlipStatus = "verified" | "pending_approval" | "blocked" | null;
 
 export default function SlipScreen() {
   const [slipImage, setSlipImage] = useState<PickedImage | null>(null);
@@ -21,6 +21,9 @@ export default function SlipScreen() {
   const [slipUrl, setSlipUrl] = useState<string | null>(null);
   const [slipStatus, setSlipStatus] = useState<SlipStatus>(null);
   const [transRef, setTransRef] = useState("");
+  const [receiverBankId, setReceiverBankId] = useState("");
+  const [receiverAccountMasked, setReceiverAccountMasked] = useState("");
+  const [receiverMatch, setReceiverMatch] = useState(true);
   const [verifying, setVerifying] = useState(false);
 
   const [shopName, setShopName] = useState("");
@@ -34,6 +37,7 @@ export default function SlipScreen() {
   const [pickerSearch, setPickerSearch] = useState("");
   const [isProxy, setIsProxy] = useState(false);
   const [loading, setLoading] = useState(false);
+  const lastVerifyRef = useRef(0);
 
   async function parseAsset(uri: string): Promise<PickedImage> {
     const compressed = await ImageManipulator.manipulateAsync(
@@ -46,25 +50,36 @@ export default function SlipScreen() {
   }
 
   async function verifySlip(picked: PickedImage) {
+    const now = Date.now();
+    if (verifying || now - lastVerifyRef.current < 60000) return;
+    lastVerifyRef.current = now;
     setVerifying(true);
     setSlipStatus(null);
     setTransRef("");
     setAmount("");
     setSlipUrl(null);
+    setReceiverMatch(true);
+    setReceiverBankId("");
+    setReceiverAccountMasked("");
     try {
-      const fd = new FormData();
-      const verifyUri = slipOriginalUri ?? picked.uri;
-      fd.append("slip", { uri: verifyUri, name: picked.name, type: picked.type } as unknown as Blob);
-      const res = await api.verifySlip(fd);
+      const res = await api.verifySlip(picked.uri, picked.name);
       setSlipUrl(res.slipUrl ?? null);
       setTransRef(res.transRef ?? "");
-      if (res.success && res.amount) {
+      setReceiverBankId(res.receiverBankId ?? "");
+      setReceiverAccountMasked(res.receiverAccountMasked ?? "");
+      const matched = res.receiverMatch !== false;
+      setReceiverMatch(matched);
+      if (!matched) {
+        setSlipStatus("blocked");
+        setAmount(res.amount ? String(res.amount) : "");
+      } else if (res.success && res.amount) {
         setSlipStatus("verified");
         setAmount(String(res.amount));
       } else {
         setSlipStatus("pending_approval");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[verifySlip] error:", err instanceof Error ? err.message : String(err));
       setSlipStatus("pending_approval");
     } finally {
       setVerifying(false);
@@ -113,27 +128,36 @@ export default function SlipScreen() {
     setProvince("");
     setDistrict("");
     setIsProxy(false);
+    setReceiverMatch(true);
+    setReceiverBankId("");
+    setReceiverAccountMasked("");
   }
 
   async function handleSubmit() {
     if (!slipUrl || !shopName.trim() || !amount.trim()) return;
     setLoading(true);
     try {
+      const isBlocked = !receiverMatch;
       await api.submitSlip({
         shopName: shopName.trim(),
         amount: amount.trim(),
         details: details.trim(),
         slipUrl,
-        slipStatus,
+        slipStatus: isBlocked ? "blocked" : slipStatus,
         transRef,
         province: province.trim(),
         district: district.trim(),
         isProxy,
+        isReceiverBlocked: isBlocked,
+        receiverBankId: receiverBankId || undefined,
+        receiverAccountMasked: receiverAccountMasked || undefined,
       });
       resetForm();
       Alert.alert(
         "สำเร็จ",
-        slipStatus === "verified"
+        isBlocked
+          ? "บันทึกสลิปแล้ว — รอ Admin ตรวจสอบบัญชีผู้รับ"
+          : slipStatus === "verified"
           ? "ส่งสลิปแล้ว และแจ้งกลุ่ม LINE เรียบร้อย"
           : "ส่งสลิปแล้ว รอ Admin ยืนยันยอดเงิน",
       );
@@ -149,7 +173,7 @@ export default function SlipScreen() {
   const filteredDistricts = BANGKOK_DISTRICTS.filter((d) => d.toLowerCase().includes(pickerSearch.toLowerCase()));
   const filteredAmphoes = (PROVINCE_AMPHOES[province] ?? []).filter((a) => a.toLowerCase().includes(pickerSearch.toLowerCase()));
 
-  const canSubmit = !!slipUrl && !verifying && !!shopName.trim() && !!amount.trim() && !loading;
+  const canSubmit = !!slipUrl && !verifying && !!shopName.trim() && !!amount.trim() && !loading && !!slipStatus;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -205,12 +229,24 @@ export default function SlipScreen() {
                 <Text style={[st.statusText, { color: "#d97706" }]}>ไม่พบ QR — กรอกยอดด้วยตนเอง รอ Admin ยืนยัน</Text>
               </View>
             )}
+            {!verifying && slipStatus === "blocked" && (
+              <View style={[st.statusRow, st.statusBlocked]}>
+                <Ionicons name="alert-circle" size={16} color="#dc2626" />
+                <Text style={[st.statusText, { color: "#dc2626" }]}>บัญชีผู้รับไม่ตรง — Admin จะตรวจสอบก่อนดำเนินการ</Text>
+              </View>
+            )}
 
             {slipImage && (
               <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 6, gap: 12 }}>
                 {slipStatus && (
-                  <TouchableOpacity onPress={() => { setSlipStatus(null); verifySlip(slipImage); }} style={st.changeBtn}>
-                    <Ionicons name="scan-outline" size={13} color={colors.textMuted} />
+                  <TouchableOpacity
+                    onPress={() => { setSlipStatus(null); verifySlip(slipImage); }}
+                    style={[st.changeBtn, verifying && { opacity: 0.4 }]}
+                    disabled={verifying}
+                  >
+                    {verifying
+                      ? <ActivityIndicator size={13} color={colors.textMuted} />
+                      : <Ionicons name="scan-outline" size={13} color={colors.textMuted} />}
                     <Text style={st.changeBtnText}>ตรวจสอบใหม่</Text>
                   </TouchableOpacity>
                 )}
@@ -450,6 +486,7 @@ const st = StyleSheet.create({
   },
   statusVerified: { backgroundColor: colors.primaryLight },
   statusPending: { backgroundColor: "#fffbeb" },
+  statusBlocked: { backgroundColor: "#fef2f2" },
   statusText: { fontSize: 17, color: colors.textMuted, fontWeight: "500", flex: 1 },
 
   verifyBtn: {
