@@ -487,7 +487,6 @@ export default function HistoryScreen() {
   const [customTo, setCustomTo] = useState("");
   const [showDatePicker, setShowDatePicker] = useState<"from" | "to" | null>(null);
   const [search, setSearch] = useState("");
-  const [userFilter, setUserFilter] = useState("");
   const [shopFilter, setShopFilter] = useState("");
 
   // New filters
@@ -500,9 +499,7 @@ export default function HistoryScreen() {
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [users, setUsers] = useState<{ id: string; fullName: string }[]>([]);
-  const [showUserPicker, setShowUserPicker] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState("");
   const [showShopPicker, setShowShopPicker] = useState(false);
 
   const navigation = useNavigation();
@@ -510,28 +507,21 @@ export default function HistoryScreen() {
   const mountedRef = useRef(true);
 
   useEffect(() => {
-    getStoredUser().then(u => {
-      if (u?.role === "admin") {
-        setIsAdmin(true);
-        api.getUsers().then((res: any) => {
-          const list = Array.isArray(res) ? res : res?.data ?? [];
-          setUsers(list.map((u: any) => ({ id: u.id, fullName: u.fullName })));
-        }).catch(() => {});
-      }
-    });
+    getStoredUser().then(u => { if (u?.id) setCurrentUserId(u.id); });
     return () => { mountedRef.current = false; };
   }, []);
 
   const doLoad = useCallback(async (params: {
-    df: DateFilter; from: string; to: string; uid: string;
+    df: DateFilter; from: string; to: string; userId: string;
     province?: string; district?: string;
     tripType?: string; customerType?: string; visitType?: string;
   }) => {
+    if (!params.userId) return;
     const bounds = getDateBounds(params.df, params.from, params.to);
     try {
       const res = await api.getVisits({
         ...bounds,
-        filterUserId: params.uid || undefined,
+        filterUserId: params.userId,
         province: params.province || undefined,
         district: params.district || undefined,
         tripType: params.tripType || undefined,
@@ -548,17 +538,19 @@ export default function HistoryScreen() {
 
   // Reload on focus (initial + tab switch)
   useFocusEffect(useCallback(() => {
+    if (!currentUserId) return;
     setLoading(true);
-    doLoad({ df: dateFilter, from: customFrom, to: customTo, uid: userFilter, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
-  }, []));
+    doLoad({ df: dateFilter, from: customFrom, to: customTo, userId: currentUserId, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
+  }, [currentUserId]));
 
   // Reload immediately when any filter changes (skip initial mount)
   const filterInitRef = useRef(false);
   useEffect(() => {
     if (!filterInitRef.current) { filterInitRef.current = true; return; }
+    if (!currentUserId) return;
     setLoading(true);
-    doLoad({ df: dateFilter, from: customFrom, to: customTo, uid: userFilter, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
-  }, [dateFilter, customFrom, customTo, userFilter, provinceFilter, districtFilter, tripTypeFilter, customerTypeFilter, visitTypeFilter]);
+    doLoad({ df: dateFilter, from: customFrom, to: customTo, userId: currentUserId, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
+  }, [dateFilter, customFrom, customTo, provinceFilter, districtFilter, tripTypeFilter, customerTypeFilter, visitTypeFilter, currentUserId]);
 
   const uniqueShops = useMemo(() => [...new Set(records.map(r => r.shopName))].sort(), [records]);
 
@@ -575,7 +567,6 @@ export default function HistoryScreen() {
   const hasActiveFilter =
     search.trim().length > 0 ||
     !!shopFilter ||
-    !!userFilter ||
     hasActiveTypeFilter ||
     hasActiveLocationFilter ||
     (dateFilter !== "all" && dateFilter !== "custom") ||
@@ -605,8 +596,8 @@ export default function HistoryScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    doLoad({ df: dateFilter, from: customFrom, to: customTo, uid: userFilter, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
-  }, [dateFilter, customFrom, customTo, userFilter, provinceFilter, districtFilter, tripTypeFilter, customerTypeFilter, visitTypeFilter, doLoad]);
+    doLoad({ df: dateFilter, from: customFrom, to: customTo, userId: currentUserId, province: provinceFilter, district: districtFilter, tripType: tripTypeFilter, customerType: customerTypeFilter, visitType: visitTypeFilter });
+  }, [dateFilter, customFrom, customTo, currentUserId, provinceFilter, districtFilter, tripTypeFilter, customerTypeFilter, visitTypeFilter, doLoad]);
 
   function handleDeletePress(id: string) {
     Alert.alert("ยืนยันการลบ", "ต้องการลบรายการนี้ใช่ไหม?", [
@@ -819,29 +810,19 @@ export default function HistoryScreen() {
           </View>
         )}
 
-        {/* Admin: user + shop pickers */}
-        {isAdmin && (
+        {/* Shop picker */}
+        {records.length > 0 && (
           <View style={styles.adminFilterRow}>
-            <TouchableOpacity style={styles.pickerBtn} onPress={() => setShowUserPicker(true)}>
-              <Text style={styles.pickerLabel}>เซล์</Text>
-              <Text style={styles.pickerValue} numberOfLines={1}>
-                {userFilter ? (users.find(u => u.id === userFilter)?.fullName ?? "เซล์") : "ทุกเซล์"}
-              </Text>
-              <Ionicons name="chevron-down" size={13} color={colors.textMuted} />
-            </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.pickerBtn, !records.length && styles.pickerBtnDisabled]}
-              onPress={() => records.length && setShowShopPicker(true)}
+              style={styles.pickerBtn}
+              onPress={() => setShowShopPicker(true)}
             >
               <Text style={styles.pickerLabel}>ร้าน</Text>
               <Text style={styles.pickerValue} numberOfLines={1}>{shopFilter || "ทุกร้าน"}</Text>
               <Ionicons name="chevron-down" size={13} color={colors.textMuted} />
             </TouchableOpacity>
-            {(userFilter || shopFilter) && (
-              <TouchableOpacity
-                style={styles.clearBtn}
-                onPress={() => { setUserFilter(""); setShopFilter(""); }}
-              >
+            {shopFilter && (
+              <TouchableOpacity style={styles.clearBtn} onPress={() => setShopFilter("")}>
                 <Text style={styles.clearBtnText}>ล้าง</Text>
               </TouchableOpacity>
             )}
@@ -892,9 +873,6 @@ export default function HistoryScreen() {
               )}
               <View style={styles.info}>
                 <Text style={[styles.shopName, { fontSize: fs(13) }]} numberOfLines={1}>{item.shopName}</Text>
-                {isAdmin && item.user && (
-                  <Text style={[styles.userLabel, { fontSize: fs(11) }]} numberOfLines={1}>{item.user.fullName}</Text>
-                )}
                 <View style={styles.tagRow}>
                   {tags.map((t) => <Text key={t} style={styles.tag}>{t}</Text>)}
                 </View>
@@ -937,14 +915,6 @@ export default function HistoryScreen() {
       />
 
       {/* ── Pickers ── */}
-      <PickerModal
-        visible={showUserPicker}
-        title="เลือกเซล์"
-        options={[{ value: "", label: "ทุกเซล์" }, ...users.map(u => ({ value: u.id, label: u.fullName }))]}
-        selected={userFilter}
-        onSelect={setUserFilter}
-        onClose={() => setShowUserPicker(false)}
-      />
       <PickerModal
         visible={showShopPicker}
         title="เลือกร้าน"
