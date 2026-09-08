@@ -8,6 +8,7 @@ import {
 import { useNavigation, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getStoredUser } from "@/lib/api";
+import { useAuthStore } from "@/lib/useAuthStore";
 import { colors, radius, shadows } from "@/lib/theme";
 import { SkeletonBox } from "@/lib/Skeleton";
 import { ImageViewer } from "@/lib/ImageViewer";
@@ -507,7 +508,10 @@ export default function HistoryScreen() {
   const mountedRef = useRef(true);
 
   useEffect(() => {
-    getStoredUser().then(u => { if (u?.id) setCurrentUserId(u.id); });
+    getStoredUser().then(u => {
+      const id = u?.id ?? useAuthStore.getState().user?.id;
+      if (id) setCurrentUserId(id);
+    });
     return () => { mountedRef.current = false; };
   }, []);
 
