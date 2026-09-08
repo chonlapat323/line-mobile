@@ -142,8 +142,6 @@ export default function RecordScreen() {
       },
       {
         text: "เลือกจาก Gallery", onPress: async () => {
-          const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
           const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] as any, allowsMultipleSelection: false, quality: 0.8, allowsEditing: false });
           if (!res.canceled && res.assets[0]) { const img = await parseAsset(res.assets[0].uri); setSlotImages((prev) => ({ ...prev, [slotKey]: img })); }
         },
