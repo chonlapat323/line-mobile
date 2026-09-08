@@ -849,9 +849,8 @@ export default function HistoryScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const locationLabel = item.district
-            ? `${item.province.replace("กรุงเทพมหานคร", "กรุงเทพฯ")} · ${item.district}`
-            : item.province.replace("กรุงเทพมหานคร", "กรุงเทพฯ");
+          const provinceLabel = (item.province || "").replace("กรุงเทพมหานคร", "กรุงเทพฯ");
+          const locationLabel = item.district ? `${provinceLabel} · ${item.district}` : provinceLabel;
           const resKey = item.result || "";
           const resLabel = RESULT_LABEL[resKey] || "";
           const rs = getResultStyle(resKey);
