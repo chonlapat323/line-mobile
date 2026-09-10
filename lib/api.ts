@@ -175,6 +175,8 @@ export const api = {
     request("/users/me/force-change-password", { method: "PATCH", body: JSON.stringify({ newPassword }) }),
   getLastVisitByShop: (shopName: string) =>
     request(`/visits/last-by-shop?shopName=${encodeURIComponent(shopName)}`),
+  searchShopContacts: (query: string) =>
+    request(`/shop-contacts/search?q=${encodeURIComponent(query)}`),
 };
 
 export async function saveToken(token: string, user: object) {

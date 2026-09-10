@@ -49,6 +49,7 @@ export default function RecordScreen() {
   const [locationLoading, setLocationLoading] = useState(false);
   const [shopName, setShopName] = useState("ร้านบิ๊กบิวตี้");
   const [shopHistory, setShopHistory] = useState<string[]>([]);
+  const [flowShopSuggestions, setFlowShopSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [province, setProvince] = useState("กรุงเทพมหานคร");
   const [district, setDistrict] = useState("ลาดพร้าว");
@@ -81,6 +82,18 @@ export default function RecordScreen() {
     getShopHistory().then(setShopHistory);
     captureLocation();
   }, []);
+
+  // Server-side shop-name autocomplete (FlowAccount contacts), debounced.
+  useEffect(() => {
+    const q = shopName.trim();
+    if (q.length < 2) { setFlowShopSuggestions([]); return; }
+    const timer = setTimeout(() => {
+      api.searchShopContacts(q)
+        .then((rows: { contactName: string }[]) => setFlowShopSuggestions(rows.map((r) => r.contactName)))
+        .catch(() => {});
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [shopName]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -211,7 +224,10 @@ export default function RecordScreen() {
   }
 
   const shopSuggestions = shopName.trim()
-    ? shopHistory.filter((s) => s.toLowerCase().includes(shopName.toLowerCase()) && s !== shopName)
+    ? Array.from(new Set([
+        ...shopHistory.filter((s) => s.toLowerCase().includes(shopName.toLowerCase()) && s !== shopName),
+        ...flowShopSuggestions.filter((s) => s !== shopName),
+      ])).slice(0, 8)
     : [];
 
   const isBangkok = province === BANGKOK_PROVINCE;
