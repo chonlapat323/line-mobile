@@ -175,8 +175,6 @@ export default function RecordScreen() {
       },
       {
         text: "เลือกจาก Gallery", onPress: async () => {
-          const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (!granted) { showAlert("error", "ไม่ได้รับอนุญาต", "กรุณาเปิดสิทธิ์ Photos ในการตั้งค่า"); return; }
           const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] as any, allowsMultipleSelection: false, quality: 0.8 });
           if (!res.canceled && res.assets[0]) setQuotationImage(await parseAsset(res.assets[0].uri));
         },
@@ -208,8 +206,16 @@ export default function RecordScreen() {
       if (orderAmount.trim()) fd.append("orderAmount", orderAmount.trim());
       if (quotationImage) fd.append("images", { uri: quotationImage.uri, name: `quotation-${quotationImage.name}`, type: quotationImage.type } as unknown as Blob);
       await api.createVisit(fd);
-      await saveShopToHistory(shopName.trim());
-      setShopHistory(await getShopHistory());
+
+      // Local bookkeeping (shop suggestion history) — never let a failure here
+      // mask the fact that the visit itself was already saved successfully.
+      try {
+        await saveShopToHistory(shopName.trim());
+        setShopHistory(await getShopHistory());
+      } catch (historyErr) {
+        console.error("saveShopToHistory failed:", historyErr);
+      }
+
       Keyboard.dismiss();
       setSavedShop(shopName.trim());
       setShowSuccess(true);
