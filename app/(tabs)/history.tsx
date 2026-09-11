@@ -363,7 +363,7 @@ function EditModal({ record, onClose, onDone }: {
       const updated = await api.updateVisit(record.id, {
         shopName: shopName.trim(),
         result,
-        orderAmount: result === "buy" && orderAmount ? Number(orderAmount) : null,
+        orderAmount: result === "buy" && orderAmount ? Number(orderAmount.replace(/,/g, "")) : null,
         details: details.trim(),
       });
       onDone({ ...record, ...updated });
