@@ -59,9 +59,7 @@ async function request(path: string, options: RequestInit = {}) {
   }
 }
 
-class NetworkError extends Error {}
-
-function xhrMultipartOnce(path: string, formData: FormData, timeoutMs: number): Promise<any> {
+function xhrMultipart(path: string, formData: FormData, timeoutMs = 30000): Promise<any> {
   const token = getToken();
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -83,24 +81,10 @@ function xhrMultipartOnce(path: string, formData: FormData, timeoutMs: number): 
       try { resolve(JSON.parse(xhr.responseText)); }
       catch { reject(new Error("Invalid response")); }
     };
-    xhr.onerror = () => reject(new NetworkError("ไม่สามารถเชื่อมต่อ server ได้"));
-    xhr.ontimeout = () => reject(new NetworkError("การเชื่อมต่อหมดเวลา กรุณาตรวจสอบ internet"));
+    xhr.onerror = () => reject(new Error("ไม่สามารถเชื่อมต่อ server ได้"));
+    xhr.ontimeout = () => reject(new Error("การเชื่อมต่อหมดเวลา กรุณาตรวจสอบ internet"));
     xhr.send(formData);
   });
-}
-
-// Mobile connections drop mid-upload often enough that a plain network error
-// (not a timeout, not a server response) is worth retrying transparently
-// before making the user redo the whole form.
-async function xhrMultipart(path: string, formData: FormData, timeoutMs = 30000, retries = 2): Promise<any> {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return await xhrMultipartOnce(path, formData, timeoutMs);
-    } catch (err) {
-      if (!(err instanceof NetworkError) || attempt >= retries) throw err;
-      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-    }
-  }
 }
 
 export const api = {
