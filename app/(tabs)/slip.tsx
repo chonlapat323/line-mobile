@@ -19,6 +19,7 @@ export default function SlipScreen() {
   const [slipImage, setSlipImage] = useState<PickedImage | null>(null);
   const [slipOriginalUri, setSlipOriginalUri] = useState<string | null>(null);
   const [slipUrl, setSlipUrl] = useState<string | null>(null);
+  const [slipHash, setSlipHash] = useState<string | null>(null);
   const [slipStatus, setSlipStatus] = useState<SlipStatus>(null);
   const [transRef, setTransRef] = useState("");
   const [verifying, setVerifying] = useState(false);
@@ -73,6 +74,7 @@ export default function SlipScreen() {
     setTransRef("");
     setAmount("");
     setSlipUrl(null);
+    setSlipHash(null);
     setIsDuplicateSlip(false);
     try {
       const res = await api.verifySlip(picked.uri, picked.name);
@@ -90,6 +92,7 @@ export default function SlipScreen() {
       }
 
       setSlipUrl(res.slipUrl ?? null);
+      setSlipHash(res.hash ?? null);
       setTransRef(res.transRef ?? "");
 
       if (res.success && res.amount) {
@@ -117,7 +120,7 @@ export default function SlipScreen() {
             const picked = await parseAsset(originalUri);
             setSlipOriginalUri(originalUri);
             setSlipImage(picked);
-            setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount(""); setIsDuplicateSlip(false);
+            setSlipStatus(null); setSlipUrl(null); setSlipHash(null); setTransRef(""); setAmount(""); setIsDuplicateSlip(false);
           }
         },
       },
@@ -129,7 +132,7 @@ export default function SlipScreen() {
             const picked = await parseAsset(originalUri);
             setSlipOriginalUri(originalUri);
             setSlipImage(picked);
-            setSlipStatus(null); setSlipUrl(null); setTransRef(""); setAmount(""); setIsDuplicateSlip(false);
+            setSlipStatus(null); setSlipUrl(null); setSlipHash(null); setTransRef(""); setAmount(""); setIsDuplicateSlip(false);
           }
         },
       },
@@ -141,6 +144,7 @@ export default function SlipScreen() {
     setSlipImage(null);
     setSlipOriginalUri(null);
     setSlipUrl(null);
+    setSlipHash(null);
     setSlipStatus(null);
     setTransRef("");
     setAmount("");
@@ -167,6 +171,7 @@ export default function SlipScreen() {
         amount: amount.trim(),
         details: details.trim(),
         slipUrl,
+        hash: slipHash,
         slipStatus,
         transRef,
         province: province.trim(),
