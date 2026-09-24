@@ -163,7 +163,33 @@ export default function SlipScreen() {
     setShowConfirm(true);
   }
 
-  async function doSubmit() {
+  async function confirmSubmit() {
+    setShowConfirm(false);
+    const name = shopName.trim();
+    let shopExists = true;
+    try {
+      shopExists = (await api.shopContactExists(name)).exists;
+    } catch {
+      // Can't reach the check — don't block the slip submission over it, just skip the popup.
+    }
+
+    if (shopExists) {
+      doSubmit(false);
+      return;
+    }
+
+    Alert.alert(
+      "ร้านนี้ยังไม่มีในระบบ",
+      `"${name}" ยังไม่มีในระบบร้านค้า ต้องการเพิ่มเป็นร้านใหม่ไหมครับ? (ถ้าไม่เพิ่ม ก็ยังส่งสลิปนี้ได้ตามปกติ แค่จะไม่เพิ่มร้านนี้เข้าระบบ)`,
+      [
+        { text: "แก้ไขชื่อร้าน", style: "cancel" },
+        { text: "ส่งโดยไม่เพิ่ม", onPress: () => doSubmit(false) },
+        { text: "เพิ่มร้านใหม่", onPress: () => doSubmit(true) },
+      ],
+    );
+  }
+
+  async function doSubmit(confirmNewShop: boolean) {
     setLoading(true);
     try {
       await api.submitSlip({
@@ -177,6 +203,7 @@ export default function SlipScreen() {
         province: province.trim(),
         district: district.trim(),
         isProxy,
+        confirmNewShop,
       });
       resetForm();
       Alert.alert(
@@ -447,7 +474,7 @@ export default function SlipScreen() {
                 <Text style={{ fontSize: 17, fontWeight: "600", color: colors.textSecondary }}>ยกเลิก</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => { setShowConfirm(false); doSubmit(); }}
+                onPress={confirmSubmit}
                 style={{ flex: 1, paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.primary, alignItems: "center" }}
               >
                 <Text style={{ fontSize: 17, fontWeight: "700", color: "#fff" }}>ยืนยัน</Text>

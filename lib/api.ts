@@ -153,6 +153,8 @@ export const api = {
     request(`/visits/last-by-shop?shopName=${encodeURIComponent(shopName)}`),
   searchShopContacts: (query: string) =>
     request(`/shop-contacts/search?q=${encodeURIComponent(query)}`),
+  shopContactExists: (name: string): Promise<{ exists: boolean }> =>
+    request(`/shop-contacts/exists?name=${encodeURIComponent(name)}`),
 };
 
 export async function saveToken(token: string, user: object) {

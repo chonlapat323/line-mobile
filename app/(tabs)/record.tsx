@@ -184,6 +184,32 @@ export default function RecordScreen() {
   }
 
   async function handleSubmit() {
+    const name = shopName.trim();
+    let shopExists = true;
+    try {
+      shopExists = (await api.shopContactExists(name)).exists;
+    } catch {
+      // Can't reach the check — don't block the trip submission over it, just skip the popup.
+    }
+
+    if (shopExists) {
+      submitVisit(false);
+      return;
+    }
+
+    showAlert(
+      "confirm",
+      "ร้านนี้ยังไม่มีในระบบ",
+      `"${name}" ยังไม่มีในระบบร้านค้า ต้องการเพิ่มเป็นร้านใหม่ไหมครับ? (ถ้าไม่เพิ่ม ก็ยังบันทึกทริปนี้ได้ตามปกติ แค่จะไม่เพิ่มร้านนี้เข้าระบบ)`,
+      [
+        { text: "แก้ไขชื่อร้าน", style: "cancel", onPress: () => setAppAlert((p) => ({ ...p, visible: false })) },
+        { text: "ส่งโดยไม่เพิ่ม", onPress: () => { setAppAlert((p) => ({ ...p, visible: false })); submitVisit(false); } },
+        { text: "เพิ่มร้านใหม่", onPress: () => { setAppAlert((p) => ({ ...p, visible: false })); submitVisit(true); } },
+      ],
+    );
+  }
+
+  async function submitVisit(confirmNewShop: boolean) {
     setLoading(true);
     try {
       const fd = new FormData();
@@ -204,6 +230,7 @@ export default function RecordScreen() {
       fd.append("result", result!);
       fd.append("details", details);
       if (orderAmount.trim()) fd.append("orderAmount", orderAmount.trim());
+      if (confirmNewShop) fd.append("confirmNewShop", "true");
       if (quotationImage) fd.append("images", { uri: quotationImage.uri, name: `quotation-${quotationImage.name}`, type: quotationImage.type } as unknown as Blob);
       await api.createVisit(fd);
 

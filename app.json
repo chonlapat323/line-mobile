@@ -2,7 +2,7 @@
   "expo": {
     "name": "BeautyUp Sales",
     "slug": "line-sender-mobile",
-    "version": "2.2.11",
+    "version": "2.2.14",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "linesender",
@@ -20,7 +20,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.beautyup.linesender",
-      "versionCode": 32,
+      "versionCode": 34,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -40,8 +40,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow BeautyUp Sales to access your photos.",
-          "cameraPermission": "Allow BeautyUp Sales to use the camera to take photos."
+          "photosPermission": "BeautyUp Sales uses your photo library to attach existing photos of the storefront, shelf displays, or payment slips to your visit report, which your manager reviews to approve the visit and commission.",
+          "cameraPermission": "BeautyUp Sales uses the camera to photograph the storefront, shelf displays, and payment slips during a sales visit. These photos are attached to your visit report for your manager to review and approve."
         }
       ],
       "@react-native-community/datetimepicker",
